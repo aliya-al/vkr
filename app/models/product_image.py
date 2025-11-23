@@ -1,0 +1,16 @@
+import uuid
+from sqlalchemy import String, ForeignKey
+from sqlalchemy.orm import Mapped, mapped_column, relationship
+from app.utils.database import Base
+
+class ProductImage(Base):
+    __tablename__ = "product_images"
+
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    product_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("products.id", ondelete="CASCADE"),
+        nullable=False
+    ) # ondelete="CASCADE" - если удалить товар, то все связанные картинки тоже удалятся.
+    file_path: Mapped[str] = mapped_column(String(500), nullable=False)
+
+    product = relationship("Product", back_populates="images")
