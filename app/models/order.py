@@ -2,7 +2,7 @@ import uuid
 import enum
 from datetime import datetime
 
-from sqlalchemy import String, Integer, ForeignKey, DateTime, Enum, func
+from sqlalchemy import String, Integer, ForeignKey, DateTime, Enum, func, Float
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.utils.database import Base
@@ -41,6 +41,19 @@ class Order(Base):
     )
 
     total_price: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+
+    # общий вес заказа в килограммах - (weight_kg товара * quantity) по всем позициям
+    total_weight_kg: Mapped[float] = mapped_column(
+        Float,
+        nullable=False,
+        default=0.0,
+    )
+    # общий объём заказа в кубических метрах - (volume_m3 товара * quantity)
+    total_volume_m3: Mapped[float] = mapped_column(
+        Float,
+        nullable=False,
+        default=0.0,
+    )
 
     manager_id: Mapped[uuid.UUID | None] = mapped_column(
         ForeignKey("admin_users.id", ondelete="SET NULL"),

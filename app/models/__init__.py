@@ -4,3 +4,5 @@ from .product import Product
 from .product_image import ProductImage
 from .order import Order
 from .order_item import OrderItem
+from .brand import Brand
+from .characteristic import GlobalCharacteristic
