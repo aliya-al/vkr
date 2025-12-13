@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <title>Admin</title>
+</head>
+<body>
+  <h1>Админка</h1>
+
+  <p>Вы вошли.</p>
+  <ul>
+    <li>ID: {{ admin.id }}</li>
+    <li>Role: {{ admin.role }}</li>
+  </ul>
+
+  <form method="post" action="/admin/logout">
+    <button type="submit">Выйти</button>
+  </form>
+</body>
+</html>
