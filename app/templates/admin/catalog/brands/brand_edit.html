@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <title>Редактировать бренд</title>
+</head>
+<body>
+  <h1>Редактировать бренд</h1>
+  <form method="post" action="/admin/catalog/brands/{{ brand.id }}/edit">
+    <div>
+      <label>Название
+        <input type="text" name="name" value="{{ brand.name }}" required>
+      </label>
+    </div>
+    <button type="submit">Сохранить</button>
+  </form>
+  <p><a href="/admin/catalog/brands">Назад</a></p>
+</body>
+</html>
