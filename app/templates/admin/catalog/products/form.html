@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <title>{{ title }}</title>
+</head>
+<body>
+  <h1>{{ title }}</h1>
+  <p><a href="/admin/catalog/products">Назад к списку</a></p>
+  <form method="post" action="{{ action_url }}">
+    <div>
+      <label>Название</label><br>
+      <input name="name" value="{{ product.name if product else '' }}" required>
+    </div>
+    <div style="margin-top:8px;">
+      <label>Описание</label><br>
+      <textarea name="description" rows="3" cols="40">{{ product.description if product else '' }}</textarea>
+    </div>
+    <div style="margin-top:8px;">
+      <label>Категория</label><br>
+      <select name="category_id" required>
+        {% for category in categories %}
+          <option value="{{ category.id }}" {% if product and product.category_id == category.id %}selected{% endif %}>{{ category.name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div style="margin-top:8px;">
+      <label>Бренд</label><br>
+      <select name="brand_id">
+        <option value="">(нет)</option>
+        {% for brand in brands %}
+          <option value="{{ brand.id }}" {% if product and product.brand_id == brand.id %}selected{% endif %}>{{ brand.name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div style="margin-top:8px;">
+      <label>Цена</label><br>
+      <input type="number" name="price" value="{{ product.price if product else '' }}" required>
+    </div>
+    <div style="margin-top:8px;">
+      <label>Объем (м3)</label><br>
+      <input type="number" step="0.01" name="volume_m3" value="{{ product.volume_m3 if product else '' }}" required>
+    </div>
+    <div style="margin-top:8px;">
+      <label>Вес (кг)</label><br>
+      <input type="number" step="0.01" name="weight_kg" value="{{ product.weight_kg if product else '' }}" required>
+    </div>
+    <div style="margin-top:8px;">
+      <label>Скидка (%)</label><br>
+      <input type="number" name="discount_percent" value="{{ product.discount_percent if product else '' }}">
+    </div>
+    <div style="margin-top:8px;">
+      <label>
+        <input type="checkbox" name="is_active" value="true" {% if product is none or product.is_active %}checked{% endif %}>
+        Активен
+      </label>
+    </div>
+    <div style="margin-top:12px;">
+      <button type="submit">Сохранить</button>
+    </div>
+  </form>
+
+  {% if product %}
+    <hr>
+    <h2>Изображения</h2>
+    <ul>
+      {% for image in images %}
+        <li>
+          {{ image.file_path }}
+          <form method="post" action="/admin/catalog/products/{{ product.id }}/images/{{ image.id }}/delete" style="display:inline;">
+            <button type="submit">Удалить</button>
+          </form>
+        </li>
+      {% else %}
+        <li>Нет изображений.</li>
+      {% endfor %}
+    </ul>
+    <form method="post" action="/admin/catalog/products/{{ product.id }}/images">
+      <div>
+        <label>Добавить изображение (путь)</label><br>
+        <input name="file_path" required>
+      </div>
+      <div style="margin-top:8px;">
+        <button type="submit">Добавить</button>
+      </div>
+    </form>
+  {% endif %}
+</body>
+</html>

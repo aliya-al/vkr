@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <title>Товары</title>
+</head>
+<body>
+  <h1>Товары</h1>
+  <p><a href="/admin/">На главную</a> | <a href="/admin/catalog/products/create">Создать товар</a></p>
+  <table border="1" cellpadding="6">
+    <thead>
+      <tr>
+        <th>Название</th>
+        <th>Категория</th>
+        <th>Бренд</th>
+        <th>Цена</th>
+        <th>Активен</th>
+        <th>Действия</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for product in products %}
+        <tr>
+          <td>{{ product.name }}</td>
+          <td>{{ product.category.name if product.category else '-' }}</td>
+          <td>{{ product.brand.name if product.brand else '-' }}</td>
+          <td>{{ product.price }}</td>
+          <td>{{ 'Да' if product.is_active else 'Нет' }}</td>
+          <td>
+            <a href="/admin/catalog/products/{{ product.id }}/edit">Редактировать</a>
+            <form method="post" action="/admin/catalog/products/{{ product.id }}/delete" style="display:inline;">
+              <button type="submit">Удалить</button>
+            </form>
+          </td>
+        </tr>
+      {% else %}
+        <tr><td colspan="6">Товаров пока нет.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</body>
+</html>

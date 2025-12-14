@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <title>{{ title }}</title>
+</head>
+<body>
+  <h1>{{ title }}</h1>
+  <p><a href="/admin/catalog/categories">Назад к списку</a></p>
+  <form method="post" action="{{ action_url }}">
+    <div>
+      <label>Название</label><br>
+      <input name="name" value="{{ category.name if category else '' }}" required>
+    </div>
+    <div style="margin-top:8px;">
+      <label>Slug</label><br>
+      <input name="slug" value="{{ category.slug if category else '' }}" required>
+    </div>
+    <div style="margin-top:8px;">
+      <label>Родительская категория</label><br>
+      <select name="parent_id">
+        <option value="">(нет)</option>
+        {% for item in categories %}
+          <option value="{{ item.id }}" {% if category and category.parent_id == item.id %}selected{% endif %}>{{ item.name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div style="margin-top:12px;">
+      <button type="submit">Сохранить</button>
+    </div>
+  </form>
+</body>
+</html>
