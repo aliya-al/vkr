@@ -1,3 +1,4 @@
+import re
 import uuid
 
 from fastapi import APIRouter, Depends, Form, HTTPException, Request
@@ -9,7 +10,6 @@ from sqlalchemy.orm import selectinload
 from app.models.brand import Brand
 from app.models.category import Category
 from app.models.product import Product
-from app.models.product_image import ProductImage
 from app.routers.admin.deps import require_admin_or_404
 from app.utils.database import get_async_session
 from app.utils.templates import templates
@@ -18,6 +18,49 @@ router = APIRouter(
     prefix="/catalog",
     dependencies=[Depends(require_admin_or_404)],
 )
+
+
+_RU_TRANSLIT = {
+    "а": "a",
+    "б": "b",
+    "в": "v",
+    "г": "g",
+    "д": "d",
+    "е": "e",
+    "ё": "e",
+    "ж": "zh",
+    "з": "z",
+    "и": "i",
+    "й": "y",
+    "к": "k",
+    "л": "l",
+    "м": "m",
+    "н": "n",
+    "о": "o",
+    "п": "p",
+    "р": "r",
+    "с": "s",
+    "т": "t",
+    "у": "u",
+    "ф": "f",
+    "х": "h",
+    "ц": "c",
+    "ч": "ch",
+    "ш": "sh",
+    "щ": "sch",
+    "ъ": "",
+    "ы": "y",
+    "ь": "",
+    "э": "e",
+    "ю": "yu",
+    "я": "ya",
+}
+
+
+def _slugify(value: str) -> str:
+    transliterated = "".join(_RU_TRANSLIT.get(char, char) for char in value.lower())
+    slug = re.sub(r"[^a-z0-9]+", "-", transliterated)
+    return slug.strip("-")
 
 
 @router.get("/categories", response_class=HTMLResponse)
@@ -29,7 +72,7 @@ async def categories_list(request: Request, session: AsyncSession = Depends(get_
     )
     categories = result.scalars().all()
     return templates.TemplateResponse(
-        "admin/catalog/categories/list.html",
+        "admin/catalog/categories/categories_list.html",
         {"request": request, "categories": categories},
     )
 
@@ -39,27 +82,20 @@ async def category_create_page(request: Request, session: AsyncSession = Depends
     result = await session.execute(select(Category).order_by(Category.name))
     categories = result.scalars().all()
     return templates.TemplateResponse(
-        "admin/catalog/categories/form.html",
-        {
-            "request": request,
-            "category": None,
-            "categories": categories,
-            "action_url": "/admin/catalog/categories/create",
-            "title": "Создать категорию",
-        },
+        "admin/catalog/categories/category_create.html",
+        {"request": request, "categories": categories},
     )
 
 
 @router.post("/categories/create")
 async def category_create(
     name: str = Form(...),
-    slug: str = Form(...),
     parent_id: str | None = Form(None),
     session: AsyncSession = Depends(get_async_session),
 ):
     category = Category(
         name=name,
-        slug=slug,
+        slug=_slugify(name),
         parent_id=uuid.UUID(parent_id) if parent_id else None,
     )
     session.add(category)
@@ -84,14 +120,8 @@ async def category_edit_page(
     categories = categories_result.scalars().all()
 
     return templates.TemplateResponse(
-        "admin/catalog/categories/form.html",
-        {
-            "request": request,
-            "category": category,
-            "categories": categories,
-            "action_url": f"/admin/catalog/categories/{category_id}/edit",
-            "title": "Редактировать категорию",
-        },
+        "admin/catalog/categories/category_edit.html",
+        {"request": request, "category": category, "categories": categories},
     )
 
 
@@ -99,7 +129,6 @@ async def category_edit_page(
 async def category_edit(
     category_id: uuid.UUID,
     name: str = Form(...),
-    slug: str = Form(...),
     parent_id: str | None = Form(None),
     session: AsyncSession = Depends(get_async_session),
 ):
@@ -110,7 +139,7 @@ async def category_edit(
 
     new_parent_id = uuid.UUID(parent_id) if parent_id else None
     category.name = name
-    category.slug = slug
+    category.slug = _slugify(name)
     category.parent_id = new_parent_id
 
     await session.commit()
@@ -134,7 +163,7 @@ async def brands_list(request: Request, session: AsyncSession = Depends(get_asyn
     result = await session.execute(select(Brand).order_by(Brand.name))
     brands = result.scalars().all()
     return templates.TemplateResponse(
-        "admin/catalog/brands/list.html",
+        "admin/catalog/brands/brands_list.html",
         {"request": request, "brands": brands},
     )
 
@@ -142,23 +171,17 @@ async def brands_list(request: Request, session: AsyncSession = Depends(get_asyn
 @router.get("/brands/create", response_class=HTMLResponse)
 async def brand_create_page(request: Request):
     return templates.TemplateResponse(
-        "admin/catalog/brands/form.html",
-        {
-            "request": request,
-            "brand": None,
-            "action_url": "/admin/catalog/brands/create",
-            "title": "Создать бренд",
-        },
+        "admin/catalog/brands/brand_create.html",
+        {"request": request},
     )
 
 
 @router.post("/brands/create")
 async def brand_create(
     name: str = Form(...),
-    slug: str = Form(...),
     session: AsyncSession = Depends(get_async_session),
 ):
-    brand = Brand(name=name, slug=slug)
+    brand = Brand(name=name, slug=_slugify(name))
     session.add(brand)
     await session.commit()
     return RedirectResponse("/admin/catalog/brands", status_code=303)
@@ -172,13 +195,8 @@ async def brand_edit_page(brand_id: uuid.UUID, request: Request, session: AsyncS
         raise HTTPException(status_code=404)
 
     return templates.TemplateResponse(
-        "admin/catalog/brands/form.html",
-        {
-            "request": request,
-            "brand": brand,
-            "action_url": f"/admin/catalog/brands/{brand_id}/edit",
-            "title": "Редактировать бренд",
-        },
+        "admin/catalog/brands/brand_edit.html",
+        {"request": request, "brand": brand},
     )
 
 
@@ -186,7 +204,6 @@ async def brand_edit_page(brand_id: uuid.UUID, request: Request, session: AsyncS
 async def brand_edit(
     brand_id: uuid.UUID,
     name: str = Form(...),
-    slug: str = Form(...),
     session: AsyncSession = Depends(get_async_session),
 ):
     result = await session.execute(select(Brand).where(Brand.id == brand_id))
@@ -195,7 +212,7 @@ async def brand_edit(
         raise HTTPException(status_code=404)
 
     brand.name = name
-    brand.slug = slug
+    brand.slug = _slugify(name)
     await session.commit()
     return RedirectResponse("/admin/catalog/brands", status_code=303)
 
@@ -221,31 +238,30 @@ async def products_list(request: Request, session: AsyncSession = Depends(get_as
     )
     products = result.scalars().all()
     return templates.TemplateResponse(
-        "admin/catalog/products/list.html",
+        "admin/catalog/products/products_list.html",
         {"request": request, "products": products},
     )
 
 
-async def _get_form_choices(session: AsyncSession):
-    categories_result = await session.execute(select(Category).order_by(Category.name))
+async def _get_form_choices(session: AsyncSession, current_category_id: uuid.UUID | None = None):
+    categories_result = await session.execute(
+        select(Category).options(selectinload(Category.children)).order_by(Category.name)
+    )
     brands_result = await session.execute(select(Brand).order_by(Brand.name))
-    return categories_result.scalars().all(), brands_result.scalars().all()
+    categories = [
+        category
+        for category in categories_result.scalars().all()
+        if not category.children or category.id == current_category_id
+    ]
+    return categories, brands_result.scalars().all()
 
 
 @router.get("/products/create", response_class=HTMLResponse)
 async def product_create_page(request: Request, session: AsyncSession = Depends(get_async_session)):
     categories, brands = await _get_form_choices(session)
     return templates.TemplateResponse(
-        "admin/catalog/products/form.html",
-        {
-            "request": request,
-            "product": None,
-            "categories": categories,
-            "brands": brands,
-            "action_url": "/admin/catalog/products/create",
-            "title": "Создать товар",
-            "images": [],
-        },
+        "admin/catalog/products/product_create.html",
+        {"request": request, "categories": categories, "brands": brands},
     )
 
 
@@ -287,23 +303,20 @@ async def product_edit_page(
     result = await session.execute(
         select(Product)
         .where(Product.id == product_id)
-        .options(selectinload(Product.category), selectinload(Product.brand), selectinload(Product.images))
+        .options(selectinload(Product.category), selectinload(Product.brand))
     )
     product = result.scalar_one_or_none()
     if not product:
         raise HTTPException(status_code=404)
 
-    categories, brands = await _get_form_choices(session)
+    categories, brands = await _get_form_choices(session, current_category_id=product.category_id)
     return templates.TemplateResponse(
-        "admin/catalog/products/form.html",
+        "admin/catalog/products/product_edit.html",
         {
             "request": request,
             "product": product,
             "categories": categories,
             "brands": brands,
-            "action_url": f"/admin/catalog/products/{product_id}/edit",
-            "title": "Редактировать товар",
-            "images": product.images,
         },
     )
 
@@ -351,40 +364,3 @@ async def product_delete(product_id: uuid.UUID, session: AsyncSession = Depends(
     await session.delete(product)
     await session.commit()
     return RedirectResponse("/admin/catalog/products", status_code=303)
-
-
-@router.post("/products/{product_id}/images")
-async def product_image_create(
-    product_id: uuid.UUID,
-    file_path: str = Form(...),
-    session: AsyncSession = Depends(get_async_session),
-):
-    result = await session.execute(select(Product).where(Product.id == product_id))
-    product = result.scalar_one_or_none()
-    if not product:
-        raise HTTPException(status_code=404)
-
-    image = ProductImage(product_id=product_id, file_path=file_path)
-    session.add(image)
-    await session.commit()
-    return RedirectResponse(f"/admin/catalog/products/{product_id}/edit", status_code=303)
-
-
-@router.post("/products/{product_id}/images/{image_id}/delete")
-async def product_image_delete(
-    product_id: uuid.UUID,
-    image_id: int,
-    session: AsyncSession = Depends(get_async_session),
-):
-    result = await session.execute(
-        select(ProductImage).where(
-            ProductImage.id == image_id, ProductImage.product_id == product_id
-        )
-    )
-    image = result.scalar_one_or_none()
-    if not image:
-        raise HTTPException(status_code=404)
-
-    await session.delete(image)
-    await session.commit()
-    return RedirectResponse(f"/admin/catalog/products/{product_id}/edit", status_code=303)

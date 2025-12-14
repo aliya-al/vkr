@@ -2,19 +2,15 @@
 <html lang="ru">
 <head>
   <meta charset="utf-8">
-  <title>{{ title }}</title>
+  <title>Редактировать бренд</title>
 </head>
 <body>
-  <h1>{{ title }}</h1>
+  <h1>Редактировать бренд</h1>
   <p><a href="/admin/catalog/brands">Назад к списку</a></p>
-  <form method="post" action="{{ action_url }}">
+  <form method="post" action="/admin/catalog/brands/{{ brand.id }}/edit">
     <div>
       <label>Название</label><br>
-      <input name="name" value="{{ brand.name if brand else '' }}" required>
-    </div>
-    <div style="margin-top:8px;">
-      <label>Slug</label><br>
-      <input name="slug" value="{{ brand.slug if brand else '' }}" required>
+      <input name="name" value="{{ brand.name }}" required>
     </div>
     <div style="margin-top:12px;">
       <button type="submit">Сохранить</button>

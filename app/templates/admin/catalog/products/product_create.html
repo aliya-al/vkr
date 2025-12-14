@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <title>Создать товар</title>
+</head>
+<body>
+  <h1>Создать товар</h1>
+  <p><a href="/admin/catalog/products">Назад к списку</a></p>
+  <form method="post" action="/admin/catalog/products/create">
+    <div>
+      <label>Название</label><br>
+      <input name="name" required>
+    </div>
+    <div style="margin-top:8px;">
+      <label>Описание</label><br>
+      <textarea name="description" rows="3" cols="40"></textarea>
+    </div>
+    <div style="margin-top:8px;">
+      <label>Категория</label><br>
+      <select name="category_id" required>
+        {% for category in categories %}
+          <option value="{{ category.id }}">{{ category.name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div style="margin-top:8px;">
+      <label>Бренд</label><br>
+      <select name="brand_id">
+        <option value="">(нет)</option>
+        {% for brand in brands %}
+          <option value="{{ brand.id }}">{{ brand.name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div style="margin-top:8px;">
+      <label>Цена</label><br>
+      <input type="number" name="price" required>
+    </div>
+    <div style="margin-top:8px;">
+      <label>Объем (м3)</label><br>
+      <input type="number" step="0.01" name="volume_m3" required>
+    </div>
+    <div style="margin-top:8px;">
+      <label>Вес (кг)</label><br>
+      <input type="number" step="0.01" name="weight_kg" required>
+    </div>
+    <div style="margin-top:8px;">
+      <label>Скидка (%)</label><br>
+      <input type="number" name="discount_percent">
+    </div>
+    <div style="margin-top:8px;">
+      <label>
+        <input type="checkbox" name="is_active" value="true" checked>
+        Активен
+      </label>
+    </div>
+    <div style="margin-top:12px;">
+      <button type="submit">Сохранить</button>
+    </div>
+  </form>
+  <hr>
+  <p>Загрузка изображений появится позже.</p>
+</body>
+</html>
