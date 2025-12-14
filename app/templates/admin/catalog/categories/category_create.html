@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <title>Создать категорию</title>
+</head>
+<body>
+  <h1>Создать категорию</h1>
+  <form method="post" action="/admin/catalog/categories/create">
+    <div>
+      <label>Название
+        <input type="text" name="name" required>
+      </label>
+    </div>
+    <div>
+      <label>Родительская категория
+        <select name="parent_id">
+          <option value="">(нет)</option>
+          {% for category in categories %}
+            <option value="{{ category.id }}">{{ category.name }}</option>
+          {% endfor %}
+        </select>
+      </label>
+    </div>
+    <button type="submit">Сохранить</button>
+  </form>
+  <p><a href="/admin/catalog/categories">Назад</a></p>
+</body>
+</html>

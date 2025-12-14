@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <title>Товары</title>
+</head>
+<body>
+  <h1>Товары</h1>
+  <a href="/admin/catalog/products/create">Создать товар</a>
+  <table border="1" cellpadding="4">
+    <thead>
+      <tr>
+        <th>Название</th>
+        <th>Категория</th>
+        <th>Бренд</th>
+        <th>Цена</th>
+        <th>Скидка %</th>
+        <th>Цена со скидкой</th>
+        <th>Статус</th>
+        <th>Действия</th>
+      </tr>
+    </thead>
+    <tbody>
+    {% for product in products %}
+      <tr>
+        <td>{{ product.name }}</td>
+        <td>{{ product.category.name }}</td>
+        <td>{% if product.brand %}{{ product.brand.name }}{% else %}—{% endif %}</td>
+        <td>{{ product.price }}</td>
+        <td>{% if product.discount_percent is not none %}{{ product.discount_percent }}{% else %}—{% endif %}</td>
+        <td>
+          {% if product.discount_percent is not none %}
+            {% set discounted = product.price - (product.price * product.discount_percent // 100) %}
+            {{ discounted }}
+          {% else %}
+            —
+          {% endif %}
+        </td>
+        <td>{% if product.is_active %}Активен{% else %}Скрыт{% endif %}</td>
+        <td>
+          <a href="/admin/catalog/products/{{ product.id }}/edit">Редактировать</a>
+          <form method="post" action="/admin/catalog/products/{{ product.id }}/delete" style="display:inline;">
+            <button type="submit">Удалить</button>
+          </form>
+        </td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  <p><a href="/admin/">Назад</a></p>
+</body>
+</html>
