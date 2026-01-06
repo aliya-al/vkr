@@ -61,7 +61,7 @@ async def products_list(request: Request, session: AsyncSession = Depends(get_as
     )
 
 
-@router.get("/products/create", response_class=HTMLResponse)
+@router.get("/products/new", response_class=HTMLResponse)
 async def product_create_page(request: Request, session: AsyncSession = Depends(get_async_session)):
     categories, brands = await _get_form_choices(session)
     return templates.TemplateResponse(
@@ -70,7 +70,7 @@ async def product_create_page(request: Request, session: AsyncSession = Depends(
     )
 
 
-@router.post("/products/create")
+@router.post("/products/new")
 async def product_create(
     name: str = Form(...),
     description: str | None = Form(None),
@@ -96,7 +96,7 @@ async def product_create(
     )
     session.add(product)
     await session.commit()
-    return RedirectResponse("/admin/catalog/products", status_code=303)
+    return RedirectResponse("/admin/products", status_code=303)
 
 
 @router.get("/products/{product_id}/edit", response_class=HTMLResponse)
@@ -156,7 +156,7 @@ async def product_edit(
     product.discount_percent = int(discount_percent) if discount_percent else None
 
     await session.commit()
-    return RedirectResponse("/admin/catalog/products", status_code=303)
+    return RedirectResponse("/admin/products", status_code=303)
 
 
 @router.post("/products/{product_id}/delete")
@@ -168,4 +168,4 @@ async def product_delete(product_id: uuid.UUID, session: AsyncSession = Depends(
 
     await session.delete(product)
     await session.commit()
-    return RedirectResponse("/admin/catalog/products", status_code=303)
+    return RedirectResponse("/admin/products", status_code=303)

@@ -6,7 +6,7 @@
 </head>
 <body>
   <h1>Товары</h1>
-  <a href="/admin/catalog/products/create">Создать товар</a>
+  <a href="/admin/products/new">Создать товар</a>
   <table border="1" cellpadding="4">
     <thead>
       <tr>
@@ -38,8 +38,8 @@
         </td>
         <td>{% if product.is_active %}Активен{% else %}Скрыт{% endif %}</td>
         <td>
-          <a href="/admin/catalog/products/{{ product.id }}/edit">Редактировать</a>
-          <form method="post" action="/admin/catalog/products/{{ product.id }}/delete" style="display:inline;">
+          <a href="/admin/products/{{ product.id }}/edit">Редактировать</a>
+          <form method="post" action="/admin/products/{{ product.id }}/delete" style="display:inline;">
             <button type="submit">Удалить</button>
           </form>
         </td>
@@ -47,6 +47,6 @@
     {% endfor %}
     </tbody>
   </table>
-  <p><a href="/admin/">Назад</a></p>
+  <p><a href="/admin/dashboard">Назад</a></p>
 </body>
 </html>

@@ -6,7 +6,7 @@
 </head>
 <body>
   <h1>Бренды</h1>
-  <p><a href="/admin/">На главную</a> | <a href="/admin/catalog/brands/create">Создать бренд</a></p>
+  <p><a href="/admin/dashboard">На главную</a> | <a href="/admin/brands/new">Создать бренд</a></p>
   <table border="1" cellpadding="6">
     <thead>
       <tr>
@@ -21,8 +21,8 @@
           <td>{{ brand.name }}</td>
           <td>{{ brand.slug }}</td>
           <td>
-            <a href="/admin/catalog/brands/{{ brand.id }}/edit">Редактировать</a>
-            <form method="post" action="/admin/catalog/brands/{{ brand.id }}/delete" style="display:inline;">
+            <a href="/admin/brands/{{ brand.id }}/edit">Редактировать</a>
+            <form method="post" action="/admin/brands/{{ brand.id }}/delete" style="display:inline;">
               <button type="submit">Удалить</button>
             </form>
           </td>

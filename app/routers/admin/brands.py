@@ -23,7 +23,7 @@ async def brands_list(request: Request, session: AsyncSession = Depends(get_asyn
     )
 
 
-@router.get("/brands/create", response_class=HTMLResponse)
+@router.get("/brands/new", response_class=HTMLResponse)
 async def brand_create_page(request: Request):
     return templates.TemplateResponse(
         "admin/catalog/brands/brand_create.html",
@@ -31,7 +31,7 @@ async def brand_create_page(request: Request):
     )
 
 
-@router.post("/brands/create")
+@router.post("/brands/new")
 async def brand_create(
     name: str = Form(...),
     session: AsyncSession = Depends(get_async_session),
@@ -39,7 +39,7 @@ async def brand_create(
     brand = Brand(name=name, slug=slugify(name))
     session.add(brand)
     await session.commit()
-    return RedirectResponse("/admin/catalog/brands", status_code=303)
+    return RedirectResponse("/admin/brands", status_code=303)
 
 
 @router.get("/brands/{brand_id}/edit", response_class=HTMLResponse)
@@ -69,7 +69,7 @@ async def brand_edit(
     brand.name = name
     brand.slug = slugify(name)
     await session.commit()
-    return RedirectResponse("/admin/catalog/brands", status_code=303)
+    return RedirectResponse("/admin/brands", status_code=303)
 
 
 @router.post("/brands/{brand_id}/delete")
@@ -81,4 +81,4 @@ async def brand_delete(brand_id: uuid.UUID, session: AsyncSession = Depends(get_
 
     await session.delete(brand)
     await session.commit()
-    return RedirectResponse("/admin/catalog/brands", status_code=303)
+    return RedirectResponse("/admin/brands", status_code=303)

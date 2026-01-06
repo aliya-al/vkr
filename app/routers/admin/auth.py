@@ -35,7 +35,7 @@ async def login_action(
     request.session["admin_user_id"] = str(user.id)
     request.session["admin_user_role"] = user.role
 
-    return RedirectResponse(url="/admin/", status_code=status.HTTP_303_SEE_OTHER)
+    return RedirectResponse(url="/admin/dashboard", status_code=status.HTTP_303_SEE_OTHER)
 
 
 @router.post("/logout")

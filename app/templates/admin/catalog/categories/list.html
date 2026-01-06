@@ -6,7 +6,7 @@
 </head>
 <body>
   <h1>Категории</h1>
-  <p><a href="/admin/">На главную</a> | <a href="/admin/catalog/categories/create">Создать категорию</a></p>
+  <p><a href="/admin/dashboard">На главную</a> | <a href="/admin/categories/new">Создать категорию</a></p>
   <table border="1" cellpadding="6">
     <thead>
       <tr>
@@ -23,8 +23,8 @@
           <td>{{ category.slug }}</td>
           <td>{% if category.parent %}{{ category.parent.name }}{% else %}-{% endif %}</td>
           <td>
-            <a href="/admin/catalog/categories/{{ category.id }}/edit">Редактировать</a>
-            <form method="post" action="/admin/catalog/categories/{{ category.id }}/delete" style="display:inline;">
+            <a href="/admin/categories/{{ category.id }}/edit">Редактировать</a>
+            <form method="post" action="/admin/categories/{{ category.id }}/delete" style="display:inline;">
               <button type="submit">Удалить</button>
             </form>
           </td>

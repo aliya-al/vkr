@@ -6,7 +6,7 @@
 </head>
 <body>
   <h1>Товары</h1>
-  <p><a href="/admin/">На главную</a> | <a href="/admin/catalog/products/create">Создать товар</a></p>
+  <p><a href="/admin/dashboard">На главную</a> | <a href="/admin/products/new">Создать товар</a></p>
   <table border="1" cellpadding="6">
     <thead>
       <tr>
@@ -27,8 +27,8 @@
           <td>{{ product.price }}</td>
           <td>{{ 'Да' if product.is_active else 'Нет' }}</td>
           <td>
-            <a href="/admin/catalog/products/{{ product.id }}/edit">Редактировать</a>
-            <form method="post" action="/admin/catalog/products/{{ product.id }}/delete" style="display:inline;">
+            <a href="/admin/products/{{ product.id }}/edit">Редактировать</a>
+            <form method="post" action="/admin/products/{{ product.id }}/delete" style="display:inline;">
               <button type="submit">Удалить</button>
             </form>
           </td>

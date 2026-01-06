@@ -30,7 +30,7 @@ async def categories_list(request: Request, session: AsyncSession = Depends(get_
     )
 
 
-@router.get("/categories/create", response_class=HTMLResponse)
+@router.get("/categories/new", response_class=HTMLResponse)
 async def category_create_page(request: Request, session: AsyncSession = Depends(get_async_session)):
     result = await session.execute(select(Category).order_by(Category.name))
     categories = result.scalars().all()
@@ -40,7 +40,7 @@ async def category_create_page(request: Request, session: AsyncSession = Depends
     )
 
 
-@router.post("/categories/create")
+@router.post("/categories/new")
 async def category_create(
     name: str = Form(...),
     parent_id: str | None = Form(None),
@@ -53,7 +53,7 @@ async def category_create(
     )
     session.add(category)
     await session.commit()
-    return RedirectResponse("/admin/catalog/categories", status_code=303)
+    return RedirectResponse("/admin/categories", status_code=303)
 
 
 @router.get("/categories/{category_id}/edit", response_class=HTMLResponse)
@@ -95,7 +95,7 @@ async def category_edit(
     category.parent_id = uuid.UUID(parent_id) if parent_id else None
 
     await session.commit()
-    return RedirectResponse("/admin/catalog/categories", status_code=303)
+    return RedirectResponse("/admin/categories", status_code=303)
 
 
 @router.post("/categories/{category_id}/delete")
@@ -107,4 +107,4 @@ async def category_delete(category_id: uuid.UUID, session: AsyncSession = Depend
 
     await session.delete(category)
     await session.commit()
-    return RedirectResponse("/admin/catalog/categories", status_code=303)
+    return RedirectResponse("/admin/categories", status_code=303)

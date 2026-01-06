@@ -6,7 +6,7 @@
 </head>
 <body>
   <h1>{{ title }}</h1>
-  <p><a href="/admin/catalog/products">Назад к списку</a></p>
+  <p><a href="/admin/products">Назад к списку</a></p>
   <form method="post" action="{{ action_url }}">
     <div>
       <label>Название</label><br>
@@ -67,7 +67,7 @@
       {% for image in images %}
         <li>
           {{ image.file_path }}
-          <form method="post" action="/admin/catalog/products/{{ product.id }}/images/{{ image.id }}/delete" style="display:inline;">
+          <form method="post" action="/admin/products/{{ product.id }}/images/{{ image.id }}/delete" style="display:inline;">
             <button type="submit">Удалить</button>
           </form>
         </li>
@@ -75,7 +75,7 @@
         <li>Нет изображений.</li>
       {% endfor %}
     </ul>
-    <form method="post" action="/admin/catalog/products/{{ product.id }}/images">
+    <form method="post" action="/admin/products/{{ product.id }}/images">
       <div>
         <label>Добавить изображение (путь)</label><br>
         <input name="file_path" required>
