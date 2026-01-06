@@ -1,0 +1,114 @@
+{# templates/public/components/header.html #}
+
+{#
+  ИКОНКИ (PNG):
+  - app/static/img/icons/public/
+  - Имена: search.png, heart.png, compare.png, cart.png
+  - Показываем 24x24 (лучше файл 48x48).
+#}
+
+{% set _role = role|default(None) %}
+{% set _counts = counts|default({}) %}
+{% set _cart_count = _counts.get('cart', 0) %}
+{% set _fav_count = _counts.get('favorites', 0) %}
+{% set _cmp_count = _counts.get('compare', 0) %}
+
+<header class="site-header" role="banner">
+  {# Верхняя полоса (по желанию может НЕ быть sticky) #}
+  <div class="topbar">
+    <div class="container topbar__inner">
+      <div class="topbar__left">
+        <span class="topbar__city">{{ city|default('Казань') }}</span>
+      </div>
+
+      <nav class="topbar__nav" aria-label="Верхнее меню">
+        {% if _role in ['admin', 'manager'] %}
+          <a class="topbar__link topbar__link--admin" href="/admin">Админ-панель</a>
+        {% endif %}
+        <a class="topbar__link" href="/contacts">Контакты</a>
+        <a class="topbar__link" href="/about">О компании</a>
+        <a class="topbar__link" href="/delivery">Доставка</a>
+      </nav>
+
+      <div class="topbar__right">
+        <a class="topbar__phone" href="tel:{{ phone|default('8-800-600-7775')|replace(' ', '') }}">
+          {{ phone|default('8-800-600-7775') }}
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <div class="header-main">
+    <div class="container header-main__inner">
+      <a class="logo" href="/" aria-label="На главную">
+        <span class="logo__text">Логотип</span>
+      </a>
+
+      <form class="search" action="/search" method="get" role="search">
+        <label class="visually-hidden" for="q">Поиск</label>
+
+        <div class="search__field">
+          <img
+            class="search__field-icon"
+            src="{{ url_for('static', path='img/icons/public/search.png') }}"
+            width="40" height="40"
+            alt=""
+            decoding="async"
+          >
+          <input
+            class="search__input"
+            id="q"
+            name="q"
+            type="search"
+            placeholder="поиск по сайту..."
+            autocomplete="off"
+          >
+        </div>
+      </form>
+
+      <nav class="header-actions" aria-label="Действия">
+        <a class="action" href="/favorites" aria-label="Избранное">
+          <img
+            class="action__icon"
+            src="{{ url_for('static', path='img/icons/public/heart.png') }}"
+            width="40" height="40"
+            alt=""
+            decoding="async"
+          >
+          <span class="action__label">избранное</span>
+          {% if _fav_count %}
+            <span class="badge" aria-label="В избранном: {{ _fav_count }}">{{ _fav_count }}</span>
+          {% endif %}
+        </a>
+
+        <a class="action" href="/cart" aria-label="Корзина">
+          <img
+            class="action__icon"
+            src="{{ url_for('static', path='img/icons/public/cart.png') }}"
+            width="40" height="40"
+            alt=""
+            decoding="async"
+          >
+          <span class="action__label">корзина</span>
+          {% if _cart_count %}
+            <span class="badge" aria-label="В корзине: {{ _cart_count }}">{{ _cart_count }}</span>
+          {% endif %}
+        </a>
+
+        <a class="action" href="/compare" aria-label="Сравнение">
+          <img
+            class="action__icon"
+            src="{{ url_for('static', path='img/icons/public/compare.png') }}"
+            width="40" height="40"
+            alt=""
+            decoding="async"
+          >
+          <span class="action__label">сравнение</span>
+          {% if _cmp_count %}
+            <span class="badge" aria-label="В сравнении: {{ _cmp_count }}">{{ _cmp_count }}</span>
+          {% endif %}
+        </a>
+      </nav>
+    </div>
+  </div>
+</header>
