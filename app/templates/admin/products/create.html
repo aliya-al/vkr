@@ -6,17 +6,20 @@
 </head>
 <body>
   <h1>Создать товар</h1>
-  <form method="post" action="/admin/products/new">
+
+  <form method="post" action="/admin/products/new" enctype="multipart/form-data">
     <div>
       <label>Название
         <input type="text" name="name" required>
       </label>
     </div>
+
     <div>
       <label>Описание
         <textarea name="description"></textarea>
       </label>
     </div>
+
     <div>
       <label>Категория
         <select name="category_id" required>
@@ -26,6 +29,7 @@
         </select>
       </label>
     </div>
+
     <div>
       <label>Бренд
         <select name="brand_id">
@@ -36,33 +40,54 @@
         </select>
       </label>
     </div>
+
     <div>
       <label>Цена
         <input type="number" name="price" min="0" step="1" required>
       </label>
     </div>
+
     <div>
       <label>Объем, м³
         <input type="number" name="volume_m3" min="0" step="0.01" required>
       </label>
     </div>
+
     <div>
       <label>Вес, кг
         <input type="number" name="weight_kg" min="0" step="0.01" required>
       </label>
     </div>
+
     <div>
       <label>Скидка, %
         <input type="number" name="discount_percent" min="0" max="100" step="1">
       </label>
     </div>
+
     <div>
       <label>
         <input type="checkbox" name="is_active" value="true" checked> Активен
       </label>
     </div>
+
+    <hr>
+
+    <div>
+      <label>Главное фото (обязательно)
+        <input type="file" name="main_image" accept="image/*" required>
+      </label>
+    </div>
+
+    <div>
+      <label>
+        <input type="file" name="extra_images" accept="image/*" multiple>
+      </label>
+    </div>
+
     <button type="submit">Сохранить</button>
   </form>
+
   <p><a href="/admin/products">Назад</a></p>
 </body>
 </html>

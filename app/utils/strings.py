@@ -1,5 +1,7 @@
 import re
 import unicodedata
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 
 _RU_TO_LATIN = {
@@ -55,3 +57,40 @@ def slugify(value: str) -> str:
     slug_base = slug_base.strip("-")
     slug_base = re.sub(r"-+", "-", slug_base)
     return slug_base
+
+async def ensure_unique_slug(
+    session: AsyncSession,
+    model,
+    base_slug: str,
+    *,
+    slug_field: str = "slug",
+    exclude_id=None,
+    max_len: int = 255,
+) -> str:
+    """
+    Возвращает уникальный slug для model.slug (или другого поля).
+    Если base_slug занят — добавляет суффиксы -2, -3, ...
+    exclude_id — чтобы при edit не конфликтовать с самой собой.
+    """
+    base = (base_slug or "").strip("-")[:max_len]
+    if not base:
+        base = "item"
+
+    slug = base
+    i = 2
+
+    slug_col = getattr(model, slug_field)
+
+    while True:
+        q = select(model.id).where(slug_col == slug)
+        if exclude_id is not None:
+            q = q.where(model.id != exclude_id)
+
+        exists = (await session.execute(q)).first()
+        if not exists:
+            return slug
+
+        suffix = f"_{i}"
+        cut = max_len - len(suffix)
+        slug = (base[:cut].rstrip("-")) + suffix
+        i += 1

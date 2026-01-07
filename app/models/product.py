@@ -31,8 +31,9 @@ class Product(Base):
 
     category = relationship("Category", back_populates="products")
     brand = relationship("Brand", back_populates="products")
-    images = relationship("ProductImage", back_populates="product", cascade="all, delete-orphan")
-    # чтобы достать ввсе характеристики из товара сввязью
+    images = relationship("ProductImage", back_populates="product", cascade="all, delete-orphan",
+                          order_by="(ProductImage.is_main.desc(), ProductImage.id.asc())")
+    # чтобы достать ввсе характеристики из товара связью
     characteristics_values = relationship(
         "ProductCharacteristicValue",
         back_populates="product",

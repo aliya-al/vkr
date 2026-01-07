@@ -7,9 +7,11 @@
 <body>
   <h1>Товары</h1>
   <p><a href="/admin/dashboard">На главную</a> | <a href="/admin/products/new">Создать товар</a></p>
+
   <table border="1" cellpadding="6">
     <thead>
       <tr>
+        <th>Фото</th>
         <th>Название</th>
         <th>Категория</th>
         <th>Бренд</th>
@@ -20,7 +22,26 @@
     </thead>
     <tbody>
       {% for product in products %}
+        {% set main_img = None %}
+        {% if product.images %}
+          {% for img in product.images %}
+            {% if img.is_main %}
+              {% set main_img = img %}
+            {% endif %}
+          {% endfor %}
+          {% if main_img is none %}
+            {% set main_img = product.images[0] %}
+          {% endif %}
+        {% endif %}
+
         <tr>
+          <td>
+            {% if main_img %}
+              <img src="{{ main_img.file_path }}" alt="photo" style="max-width:80px; height:auto;">
+            {% else %}
+              -
+            {% endif %}
+          </td>
           <td>{{ product.name }}</td>
           <td>{{ product.category.name if product.category else '-' }}</td>
           <td>{{ product.brand.name if product.brand else '-' }}</td>
@@ -34,7 +55,7 @@
           </td>
         </tr>
       {% else %}
-        <tr><td colspan="6">Товаров пока нет.</td></tr>
+        <tr><td colspan="7">Товаров пока нет.</td></tr>
       {% endfor %}
     </tbody>
   </table>

@@ -24,9 +24,14 @@
           <td>{% if category.parent %}{{ category.parent.name }}{% else %}-{% endif %}</td>
           <td>
             <a href="/admin/categories/{{ category.id }}/edit">Редактировать</a>
-            <form method="post" action="/admin/categories/{{ category.id }}/delete" style="display:inline;">
+
+            <form method="post"
+                  action="/admin/categories/{{ category.id }}/delete"
+                  style="display:inline;"
+                  onsubmit="return confirm('Удалить категорию? Будут удалены ВСЕ подкатегории и ВСЕ товары внутри них (включая фото). Продолжить?');">
               <button type="submit">Удалить</button>
             </form>
+
           </td>
         </tr>
       {% else %}

@@ -7,7 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.brand import Brand
 from app.utils.database import get_async_session
-from app.utils.strings import slugify
+from app.utils.strings import slugify, ensure_unique_slug
 from app.utils.templates import templates
 
 router = APIRouter()
@@ -33,7 +33,10 @@ async def brand_create(
     name: str = Form(...),
     session: AsyncSession = Depends(get_async_session),
 ):
-    brand = Brand(name=name, slug=slugify(name))
+    base = slugify(name)
+    slug = await ensure_unique_slug(session, Brand, base)
+
+    brand = Brand(name=name, slug=slug)
     session.add(brand)
     await session.commit()
     return RedirectResponse("/admin/brands", status_code=303)
@@ -61,8 +64,11 @@ async def brand_edit(
     if not brand:
         raise HTTPException(status_code=404)
 
+    base = slugify(name)
+    slug = await ensure_unique_slug(session, Brand, base, exclude_id=brand_id)
+
     brand.name = name
-    brand.slug = slugify(name)
+    brand.slug = slug
     await session.commit()
     return RedirectResponse("/admin/brands", status_code=303)
 

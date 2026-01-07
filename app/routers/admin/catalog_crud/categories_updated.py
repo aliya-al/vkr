@@ -11,7 +11,7 @@ from app.models.product import Product
 from app.models.product_image import ProductImage
 
 from app.utils.database import get_async_session
-from app.utils.strings import slugify, ensure_unique_slug
+from app.utils.strings import slugify
 from app.utils.templates import templates
 from app.utils.delete_product_image import delete_product_image_if_local
 
@@ -86,12 +86,10 @@ async def category_create(
     parent_id: str | None = Form(None),
     session: AsyncSession = Depends(get_async_session),
 ):
-    base = slugify(name)
-    slug = await ensure_unique_slug(session, Category, base)
-
+    # на create цикл невозможен (категории ещё нет), но запрещаем parent_id == None/uuid корректно
     category = Category(
         name=name,
-        slug=slug,
+        slug=slugify(name),
         parent_id=uuid.UUID(parent_id) if parent_id else None,
     )
     session.add(category)
@@ -110,15 +108,9 @@ async def category_edit_page(
     if not category:
         raise HTTPException(status_code=404)
 
-    # descendants включает саму category_id и всех потомков
-    descendants = await _get_subtree_category_ids(session, category_id)
-
     categories_result = await session.execute(
-        select(Category)
-        .where(~Category.id.in_(descendants))
-        .order_by(Category.name)
+        select(Category).where(Category.id != category_id).order_by(Category.name)
     )
-
     categories = categories_result.scalars().all()
 
     return templates.TemplateResponse(
@@ -142,11 +134,8 @@ async def category_edit(
     new_parent_id = uuid.UUID(parent_id) if parent_id else None
     await _ensure_no_cycle(session, category_id, new_parent_id)
 
-    base = slugify(name)
-    slug = await ensure_unique_slug(session, Category, base, exclude_id=category_id)
-
     category.name = name
-    category.slug = slug
+    category.slug = slugify(name)
     category.parent_id = new_parent_id
 
     await session.commit()

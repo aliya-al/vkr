@@ -1,5 +1,5 @@
 import uuid
-from sqlalchemy import String, ForeignKey
+from sqlalchemy import String, ForeignKey, Boolean, Column, Index
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.utils.database import Base
 
@@ -14,3 +14,14 @@ class ProductImage(Base):
     file_path: Mapped[str] = mapped_column(String(500), nullable=False)
 
     product = relationship("Product", back_populates="images")
+    is_main = Column(Boolean, nullable=False, default=False, server_default="false")
+
+    # PostgreSQL: одно главное фото на товар
+    __table_args__ = (
+        Index(
+            "ux_product_images_one_main_per_product",
+            "product_id",
+            unique=True,
+            postgresql_where=(is_main.is_(True)),
+        ),
+    )
