@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <title>Создать характеристику</title>
+</head>
+<body>
+  <h1>Создать характеристику</h1>
+
+  <form method="post" action="/admin/attributes/new">
+    <div>
+      <label>Название
+        <input type="text" name="name" required>
+      </label>
+    </div>
+
+    <div>
+      <label>Тип значения
+        <select name="value_type">
+          <option value="string" selected>строка</option>
+          <option value="number">число</option>
+        </select>
+      </label>
+    </div>
+
+    <div>
+      <label>Единица измерения (опционально)
+        <input type="text" name="unit" placeholder="кг, мм, м² ...">
+      </label>
+    </div>
+
+    <button type="submit">Сохранить</button>
+  </form>
+
+  <p><a href="/admin/attributes">Назад</a></p>
+</body>
+</html>

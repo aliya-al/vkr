@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <title>Редактировать новость</title>
+</head>
+<body>
+  <h1>Редактировать новость</h1>
+
+  {% if error %}
+    <p style="color:red;">{{ error }}</p>
+  {% endif %}
+
+  <form method="post" action="/admin/news/{{ news.id }}/edit" enctype="multipart/form-data">
+    <div>
+      <label>Название
+        <input type="text" name="title" value="{{ news.title }}" required>
+      </label>
+    </div>
+
+    <div>
+      <label>Описание</label><br>
+      <textarea name="description" rows="8" cols="80" required>{{ news.description }}</textarea>
+    </div>
+
+    <div>
+      <p>Текущее фото:</p>
+      {% if news.image_path %}
+        <img src="{{ news.image_path }}" alt="news image" width="180"><br>
+        <label>
+          <input type="checkbox" name="remove_image" value="true">
+          Удалить фото
+        </label>
+      {% else %}
+        —
+      {% endif %}
+    </div>
+
+    <div>
+      <label>Загрузить новое фото (опционально)
+        <input type="file" name="image" accept="image/*">
+      </label>
+    </div>
+
+    <button type="submit">Сохранить</button>
+  </form>
+
+  <p><a href="/admin/news">Назад</a></p>
+</body>
+</html>

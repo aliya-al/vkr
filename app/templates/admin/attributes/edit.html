@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <title>Редактировать характеристику</title>
+</head>
+<body>
+  <h1>Редактировать характеристику</h1>
+
+  <form method="post" action="/admin/attributes/{{ attribute.id }}/edit">
+    <div>
+      <label>Название
+        <input type="text" name="name" value="{{ attribute.name }}" required>
+      </label>
+    </div>
+
+    <div>
+      <label>Тип значения
+        <select name="value_type">
+          <option value="string" {% if attribute.value_type == 'string' %}selected{% endif %}>строка</option>
+          <option value="number" {% if attribute.value_type == 'number' %}selected{% endif %}>число</option>
+        </select>
+      </label>
+    </div>
+
+    <div>
+      <label>Единица измерения (опционально)
+        <input type="text" name="unit" value="{{ attribute.unit or '' }}" placeholder="кг, мм, м² ...">
+      </label>
+    </div>
+
+    <button type="submit">Сохранить</button>
+  </form>
+
+  <p><a href="/admin/attributes">Назад</a></p>
+</body>
+</html>

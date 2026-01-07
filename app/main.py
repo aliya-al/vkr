@@ -4,6 +4,7 @@ from dotenv import load_dotenv
 from fastapi import FastAPI
 from starlette.middleware.sessions import SessionMiddleware
 from app.routers import routers
+from fastapi.staticfiles import StaticFiles
 
 load_dotenv() # загружает переменные из локального
 
@@ -17,6 +18,7 @@ app = FastAPI(
 )
 
 app.include_router(routers)
+app.mount("/static", StaticFiles(directory="app/static"), name="static")
 
 SESSION_SECRET_KEY = os.getenv("SESSION_SECRET_KEY")
 if not SESSION_SECRET_KEY:

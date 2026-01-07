@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <title>Новости</title>
+</head>
+<body>
+  <h1>Новости</h1>
+
+  <p>
+    <a href="/admin/dashboard">На главную</a> |
+    <a href="/admin/news/new">Создать новость</a>
+  </p>
+
+  <table border="1" cellpadding="6">
+    <thead>
+      <tr>
+        <th>Название</th>
+        <th>Описание</th>
+        <th>Фото</th>
+        <th>Дата</th>
+        <th>Действия</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for n in news %}
+        <tr>
+          <td>{{ n.title }}</td>
+          <td>{{ n.description }}</td>
+          <td>
+            {% if n.image_path %}
+              <img src="{{ n.image_path }}" alt="news image" width="120">
+            {% else %}
+              —
+            {% endif %}
+          </td>
+          <td>{{ n.created_at }}</td>
+          <td>
+            <a href="/admin/news/{{ n.id }}/edit">Редактировать</a>
+            <form method="post" action="/admin/news/{{ n.id }}/delete" style="display:inline;">
+              <button type="submit">Удалить</button>
+            </form>
+          </td>
+        </tr>
+      {% else %}
+        <tr><td colspan="5">Новостей пока нет.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</body>
+</html>

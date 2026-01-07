@@ -9,4 +9,5 @@ from .characteristic import GlobalCharacteristic
 from .product_characteristic_value import ProductCharacteristicValue
 from .category_characteristic import CategoryCharacteristic
 from .characteristic import GlobalCharacteristic
+from .news import News
 

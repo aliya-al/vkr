@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <title>Менеджеры</title>
+</head>
+<body>
+  <h1>Менеджеры</h1>
+
+  <p>
+    <a href="/admin/dashboard">На главную</a> |
+    <a href="/admin/managers/new">Создать менеджера</a>
+  </p>
+
+  <table border="1" cellpadding="6">
+    <thead>
+      <tr>
+        <th>Логин</th>
+        <th>Активен</th>
+        <th>Действия</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for m in managers %}
+        <tr>
+          <td>{{ m.login }}</td>
+          <td>{{ "Да" if m.is_active else "Нет" }}</td>
+          <td>
+            <a href="/admin/managers/{{ m.id }}/edit">Редактировать</a>
+            <form method="post" action="/admin/managers/{{ m.id }}/delete" style="display:inline;">
+              <button type="submit">Удалить</button>
+            </form>
+          </td>
+        </tr>
+      {% else %}
+        <tr><td colspan="3">Менеджеров пока нет.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</body>
+</html>

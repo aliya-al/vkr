@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <title>Редактировать категорию</title>
+</head>
+<body>
+  <h1>Редактировать категорию</h1>
+  <form method="post" action="/admin/categories/{{ category.id }}/edit">
+    <div>
+      <label>Название
+        <input type="text" name="name" value="{{ category.name }}" required>
+      </label>
+    </div>
+    <div>
+      <label>Родительская категория
+        <select name="parent_id">
+          <option value="">(нет)</option>
+          {% for available_category in categories %}
+            <option value="{{ available_category.id }}" {% if category.parent_id == available_category.id %}selected{% endif %}>{{ available_category.name }}</option>
+          {% endfor %}
+        </select>
+      </label>
+    </div>
+    <button type="submit">Сохранить</button>
+  </form>
+  <p><a href="/admin/categories">Назад</a></p>
+</body>
+</html>

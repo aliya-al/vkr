@@ -1,4 +1,4 @@
-"""Add catalog, brands, characteristics, category tree, orders
+"""Add catalog_crud, brands, characteristics, category tree, orders
 
 Revision ID: 7292477deb40
 Revises: 22aa15737cd5

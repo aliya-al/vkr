@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <title>Admin</title>
+</head>
+<body>
+  <h1>Админка</h1>
+
+  <p>Вы вошли.</p>
+  <ul>
+    <li>ID: {{ admin.id }}</li>
+    <li>Role: {{ admin.role }}</li>
+  </ul>
+
+  <h2>Каталог</h2>
+  <ul>
+    <li><a href="/admin/categories">Категории</a></li>
+    <li><a href="/admin/brands">Бренды</a></li>
+    <li><a href="/admin/products">Товары</a></li>
+    <li><a href="/admin/attributes">Характеристики</a></li>
+    <li><a href="/admin/news">Новости</a></li>
+    {% if admin.role == "admin" %}
+      <li><a href="/admin/managers">Менеджеры</a></li>
+    {% endif %}
+  </ul>
+
+  <form method="post" action="/admin/logout">
+    <button type="submit">Выйти</button>
+  </form>
+</body>
+</html>

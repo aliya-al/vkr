@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <title>Создать менеджера</title>
+</head>
+<body>
+  <h1>Создать менеджера</h1>
+
+  {% if error %}
+    <p style="color:red;">{{ error }}</p>
+  {% endif %}
+
+  <form method="post" action="/admin/managers/new">
+    <div>
+      <label>Логин
+        <input type="text" name="login" value="{{ login }}" required>
+      </label>
+    </div>
+
+    <div>
+      <label>Пароль
+        <input type="password" name="password" required>
+      </label>
+    </div>
+
+    <div>
+      <label>
+        <input type="checkbox" name="is_active" value="true" {% if is_active %}checked{% endif %}>
+        Активен
+      </label>
+    </div>
+
+    <button type="submit">Сохранить</button>
+  </form>
+
+  <p><a href="/admin/managers">Назад</a></p>
+</body>
+</html>
