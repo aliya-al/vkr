@@ -2,7 +2,7 @@ import uuid
 
 from fastapi import APIRouter, Depends, Form, HTTPException, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
-from sqlalchemy import select
+from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.brand import Brand
@@ -28,18 +28,47 @@ async def brand_create_page(request: Request):
         {"request": request},
     )
 
-@router.post("/admin/brands/new")
+@router.post("/admin/brands/new", response_class=HTMLResponse)
 async def brand_create(
+    request: Request,
     name: str = Form(...),
     session: AsyncSession = Depends(get_async_session),
 ):
-    base = slugify(name)
+    name_clean = (name or "").strip()
+    if not name_clean:
+        return templates.TemplateResponse(
+            "admin/brands/create.html",
+            {"request": request, "error": "Название обязательно.", "name_value": ""},
+            status_code=400,
+        )
+
+    # (опционально, но удобно) ранняя проверка дубля имени (без 500)
+    exists_stmt = select(Brand.id).where(func.lower(Brand.name) == name_clean.lower())
+    if (await session.execute(exists_stmt)).first():
+        return templates.TemplateResponse(
+            "admin/brands/create.html",
+            {"request": request, "error": "Такой бренд уже существует.", "name_value": name_clean},
+            status_code=400,
+        )
+
+    base = slugify(name_clean)
     slug = await ensure_unique_slug(session, Brand, base)
 
-    brand = Brand(name=name, slug=slug)
+    brand = Brand(name=name_clean, slug=slug)
     session.add(brand)
-    await session.commit()
+
+    try:
+        await session.commit()
+    except IntegrityError:
+        await session.rollback()
+        return templates.TemplateResponse(
+            "admin/brands/create.html",
+            {"request": request, "error": "Такой бренд уже существует.", "name_value": name_clean},
+            status_code=400,
+        )
+
     return RedirectResponse("/admin/brands", status_code=303)
+
 
 @router.get("/admin/brands/{brand_id}/edit", response_class=HTMLResponse)
 async def brand_edit_page(brand_id: uuid.UUID, request: Request, session: AsyncSession = Depends(get_async_session)):
@@ -53,25 +82,55 @@ async def brand_edit_page(brand_id: uuid.UUID, request: Request, session: AsyncS
         {"request": request, "brand": brand},
     )
 
-@router.post("/admin/brands/{brand_id}/edit")
+@router.post("/admin/brands/{brand_id}/edit", response_class=HTMLResponse)
 async def brand_edit(
     brand_id: uuid.UUID,
+    request: Request,
     name: str = Form(...),
     session: AsyncSession = Depends(get_async_session),
 ):
-    result = await session.execute(select(Brand).where(Brand.id == brand_id))
-    brand = result.scalar_one_or_none()
+    brand = (await session.execute(select(Brand).where(Brand.id == brand_id))).scalar_one_or_none()
     if not brand:
         raise HTTPException(status_code=404)
 
-    base = slugify(name)
+    name_clean = (name or "").strip()
+    if not name_clean:
+        return templates.TemplateResponse(
+            "admin/brands/edit.html",
+            {"request": request, "brand": brand, "error": "Название обязательно."},
+            status_code=400,
+        )
+
+    # проверка дубля имени (кроме самой себя)
+    exists_stmt = select(Brand.id).where(
+        func.lower(Brand.name) == name_clean.lower(),
+        Brand.id != brand_id,
+    )
+    if (await session.execute(exists_stmt)).first():
+        brand.name = name_clean
+        return templates.TemplateResponse(
+            "admin/brands/edit.html",
+            {"request": request, "brand": brand, "error": "Такой бренд уже существует."},
+            status_code=400,
+        )
+
+    base = slugify(name_clean)
     slug = await ensure_unique_slug(session, Brand, base, exclude_id=brand_id)
 
-    brand.name = name
+    brand.name = name_clean
     brand.slug = slug
-    await session.commit()
-    return RedirectResponse("/admin/brands", status_code=303)
 
+    try:
+        await session.commit()
+    except IntegrityError:
+        await session.rollback()
+        return templates.TemplateResponse(
+            "admin/brands/edit.html",
+            {"request": request, "brand": brand, "error": "Такой бренд уже существует."},
+            status_code=400,
+        )
+
+    return RedirectResponse("/admin/brands", status_code=303)
 
 @router.post("/admin/brands/{brand_id}/delete")
 async def brand_delete(brand_id: uuid.UUID, session: AsyncSession = Depends(get_async_session)):

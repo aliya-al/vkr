@@ -29,6 +29,10 @@
       </label>
     </div>
 
+    {% if error %}
+      <p style="color: #b00020; margin: 8px 0;">{{ error }}</p>
+    {% endif %}
+
     <button type="submit">Сохранить</button>
   </form>
 

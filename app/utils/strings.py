@@ -53,9 +53,9 @@ def slugify(value: str) -> str:
         transliterated.append(ascii_char)
 
     slug_base = "".join(transliterated)
-    slug_base = re.sub(r"[^a-z0-9]+", "-", slug_base)
+    slug_base = re.sub(r"[^a-z0-9]+", "_", slug_base)
     slug_base = slug_base.strip("-")
-    slug_base = re.sub(r"-+", "-", slug_base)
+    slug_base = re.sub(r"-+", "_", slug_base)
     return slug_base
 
 async def ensure_unique_slug(
@@ -72,7 +72,7 @@ async def ensure_unique_slug(
     Если base_slug занят — добавляет суффиксы -2, -3, ...
     exclude_id — чтобы при edit не конфликтовать с самой собой.
     """
-    base = (base_slug or "").strip("-")[:max_len]
+    base = (base_slug or "").strip("_")[:max_len]
     if not base:
         base = "item"
 
@@ -92,5 +92,5 @@ async def ensure_unique_slug(
 
         suffix = f"_{i}"
         cut = max_len - len(suffix)
-        slug = (base[:cut].rstrip("-")) + suffix
+        slug = (base[:cut].rstrip("_")) + suffix
         i += 1

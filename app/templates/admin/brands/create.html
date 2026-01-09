@@ -12,6 +12,7 @@
         <input type="text" name="name" required>
       </label>
     </div>
+    {% if error %}<p style="color:red;">{{ error }}</p>{% endif %}
     <button type="submit">Сохранить</button>
   </form>
   <p><a href="/admin/brands">Назад</a></p>

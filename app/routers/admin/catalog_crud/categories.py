@@ -1,26 +1,72 @@
 import uuid
+from urllib.parse import urlencode
 
 from fastapi import APIRouter, Depends, Form, HTTPException, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
-from sqlalchemy import select, delete, text
+from sqlalchemy import delete, exists, select, text, update
+from sqlalchemy.orm import aliased
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import selectinload
 
 from app.models.category import Category
+from app.models.category_characteristic import CategoryCharacteristic
+from app.models.characteristic import GlobalCharacteristic
 from app.models.product import Product
 from app.models.product_image import ProductImage
-
 from app.utils.database import get_async_session
-from app.utils.strings import slugify, ensure_unique_slug
-from app.utils.templates import templates
 from app.utils.delete_product_image import delete_product_image_if_local
-
+from app.utils.strings import ensure_unique_slug, slugify
+from app.utils.templates import templates
 
 router = APIRouter()
 
 
+def _truthy(v: str | None) -> bool:
+    if not v:
+        return False
+    return v.strip().lower() in {"1", "true", "on", "yes", "ok"}
+
+
+def _clean_int_list(values: list[int] | None) -> list[int]:
+    clean: list[int] = []
+    for x in values or []:
+        try:
+            clean.append(int(x))
+        except Exception:
+            continue
+    return clean
+
+
+async def _has_children(session: AsyncSession, category_id: uuid.UUID) -> bool:
+    q = select(exists().where(Category.parent_id == category_id))
+    return bool(await session.scalar(q))
+
+
+async def _has_products(session: AsyncSession, category_id: uuid.UUID) -> bool:
+    q = select(exists().where(Product.category_id == category_id))
+    return bool(await session.scalar(q))
+
+
+async def _move_decision_for_parent(
+    session: AsyncSession,
+    parent_id: uuid.UUID,
+) -> tuple[bool, str | None]:
+    """
+    Перенос нужен, если у parent_id пока НЕТ детей и ЕСТЬ товары.
+    Возвращаем: (move_needed, parent_name)
+    """
+    had_children_before = await _has_children(session, parent_id)
+    has_products = await _has_products(session, parent_id)
+
+    move_needed = (not had_children_before) and has_products
+    if not move_needed:
+        return False, None
+
+    parent = await session.get(Category, parent_id)
+    return True, (parent.name if parent else None)
+
+
 async def _get_subtree_category_ids(session: AsyncSession, root_id: uuid.UUID) -> list[uuid.UUID]:
-    """Вернуть id категории root + всех её потомков. Используем UNION (не UNION ALL), чтобы не зависнуть при цикле."""
+    """Вернуть id категории root + всех её потомков."""
     q = text(
         """
         WITH RECURSIVE subcats AS (
@@ -40,62 +86,244 @@ async def _get_subtree_category_ids(session: AsyncSession, root_id: uuid.UUID) -
 
 
 async def _ensure_no_cycle(session: AsyncSession, category_id: uuid.UUID, new_parent_id: uuid.UUID | None) -> None:
-    """
-    Защита от циклов в дереве категорий:
-    - нельзя назначить родителем саму себя
-    - нельзя назначить родителем своего потомка
-    """
+    """Защита от циклов в дереве категорий."""
     if not new_parent_id:
         return
     if new_parent_id == category_id:
         raise HTTPException(status_code=400, detail="Нельзя выбрать категорию саму себе родителем.")
 
-    # Получаем всех потомков текущей категории; родитель не может быть среди них.
     descendants = await _get_subtree_category_ids(session, category_id)
     if new_parent_id in descendants:
         raise HTTPException(status_code=400, detail="Нельзя выбрать потомка в качестве родителя (получится цикл).")
 
 
-@router.get("/admin/categories", response_class=HTMLResponse)
-async def categories_list(request: Request, session: AsyncSession = Depends(get_async_session)):
-    result = await session.execute(
-        select(Category)
-        .options(selectinload(Category.parent))
+async def _get_category_options(
+    session: AsyncSession,
+    exclude_ids: list[uuid.UUID] | None = None,
+) -> list[dict]:
+    stmt = select(Category.id, Category.name).order_by(Category.name)
+    if exclude_ids:
+        stmt = stmt.where(~Category.id.in_(exclude_ids))
+    rows = (await session.execute(stmt)).all()
+    return [{"id": r.id, "name": r.name} for r in rows]
+
+
+async def _get_all_characteristics(session: AsyncSession) -> list[dict]:
+    rows = (
+        await session.execute(
+            select(
+                GlobalCharacteristic.id,
+                GlobalCharacteristic.name,
+                GlobalCharacteristic.value_type,
+                GlobalCharacteristic.unit,
+            ).order_by(GlobalCharacteristic.name)
+        )
+    ).all()
+
+    return [
+        {
+            "id": r.id,
+            "name": r.name,
+            "value_type": getattr(r.value_type, "value", str(r.value_type)),
+            "unit": r.unit,
+        }
+        for r in rows
+    ]
+
+
+async def _get_selected_characteristic_ids(session: AsyncSession, category_id: uuid.UUID) -> set[int]:
+    rows = (
+        await session.execute(
+            select(CategoryCharacteristic.characteristic_id).where(CategoryCharacteristic.category_id == category_id)
+        )
+    ).all()
+    return {int(r[0]) for r in rows}
+
+
+async def _replace_category_characteristics(
+    session: AsyncSession,
+    category_id: uuid.UUID,
+    selected_ids: list[int],
+) -> None:
+    """Полностью заменяет набор характеристик категории. Вызывать внутри транзакции."""
+    await session.execute(delete(CategoryCharacteristic).where(CategoryCharacteristic.category_id == category_id))
+
+    clean_ids = _clean_int_list(selected_ids)
+    if not clean_ids:
+        return
+
+    session.add_all(
+        [CategoryCharacteristic(category_id=category_id, characteristic_id=cid) for cid in clean_ids]
+    )
+
+
+async def _get_categories_for_index(session: AsyncSession) -> list[dict]:
+    Parent = aliased(Category)
+    Child = aliased(Category)
+
+    has_children_expr = exists(select(1).select_from(Child).where(Child.parent_id == Category.id))
+    has_products_expr = exists(select(1).select_from(Product).where(Product.category_id == Category.id))
+
+    stmt = (
+        select(
+            Category.id.label("id"),
+            Category.name.label("name"),
+            Category.slug.label("slug"),
+            Category.parent_id.label("parent_id"),
+            Parent.name.label("parent_name"),
+            has_children_expr.label("has_children"),
+            has_products_expr.label("has_products"),
+        )
+        .outerjoin(Parent, Parent.id == Category.parent_id)
         .order_by(Category.name)
     )
-    categories = result.scalars().all()
+
+    rows = (await session.execute(stmt)).mappings().all()
+    return [dict(r) for r in rows]
+
+
+async def _parse_moved_message(request: Request, session: AsyncSession) -> tuple[int, str | None]:
+    qp = request.query_params
+    moved_raw = qp.get("moved")
+    to_raw = qp.get("to")
+    if not moved_raw or not to_raw:
+        return 0, None
+
+    try:
+        moved_count = int(moved_raw)
+        to_id = uuid.UUID(to_raw)
+    except Exception:
+        return 0, None
+
+    to_obj = await session.get(Category, to_id)
+    return moved_count, (to_obj.name if to_obj else None)
+
+
+@router.get("/admin/categories", response_class=HTMLResponse)
+async def categories_list(request: Request, session: AsyncSession = Depends(get_async_session)):
+    categories = await _get_categories_for_index(session)
+    moved_count, moved_to_name = await _parse_moved_message(request, session)
+
     return templates.TemplateResponse(
         "admin/categories/index.html",
-        {"request": request, "categories": categories},
+        {
+            "request": request,
+            "categories": categories,
+            "moved_count": moved_count,
+            "moved_to_name": moved_to_name,
+        },
     )
 
 
 @router.get("/admin/categories/new", response_class=HTMLResponse)
 async def category_create_page(request: Request, session: AsyncSession = Depends(get_async_session)):
-    result = await session.execute(select(Category).order_by(Category.name))
-    categories = result.scalars().all()
+    categories = await _get_category_options(session)
+    characteristics = await _get_all_characteristics(session)
+
+    # стартовый набор: если пришли на страницу с ?parent_id=..., отметим как у родителя
+    selected_ids: set[int] = set()
+    parent_id_raw = request.query_params.get("parent_id")
+    if parent_id_raw:
+        try:
+            parent_uuid = uuid.UUID(parent_id_raw)
+            selected_ids = await _get_selected_characteristic_ids(session, parent_uuid)
+        except Exception:
+            selected_ids = set()
+
     return templates.TemplateResponse(
         "admin/categories/create.html",
-        {"request": request, "categories": categories},
+        {
+            "request": request,
+            "categories": categories,
+            "name_value": request.query_params.get("name", ""),
+            "parent_id_value": request.query_params.get("parent_id", ""),
+            "confirm_required": False,
+            "confirm_text": "",
+            "cancel_url": "",
+            # новая категория на create всегда листовая -> чекбоксы показываем
+            "is_leaf": True,
+            "characteristics": characteristics,
+            "selected_characteristic_ids": selected_ids,
+        },
     )
 
 
-@router.post("/admin/categories/new")
+@router.post("/admin/categories/new", response_class=HTMLResponse)
 async def category_create(
+    request: Request,
     name: str = Form(...),
     parent_id: str | None = Form(None),
+    characteristic_ids: list[int] | None = Form(None),
+    confirm_move: str | None = Form(None),
     session: AsyncSession = Depends(get_async_session),
 ):
+    name = name.strip()
+    parent_uuid = uuid.UUID(parent_id) if parent_id else None
+
+    # КЛЮЧЕВОЕ ИСПРАВЛЕНИЕ:
+    # если создаём дочернюю категорию и чекбоксы не прислались (из-за отсутствия перерендеринга),
+    # берём стартовый набор характеристик из родителя.
+    final_characteristic_ids: list[int]
+    if parent_uuid and characteristic_ids is None:
+        final_characteristic_ids = list(await _get_selected_characteristic_ids(session, parent_uuid))
+    else:
+        final_characteristic_ids = _clean_int_list(characteristic_ids)
+
+    move_needed = False
+    parent_name: str | None = None
+    if parent_uuid:
+        move_needed, parent_name = await _move_decision_for_parent(session, parent_uuid)
+
+    # Нужно подтверждение переноса, но его ещё нет
+    if move_needed and not _truthy(confirm_move):
+        categories = await _get_category_options(session)
+        characteristics = await _get_all_characteristics(session)
+
+        cancel_url = "/admin/categories/new?" + urlencode({"name": name, "parent_id": parent_id or ""})
+
+        return templates.TemplateResponse(
+            "admin/categories/create.html",
+            {
+                "request": request,
+                "categories": categories,
+                "name_value": name,
+                "parent_id_value": parent_id or "",
+                "confirm_required": True,
+                "confirm_text": (
+                    f"Категория «{parent_name or 'Родительская'}» уже содержит товары. "
+                    f"Они будут перенесены в создаваемую категорию «{name}»."
+                ),
+                "cancel_url": cancel_url,
+                # новая категория всё равно лист -> нужно сохранить выбранные characteristic_ids как hidden
+                "is_leaf": True,
+                "characteristics": characteristics,
+                "selected_characteristic_ids": set(final_characteristic_ids),
+            },
+            status_code=200,
+        )
+
     base = slugify(name)
     slug = await ensure_unique_slug(session, Category, base)
 
-    category = Category(
-        name=name,
-        slug=slug,
-        parent_id=uuid.UUID(parent_id) if parent_id else None,
-    )
-    session.add(category)
-    await session.commit()
+    try:
+        category = Category(name=name, slug=slug, parent_id=parent_uuid)
+        session.add(category)
+        await session.flush()
+
+        # сохраняем характеристики (на create всегда можно)
+        await _replace_category_characteristics(session, category.id, final_characteristic_ids)
+
+        # перенос товаров после подтверждения
+        if move_needed and parent_uuid and _truthy(confirm_move):
+            await session.execute(
+                update(Product).where(Product.category_id == parent_uuid).values(category_id=category.id)
+            )
+
+        await session.commit()
+    except Exception:
+        await session.rollback()
+        raise
+
     return RedirectResponse("/admin/categories", status_code=303)
 
 
@@ -105,68 +333,156 @@ async def category_edit_page(
     request: Request,
     session: AsyncSession = Depends(get_async_session),
 ):
-    result = await session.execute(select(Category).where(Category.id == category_id))
-    category = result.scalar_one_or_none()
-    if not category:
+    category_obj = await session.get(Category, category_id)
+    if not category_obj:
         raise HTTPException(status_code=404)
 
-    # descendants включает саму category_id и всех потомков
     descendants = await _get_subtree_category_ids(session, category_id)
+    categories = await _get_category_options(session, exclude_ids=descendants)
 
-    categories_result = await session.execute(
-        select(Category)
-        .where(~Category.id.in_(descendants))
-        .order_by(Category.name)
-    )
+    name_value = request.query_params.get("name", category_obj.name)
+    parent_id_value = request.query_params.get("parent_id", str(category_obj.parent_id) if category_obj.parent_id else "")
 
-    categories = categories_result.scalars().all()
+    category = {
+        "id": str(category_obj.id),
+        "name": category_obj.name,
+        "parent_id": str(category_obj.parent_id) if category_obj.parent_id else "",
+    }
+
+    is_leaf = not await _has_children(session, category_id)
+    can_edit_characteristics = is_leaf
+
+    characteristics: list[dict] = []
+    selected_ids: set[int] = set()
+    if can_edit_characteristics:
+        characteristics = await _get_all_characteristics(session)
+        selected_ids = await _get_selected_characteristic_ids(session, category_id)
 
     return templates.TemplateResponse(
         "admin/categories/edit.html",
-        {"request": request, "category": category, "categories": categories},
+        {
+            "request": request,
+            "category": category,
+            "categories": categories,
+            "name_value": name_value,
+            "parent_id_value": parent_id_value,
+            "confirm_required": False,
+            "can_edit_characteristics": can_edit_characteristics,
+            "confirm_text": "",
+            "cancel_url": "",
+            "is_leaf": is_leaf,
+            "characteristics": characteristics,
+            "selected_characteristic_ids": selected_ids,
+        },
     )
 
 
-@router.post("/admin/categories/{category_id}/edit")
+@router.post("/admin/categories/{category_id}/edit", response_class=HTMLResponse)
 async def category_edit(
     category_id: uuid.UUID,
+    request: Request,
     name: str = Form(...),
+    characteristic_ids: list[int] | None = Form(None),
     parent_id: str | None = Form(None),
+    confirm_move: str | None = Form(None),
     session: AsyncSession = Depends(get_async_session),
 ):
-    result = await session.execute(select(Category).where(Category.id == category_id))
-    category = result.scalar_one_or_none()
-    if not category:
+    category_obj = await session.get(Category, category_id)
+    if not category_obj:
         raise HTTPException(status_code=404)
 
+    name = name.strip()
     new_parent_id = uuid.UUID(parent_id) if parent_id else None
     await _ensure_no_cycle(session, category_id, new_parent_id)
+
+    is_leaf = not await _has_children(session, category_id)
+    can_edit_characteristics = is_leaf
+
+    parent_changed = (new_parent_id != category_obj.parent_id)
+
+    move_needed = False
+    parent_name: str | None = None
+    if parent_changed and new_parent_id:
+        move_needed, parent_name = await _move_decision_for_parent(session, new_parent_id)
+
+    if move_needed and not _truthy(confirm_move):
+        descendants = await _get_subtree_category_ids(session, category_id)
+        categories = await _get_category_options(session, exclude_ids=descendants)
+
+        cancel_url = f"/admin/categories/{category_id}/edit?" + urlencode({"name": name, "parent_id": parent_id or ""})
+
+        category = {
+            "id": str(category_obj.id),
+            "name": category_obj.name,
+            "parent_id": str(category_obj.parent_id) if category_obj.parent_id else "",
+        }
+
+        selected_ids = set(_clean_int_list(characteristic_ids))
+        characteristics: list[dict] = []
+
+        if can_edit_characteristics:
+            characteristics = await _get_all_characteristics(session)
+            if not selected_ids:
+                selected_ids = await _get_selected_characteristic_ids(session, category_id)
+
+        return templates.TemplateResponse(
+            "admin/categories/edit.html",
+            {
+                "request": request,
+                "category": category,
+                "categories": categories,
+                "name_value": name,
+                "parent_id_value": parent_id or "",
+                "confirm_required": True,
+                "confirm_text": (
+                    f"Категория «{parent_name or 'Родительская'}» уже содержит товары. "
+                    f"Они будут перенесены в категорию «{name}»."
+                ),
+                "cancel_url": cancel_url,
+                "is_leaf": is_leaf,
+                "characteristics": characteristics,
+                "selected_characteristic_ids": selected_ids,
+            },
+            status_code=200,
+        )
 
     base = slugify(name)
     slug = await ensure_unique_slug(session, Category, base, exclude_id=category_id)
 
-    category.name = name
-    category.slug = slug
-    category.parent_id = new_parent_id
+    category_obj.name = name
+    category_obj.slug = slug
+    category_obj.parent_id = new_parent_id
 
-    await session.commit()
+    try:
+        await session.flush()
+
+        if move_needed and new_parent_id and _truthy(confirm_move):
+            await session.execute(
+                update(Product).where(Product.category_id == new_parent_id).values(category_id=category_obj.id)
+            )
+
+        if can_edit_characteristics:
+            # ВАЖНО: здесь None значит "все сняли" => сохраняем пусто
+            await _replace_category_characteristics(session, category_id, _clean_int_list(characteristic_ids))
+
+        await session.commit()
+    except Exception:
+        await session.rollback()
+        raise
+
     return RedirectResponse("/admin/categories", status_code=303)
 
 
 @router.post("/admin/categories/{category_id}/delete")
 async def category_delete(category_id: uuid.UUID, session: AsyncSession = Depends(get_async_session)):
-    """
-    Удаление категории вместе со всем деревом потомков и всеми товарами внутри.
-    """
+    """Удаление категории вместе со всем деревом потомков и всеми товарами внутри."""
     files_to_delete: list[str] = []
 
     async with session.begin():
-        # 1) Собираем все категории в поддереве (эта + потомки).
         category_ids = await _get_subtree_category_ids(session, category_id)
         if not category_ids:
             raise HTTPException(status_code=404)
 
-        # 2) Собираем пути картинок всех товаров в этих категориях (чтобы удалить их в конце роута).
         img_rows = await session.execute(
             select(ProductImage.file_path)
             .join(Product, ProductImage.product_id == Product.id)
@@ -174,22 +490,13 @@ async def category_delete(category_id: uuid.UUID, session: AsyncSession = Depend
         )
         files_to_delete = [r[0] for r in img_rows.all()]
 
-        # 3) Удаляем товары (картинки в БД удалятся каскадом по FK product_images.product_id).
-        await session.execute(
-            delete(Product).where(Product.category_id.in_(category_ids))
-        )
+        await session.execute(delete(Product).where(Product.category_id.in_(category_ids)))
+        await session.execute(delete(Category).where(Category.id.in_(category_ids)))
 
-        # 4) Удаляем категории одним запросом (включая потомков).
-        await session.execute(
-            delete(Category).where(Category.id.in_(category_ids))
-        )
-
-    # 5) Коммит прошёл (вышли из session.begin) — теперь удаляем файлы с диска.
     for p in files_to_delete:
         try:
             delete_product_image_if_local(p)
         except Exception:
-            # удаление файлов не должно ломать удаление категории
             pass
 
     return RedirectResponse("/admin/categories", status_code=303)

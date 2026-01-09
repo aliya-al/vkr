@@ -6,24 +6,64 @@
 </head>
 <body>
   <h1>Редактировать категорию</h1>
-  <form method="post" action="/admin/categories/{{ category.id }}/edit">
-    <div>
-      <label>Название
-        <input type="text" name="name" value="{{ category.name }}" required>
-      </label>
-    </div>
-    <div>
-      <label>Родительская категория
-        <select name="parent_id">
-          <option value="">(нет)</option>
-          {% for available_category in categories %}
-            <option value="{{ available_category.id }}" {% if category.parent_id == available_category.id %}selected{% endif %}>{{ available_category.name }}</option>
-          {% endfor %}
-        </select>
-      </label>
-    </div>
-    <button type="submit">Сохранить</button>
-  </form>
-  <p><a href="/admin/categories">Назад</a></p>
+
+  {% if confirm_required %}
+    <p><strong>{{ confirm_text }}</strong></p>
+
+    <form method="post" action="/admin/categories/{{ category['id'] }}/edit">
+      <input type="hidden" name="name" value="{{ name_value|default(category['name']) }}">
+      <input type="hidden" name="parent_id" value="{{ parent_id_value|default(category['parent_id']) }}">
+
+      {% if is_leaf %}
+        {% for cid in (selected_characteristic_ids or []) %}
+          <input type="hidden" name="characteristic_ids" value="{{ cid }}">
+        {% endfor %}
+      {% endif %}
+
+      <button type="submit" name="confirm_move" value="1">ОК</button>
+      <a href="{{ cancel_url }}">Отмена</a>
+    </form>
+
+    <p><a href="/admin/categories">Назад</a></p>
+  {% else %}
+
+    <form method="post" action="/admin/categories/{{ category['id'] }}/edit">
+      <div>
+        <label>Название
+          <input type="text" name="name" value="{{ name_value|default(category['name']) }}" required>
+        </label>
+      </div>
+
+      <div>
+        <label>Родительская категория
+          {% set pid = parent_id_value|default(category['parent_id']) %}
+          <select name="parent_id">
+            <option value="" {% if pid == '' %}selected{% endif %}>(нет)</option>
+            {% for c in categories %}
+              <option value="{{ c['id'] }}" {% if pid == (c['id']|string) %}selected{% endif %}>
+                {{ c['name'] }}
+              </option>
+            {% endfor %}
+          </select>
+        </label>
+      </div>
+
+      {% if is_leaf %}
+        <hr>
+        <h3>Характеристики (необязательно)</h3>
+        {% for ch in characteristics %}
+          <label style="display:block; margin:4px 0;">
+            <input type="checkbox" name="characteristic_ids" value="{{ ch['id'] }}"
+              {% if ch['id'] in (selected_characteristic_ids or []) %}checked{% endif %}>
+            {{ ch['name'] }}
+          </label>
+        {% endfor %}
+      {% endif %}
+
+      <button type="submit">Сохранить</button>
+    </form>
+
+    <p><a href="/admin/categories">Назад</a></p>
+  {% endif %}
 </body>
 </html>
