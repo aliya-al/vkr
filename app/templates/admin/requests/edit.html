@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <title>Заявка {{ order.id }}</title>
+</head>
+<body>
+  <p><a href="/admin/requests">← К списку</a></p>
+
+  <h1>Заявка</h1>
+
+  {% if error %}
+    <p><strong>Ошибка:</strong> {{ error }}</p>
+  {% endif %}
+
+  <ul>
+    <li><strong>ID:</strong> {{ order.id }}</li>
+    <li><strong>Дата:</strong> {{ order.created_at }}</li>
+    <li><strong>Статус:</strong> {{ order.status }}</li>
+    <li><strong>Клиент:</strong> {{ order.customer_name }}</li>
+    <li><strong>Телефон:</strong> {{ order.customer_phone }}</li>
+    <li><strong>Тип получения:</strong> {{ order.delivery_type }}</li>
+    <li><strong>Адрес доставки:</strong> {{ order.delivery_address }}</li>
+    <li><strong>Комментарий:</strong> {{ order.comment }}</li>
+    <li><strong>Итого:</strong> {{ order.total_price }}</li>
+    <li>
+      <strong>Менеджер:</strong>
+      {% if order.manager %}
+        {{ order.manager.login }}
+      {% else %}
+        (не назначен)
+      {% endif %}
+    </li>
+  </ul>
+
+  <h3>Позиции</h3>
+  {% if not order.items %}
+    <p>Позиции отсутствуют.</p>
+  {% else %}
+    <table border="1" cellpadding="6">
+      <thead>
+        <tr>
+          <th>Товар</th>
+          <th>Кол-во</th>
+          <th>Цена</th>
+          <th>Скидка</th>
+          <th>Сумма</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for it in order.items %}
+          <tr>
+            <td>{{ it.product.name if it.product else it.product_id }}</td>
+            <td>{{ it.quantity }}</td>
+            <td>{{ it.price_per_item }}</td>
+            <td>{{ it.discount_percent }}</td>
+            <td>{{ it.total_price }}</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% endif %}
+
+  <hr>
+
+  <h3>Изменить статус</h3>
+  <form method="post" action="/admin/requests/{{ order.id }}/edit">
+    <select name="status">
+      {% for s in statuses %}
+        <option value="{{ s }}" {% if order.status == s %}selected{% endif %}>{{ s }}</option>
+      {% endfor %}
+    </select>
+    <button type="submit">Сохранить статус</button>
+  </form>
+
+  <hr>
+
+  {% if admin.role == "admin" %}
+    <h3>Назначить менеджера (админ)</h3>
+    <form method="post" action="/admin/requests/{{ order.id }}/edit">
+      <select name="manager_id">
+        <option value="">(снять назначение)</option>
+        {% for m in managers %}
+          <option value="{{ m.id }}" {% if order.manager_id == m.id %}selected{% endif %}>
+            {{ m.login }}
+          </option>
+        {% endfor %}
+      </select>
+      <button type="submit">Сохранить менеджера</button>
+    </form>
+
+    <hr>
+
+    <form method="post" action="/admin/requests/{{ order.id }}/delete" onsubmit="return confirm('Удалить заявку?');">
+      <button type="submit">Удалить заявку</button>
+    </form>
+  {% else %}
+    <h3>Менеджер</h3>
+
+    {% if not order.manager_id %}
+      <form method="post" action="/admin/requests/{{ order.id }}/edit">
+        <input type="hidden" name="action" value="take">
+        <button type="submit">Взять себе</button>
+      </form>
+    {% elif order.manager and order.manager_id %}
+      {% if order.manager_id|string == admin.id|string %}
+        <form method="post" action="/admin/requests/{{ order.id }}/edit">
+          <input type="hidden" name="action" value="drop">
+          <button type="submit">Снять с себя</button>
+        </form>
+      {% else %}
+        <p>Заявка назначена другому менеджеру.</p>
+      {% endif %}
+    {% endif %}
+  {% endif %}
+</body>
+</html>

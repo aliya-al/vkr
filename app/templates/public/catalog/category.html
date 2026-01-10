@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <title>{{ category.name }}</title>
+</head>
+<body>
+  <p><a href="/catalog/">← Все категории</a> | <a href="/cart">Корзина</a></p>
+  <h1>{{ category.name }}</h1>
+
+  {% if subcategories %}
+    <h3>Подкатегории</h3>
+    <ul>
+      {% for c in subcategories %}
+        <li><a href="/catalog/{{ c.slug }}">{{ c.name }}</a></li>
+      {% endfor %}
+    </ul>
+  {% endif %}
+
+  <h3>Товары</h3>
+  {% if products %}
+    <ul>
+      {% for p in products %}
+        <li style="margin-bottom: 12px;">
+          {% if p.main_image %}
+            <div><img src="{{ p.main_image }}" alt="img" style="max-width:120px; height:auto;"></div>
+          {% endif %}
+
+          <div><strong>{{ p.name }}</strong></div>
+
+          {% if p.discount_percent %}
+            <div>
+              Цена: <s>{{ p.price }}</s> → <strong>{{ p.display_price }}</strong> (скидка {{ p.discount_percent }}%)
+            </div>
+          {% else %}
+            <div>Цена: <strong>{{ p.price }}</strong></div>
+          {% endif %}
+
+          <form method="post" action="/cart/add">
+            <input type="hidden" name="product_id" value="{{ p.id }}">
+            <button type="submit">В корзину</button>
+          </form>
+        </li>
+      {% endfor %}
+    </ul>
+  {% else %}
+    <p>В этой категории пока нет товаров.</p>
+  {% endif %}
+</body>
+</html>

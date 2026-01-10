@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <title>Оформление</title>
+</head>
+<body>
+  <p><a href="/cart">← Корзина</a> | <a href="/catalog/">Каталог</a></p>
+  <h1>Оформление</h1>
+
+  {% if error %}
+    <p><strong>Ошибка:</strong> {{ error }}</p>
+  {% endif %}
+
+  <h3>Состав заказа</h3>
+  {% if not items %}
+    <p>Корзина пуста.</p>
+  {% else %}
+    <ul>
+      {% for it in items %}
+        <li>{{ it.product.name }} — {{ it.qty }} шт × {{ it.unit_price }} = {{ it.line_total }}</li>
+      {% endfor %}
+    </ul>
+    <p><strong>Итого:</strong> {{ total_price }}</p>
+  {% endif %}
+
+  <hr>
+
+  <form method="post" action="/checkout">
+    <div>
+      <label>Имя
+        <input type="text" name="customer_name" required value="{{ form_data.customer_name if form_data else '' }}">
+      </label>
+    </div>
+
+    <div>
+      <label>Телефон
+        <input type="text" name="customer_phone" required value="{{ form_data.customer_phone if form_data else '' }}">
+      </label>
+    </div>
+
+    <div>
+      <label>Способ получения
+        <select name="delivery_type" required>
+          <option value="delivery" {% if form_data and form_data.delivery_type == 'delivery' %}selected{% endif %}>Доставка</option>
+          <option value="pickup" {% if form_data and form_data.delivery_type == 'pickup' %}selected{% endif %}>Самовывоз</option>
+        </select>
+      </label>
+    </div>
+
+    <div>
+      <label>Адрес (только если доставка)
+        <input type="text" name="delivery_address" value="{{ form_data.delivery_address if form_data else '' }}">
+      </label>
+    </div>
+
+    <div>
+      <label>Комментарий
+        <textarea name="comment">{{ form_data.comment if form_data else '' }}</textarea>
+      </label>
+    </div>
+
+    <button type="submit">Предварительно оформить</button>
+  </form>
+</body>
+</html>

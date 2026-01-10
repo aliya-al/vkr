@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <title>Каталог</title>
+</head>
+<body>
+  <h1>Каталог</h1>
+
+  {% if root_categories %}
+    <ul>
+      {% for c in root_categories %}
+        <li>
+          <a href="/catalog/{{ c.slug }}">{{ c.name }}</a>
+
+          {% if c.children %}
+            <ul>
+              {% for ch in c.children %}
+                <li><a href="/catalog/{{ ch.slug }}">{{ ch.name }}</a></li>
+              {% endfor %}
+            </ul>
+          {% endif %}
+        </li>
+      {% endfor %}
+    </ul>
+  {% else %}
+    <p>Категорий пока нет.</p>
+  {% endif %}
+
+  <p><a href="/cart">Корзина</a></p>
+</body>
+</html>

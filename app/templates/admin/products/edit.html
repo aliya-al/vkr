@@ -7,7 +7,45 @@
 <body>
   <h1>Редактировать товар</h1>
 
+  {% if error %}
+    <p><strong>Ошибка:</strong> {{ error }}</p>
+  {% endif %}
+
+  <h3>Смена категории (через GET, без JS)</h3>
+  <form method="get" action="/admin/products/{{ product.id }}/edit">
+    <label>Категория
+      <select name="category_id" required>
+        {% for category in categories %}
+          <option value="{{ category.id }}"
+            {% if selected_category_id == (category.id|string) %}selected{% endif %}>
+            {{ category.name }}
+          </option>
+        {% endfor %}
+      </select>
+    </label>
+    <button type="submit">Далее (заполнить характеристики)</button>
+  </form>
+
+  {% if pending_change %}
+    <hr>
+    <p><strong>Набор характеристик изменится.</strong></p>
+    <p>
+      Новая категория:
+      <strong>{{ pending_category.name if pending_category else selected_category_id }}</strong>
+    </p>
+    <p>
+      <a href="/admin/products/{{ product.id }}/edit?category_id={{ selected_category_id }}&confirm_change=1">
+        Подтвердить смену категории
+      </a>
+      |
+      <a href="/admin/products/{{ product.id }}/edit">Отмена</a>
+    </p>
+    <hr>
+  {% endif %}
+
   <form method="post" action="/admin/products/{{ product.id }}/edit" enctype="multipart/form-data">
+    <input type="hidden" name="category_id" value="{{ effective_category_id }}">
+
     <div>
       <label>Название
         <input type="text" name="name" value="{{ product.name }}" required>
@@ -17,16 +55,6 @@
     <div>
       <label>Описание
         <textarea name="description">{{ product.description or '' }}</textarea>
-      </label>
-    </div>
-
-    <div>
-      <label>Категория
-        <select name="category_id" required>
-          {% for category in categories %}
-            <option value="{{ category.id }}" {% if product.category_id == category.id %}selected{% endif %}>{{ category.name }}</option>
-          {% endfor %}
-        </select>
       </label>
     </div>
 
@@ -71,6 +99,31 @@
         <input type="checkbox" name="is_active" value="true" {% if product.is_active %}checked{% endif %}> Активен
       </label>
     </div>
+
+    <hr>
+
+    <h3>Характеристики</h3>
+    {% if not pending_change %}
+      {% if characteristics %}
+        {% for ch in characteristics %}
+          <div>
+            <label>
+              {{ ch.name }}
+              {% if ch.unit %} ({{ ch.unit }}){% endif %}
+              {% if ch.value_type.value == 'number' %}
+                <input type="number" step="0.01" name="ch_{{ ch.id }}" value="{{ ch_values.get(ch.id, '') }}">
+              {% else %}
+                <input type="text" name="ch_{{ ch.id }}" value="{{ ch_values.get(ch.id, '') }}">
+              {% endif %}
+            </label>
+          </div>
+        {% endfor %}
+      {% else %}
+        <p>У категории нет характеристик.</p>
+      {% endif %}
+    {% else %}
+      <p>Чтобы увидеть поля, подтвердите смену категории выше.</p>
+    {% endif %}
 
     <hr>
 

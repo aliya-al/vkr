@@ -16,6 +16,7 @@
         <th>Категория</th>
         <th>Бренд</th>
         <th>Цена</th>
+        <th>Характеристики</th>
         <th>Активен</th>
         <th>Действия</th>
       </tr>
@@ -46,6 +47,7 @@
           <td>{{ product.category.name if product.category else '-' }}</td>
           <td>{{ product.brand.name if product.brand else '-' }}</td>
           <td>{{ product.price }}</td>
+          <td>{{ characteristics_text.get(product.id) or '-' }}</td>
           <td>{{ 'Да' if product.is_active else 'Нет' }}</td>
           <td>
             <a href="/admin/products/{{ product.id }}/edit">Редактировать</a>
@@ -55,7 +57,7 @@
           </td>
         </tr>
       {% else %}
-        <tr><td colspan="7">Товаров пока нет.</td></tr>
+        <tr><td colspan="8">Товаров пока нет.</td></tr>
       {% endfor %}
     </tbody>
   </table>

@@ -1,3 +1,4 @@
+# app/routers/admin/catalog_crud/products.py
 import uuid
 from pathlib import Path
 
@@ -10,11 +11,14 @@ from sqlalchemy.orm import selectinload
 
 from app.models.brand import Brand
 from app.models.category import Category
+from app.models.category_characteristic import CategoryCharacteristic
+from app.models.characteristic import GlobalCharacteristic, CharacteristicType
 from app.models.product import Product
+from app.models.product_characteristic_value import ProductCharacteristicValue
 from app.models.product_image import ProductImage
 from app.utils.database import get_async_session
-from app.utils.templates import templates
 from app.utils.delete_product_image import delete_product_image_if_local
+from app.utils.templates import templates
 
 router = APIRouter()
 
@@ -40,19 +44,15 @@ async def _save_product_image(file: UploadFile) -> str:
     Асинхронно сохранить картинку чанками и вернуть web-path.
     не блокируем event loop и не читаем файл целиком в память.
     """
-    # создаём папку, если её ещё нет
     _PRODUCTS_UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 
-    # проверяем расширение
     ext = _ext_or_empty(file.filename or "")
     if not ext:
         raise ValueError("Неподдерживаемый формат изображения.")
 
-    # генерируем безопасное имя файла
     name = f"{uuid.uuid4().hex}{ext}"
     dst = _PRODUCTS_UPLOAD_DIR / name
 
-    # пишем в файл чанками
     try:
         async with await anyio.open_file(dst, "wb") as out:
             while True:
@@ -61,14 +61,13 @@ async def _save_product_image(file: UploadFile) -> str:
                     break
                 await out.write(chunk)
     finally:
-        # освобождаем ресурсы UploadFile (временный файл/дескриптор)
         try:
             await file.close()
         except Exception:
             pass
 
-    # возвращаем путь для шаблонов
     return f"{_PRODUCTS_WEB_PREFIX}/{name}"
+
 
 def _only_leaf_categories(
     categories: list[Category], current_category_id: uuid.UUID | None = None
@@ -106,9 +105,7 @@ def _sort_images(images: list[ProductImage]) -> list[ProductImage]:
 
 
 def _pick_next_main_after_delete(remaining: list[ProductImage], deleted_main_id: int | None) -> ProductImage | None:
-    """
-    Выбор нового главного, когда главное удалили.
-    """
+    """Выбор нового главного, когда главное удалили."""
     if not remaining:
         return None
 
@@ -122,34 +119,163 @@ def _pick_next_main_after_delete(remaining: list[ProductImage], deleted_main_id:
     return remaining_sorted[0]
 
 
+# ----------------------------
+# Характеристики товара
+# ----------------------------
+
+async def _load_category_characteristics(
+    session: AsyncSession,
+    category_id: uuid.UUID,
+) -> list[GlobalCharacteristic]:
+    """Берём реальный набор характеристик категории из БД."""
+    res = await session.execute(
+        select(GlobalCharacteristic)
+        .join(CategoryCharacteristic, CategoryCharacteristic.characteristic_id == GlobalCharacteristic.id)
+        .where(CategoryCharacteristic.category_id == category_id)
+        .order_by(GlobalCharacteristic.name)
+    )
+    return res.scalars().all()
+
+
+def _parse_number(raw: str) -> float:
+    """Число принимаем и с запятой (на всякий)."""
+    raw = raw.strip().replace(",", ".")
+    return float(raw)
+
+
+def _parse_characteristics_from_form(
+    form: dict,
+    characteristics: list[GlobalCharacteristic],
+) -> tuple[dict[int, tuple[str | None, float | None]], str | None]:
+    """
+    Возвращает:
+      - распарсенные значения {characteristic_id: (value_string, value_number)}
+      - текст ошибки (если есть)
+    """
+    parsed: dict[int, tuple[str | None, float | None]] = {}
+
+    for ch in characteristics:
+        raw = form.get(f"ch_{ch.id}")
+        raw_str = str(raw).strip() if raw is not None else ""
+
+        if not raw_str:
+            parsed[ch.id] = (None, None)
+            continue
+
+        if ch.value_type == CharacteristicType.number:
+            try:
+                num = _parse_number(raw_str)
+            except Exception:
+                return {}, f"Некорректное число для характеристики «{ch.name}»."
+            parsed[ch.id] = (None, num)
+        else:
+            parsed[ch.id] = (raw_str, None)
+
+    return parsed, None
+
+def _format_product_characteristics(values: list[ProductCharacteristicValue]) -> str:
+    """
+    Для списка товаров: "Цвет: красный; Толщина: 2 мм"
+    """
+    items: list[str] = []
+
+    # сортируем по названию характеристики (если связь подгружена)
+    def _key(v: ProductCharacteristicValue) -> str:
+        ch = getattr(v, "characteristic", None)
+        return (getattr(ch, "name", "") or "").lower()
+
+    for v in sorted(values or [], key=_key):
+        ch = getattr(v, "characteristic", None)
+        if not ch:
+            continue
+
+        if ch.value_type == CharacteristicType.number:
+            if v.value_number is None:
+                continue
+            # убираем хвосты .0
+            s = f"{v.value_number}".rstrip("0").rstrip(".")
+            if ch.unit:
+                s = f"{s} {ch.unit}"
+            items.append(f"{ch.name}: {s}")
+        else:
+            if not v.value_string:
+                continue
+            items.append(f"{ch.name}: {v.value_string}")
+
+    return "; ".join(items)
+
+
 @router.get("/admin/products", response_class=HTMLResponse)
 async def products_list(request: Request, session: AsyncSession = Depends(get_async_session)):
-    # Важно: подгружаем images, чтобы index.html мог показывать фото без дополнительных запросов
+    # Подгружаем всё нужное для списка, включая характеристики
     result = await session.execute(
         select(Product)
-        .options(selectinload(Product.category), selectinload(Product.brand), selectinload(Product.images))
+        .options(
+            selectinload(Product.category),
+            selectinload(Product.brand),
+            selectinload(Product.images),
+            selectinload(Product.characteristics_values).selectinload(ProductCharacteristicValue.characteristic),
+        )
         .order_by(Product.name)
     )
     products = result.scalars().all()
-    return templates.TemplateResponse("admin/products/index.html", {"request": request, "products": products})
+
+    characteristics_text: dict[uuid.UUID, str] = {}
+    for p in products:
+        characteristics_text[p.id] = _format_product_characteristics(list(p.characteristics_values or []))
+
+    return templates.TemplateResponse(
+        "admin/products/index.html",
+        {"request": request, "products": products, "characteristics_text": characteristics_text},
+    )
 
 
 @router.get("/admin/products/new", response_class=HTMLResponse)
-async def product_create_page(request: Request, session: AsyncSession = Depends(get_async_session)):
+async def product_create_page(
+    request: Request,
+    session: AsyncSession = Depends(get_async_session),
+    category_id: str | None = None,
+):
     categories, brands = await _get_form_choices(session)
+
+    selected_category: Category | None = None
+    characteristics: list[GlobalCharacteristic] = []
+
+    if category_id:
+        try:
+            cat_uuid = uuid.UUID(category_id)
+        except Exception:
+            cat_uuid = None
+
+        if cat_uuid:
+            selected_category = await session.get(Category, cat_uuid)
+            if selected_category:
+                characteristics = await _load_category_characteristics(session, cat_uuid)
+
     return templates.TemplateResponse(
         "admin/products/create.html",
-        {"request": request, "categories": categories, "brands": brands, "error": None},
+        {
+            "request": request,
+            "categories": categories,
+            "brands": brands,
+            "selected_category": selected_category,
+            "selected_category_id": str(selected_category.id) if selected_category else "",
+            "characteristics": characteristics,
+            "ch_values": {},  # для create пусто
+            "error": None,
+            "form_data": {},  # чтобы можно было переиспользовать шаблон при ошибках
+        },
     )
 
 
 @router.post("/admin/products/new")
 async def product_create(
+    request: Request,
     name: str = Form(...),
     description: str | None = Form(None),
     category_id: str = Form(...),
-    main_image: UploadFile = File(...),  # главное фото обязательно в create
-    extra_images: list[UploadFile] | None = File(None),  # доп. фото (0..N)
+    main_image: UploadFile = File(...),
+    extra_images: list[UploadFile] | None = File(None),
     brand_id: str | None = Form(None),
     price: int = Form(...),
     volume_m3: float = Form(...),
@@ -158,58 +284,111 @@ async def product_create(
     discount_percent: str | None = Form(None),
     session: AsyncSession = Depends(get_async_session),
 ):
+    # 1) валидируем характеристики ДО сохранения файлов/транзакции
+    try:
+        cat_uuid = uuid.UUID(category_id)
+    except Exception:
+        raise HTTPException(status_code=400, detail="Некорректная категория.")
+
+    characteristics = await _load_category_characteristics(session, cat_uuid)
+    form = await request.form()
+    parsed_ch, ch_error = _parse_characteristics_from_form(form, characteristics)
+
+    if ch_error:
+        categories, brands = await _get_form_choices(session)
+        selected_category = await session.get(Category, cat_uuid)
+
+        return templates.TemplateResponse(
+            "admin/products/create.html",
+            {
+                "request": request,
+                "categories": categories,
+                "brands": brands,
+                "selected_category": selected_category,
+                "selected_category_id": str(cat_uuid),
+                "characteristics": characteristics,
+                "ch_values": {cid: (vs if vs is not None else vn) for cid, (vs, vn) in parsed_ch.items()},
+                "error": ch_error,
+                "form_data": {
+                    "name": name,
+                    "description": description or "",
+                    "brand_id": brand_id or "",
+                    "price": price,
+                    "volume_m3": volume_m3,
+                    "weight_kg": weight_kg,
+                    "discount_percent": discount_percent or "",
+                    "is_active": bool(is_active),
+                },
+            },
+            status_code=400,
+        )
+
     new_files: list[str] = []
-    # old_files_to_delete: что удаляем ПОСЛЕ commit
     old_files_to_delete: list[str] = []
 
     try:
-        async with session.begin():
-            product = Product(
-                name=name,
-                description=description,
-                category_id=uuid.UUID(category_id),
-                brand_id=uuid.UUID(brand_id) if brand_id else None,
-                price=price,
-                volume_m3=volume_m3,
-                weight_kg=weight_kg,
-                is_active=is_active,
-                discount_percent=int(discount_percent) if discount_percent else None,
-            )
-            session.add(product)
-            # flush нужен, чтобы получить product.id до вставки картинок
-            await session.flush()
+        product = Product(
+            name=name,
+            description=description,
+            category_id=cat_uuid,
+            brand_id=uuid.UUID(brand_id) if brand_id else None,
+            price=price,
+            volume_m3=volume_m3,
+            weight_kg=weight_kg,
+            is_active=is_active,
+            discount_percent=int(discount_percent) if discount_percent else None,
+        )
+        session.add(product)
+        await session.flush()
 
-            # главное фото
-            if not main_image or not main_image.filename:
-                raise HTTPException(status_code=400, detail="Главное фото обязательно.")
+        # главное фото
+        if not main_image or not main_image.filename:
+            raise HTTPException(status_code=400, detail="Главное фото обязательно.")
+        try:
+            main_path = await _save_product_image(main_image)
+        except ValueError as e:
+            raise HTTPException(status_code=400, detail=str(e))
+
+        new_files.append(main_path)
+        session.add(ProductImage(product_id=product.id, file_path=main_path, is_main=True))
+
+        # доп. фото
+        for f in (extra_images or []):
+            if not f or not f.filename:
+                continue
             try:
-                main_path = await _save_product_image(main_image)
-            except ValueError as e:
-                raise HTTPException(status_code=400, detail=str(e))
+                p = await _save_product_image(f)
+            except ValueError:
+                continue
+            new_files.append(p)
+            session.add(ProductImage(product_id=product.id, file_path=p, is_main=False))
 
-            new_files.append(main_path)
-            session.add(ProductImage(product_id=product.id, file_path=main_path, is_main=True))
+        # значения характеристик
+        for ch in characteristics:
+            v_str, v_num = parsed_ch.get(ch.id, (None, None))
+            if v_str is None and v_num is None:
+                continue
+            session.add(
+                ProductCharacteristicValue(
+                    product_id=product.id,
+                    characteristic_id=ch.id,
+                    value_string=v_str,
+                    value_number=v_num,
+                )
+            )
 
-            # дополнительные фото
-            for f in (extra_images or []):
-                if not f or not f.filename:
-                    continue
-                try:
-                    p = await _save_product_image(f)
-                except ValueError:
-                    continue
-                new_files.append(p)
-                session.add(ProductImage(product_id=product.id, file_path=p, is_main=False))
+        await session.commit()
 
-        # commit уже прошёл — можно удалять старые файлы (если бы они были)
         for p in old_files_to_delete:
             delete_product_image_if_local(p)
 
     except HTTPException:
+        await session.rollback()
         for p in new_files:
             delete_product_image_if_local(p)
         raise
     except Exception:
+        await session.rollback()
         for p in new_files:
             delete_product_image_if_local(p)
         raise
@@ -222,6 +401,8 @@ async def product_edit_page(
     product_id: uuid.UUID,
     request: Request,
     session: AsyncSession = Depends(get_async_session),
+    category_id: str | None = None,
+    confirm_change: str | None = None,  # "1" когда подтвердили смену категории
 ):
     result = await session.execute(
         select(Product)
@@ -230,6 +411,7 @@ async def product_edit_page(
             selectinload(Product.category),
             selectinload(Product.brand),
             selectinload(Product.images),
+            selectinload(Product.characteristics_values).selectinload(ProductCharacteristicValue.characteristic),
         )
     )
     product = result.scalar_one_or_none()
@@ -237,9 +419,61 @@ async def product_edit_page(
         raise HTTPException(status_code=404)
 
     categories, brands = await _get_form_choices(session, product.category_id)
+
+    pending_change = False
+    pending_category: Category | None = None
+
+    effective_category_id = product.category_id  # по умолчанию текущая
+    selected_category_id_str = str(product.category_id)
+
+    if category_id:
+        try:
+            new_cat_uuid = uuid.UUID(category_id)
+        except Exception:
+            new_cat_uuid = None
+
+        if new_cat_uuid and new_cat_uuid != product.category_id:
+            # Требуем подтверждение смены категории на GET (без потери файлов на POST)
+            if confirm_change == "1":
+                effective_category_id = new_cat_uuid
+                selected_category_id_str = str(new_cat_uuid)
+            else:
+                pending_change = True
+                pending_category = await session.get(Category, new_cat_uuid)
+                selected_category_id_str = str(new_cat_uuid)
+
+    characteristics = await _load_category_characteristics(session, effective_category_id)
+
+    # Значения для префилла (оставляем только те, что есть в effective-наборе)
+    current_values_by_id: dict[int, ProductCharacteristicValue] = {
+        v.characteristic_id: v for v in (product.characteristics_values or [])
+    }
+
+    ch_values: dict[int, str] = {}
+    for ch in characteristics:
+        v = current_values_by_id.get(ch.id)
+        if not v:
+            continue
+        if ch.value_type == CharacteristicType.number and v.value_number is not None:
+            ch_values[ch.id] = f"{v.value_number}".rstrip("0").rstrip(".")
+        elif ch.value_type == CharacteristicType.string and v.value_string:
+            ch_values[ch.id] = v.value_string
+
     return templates.TemplateResponse(
         "admin/products/edit.html",
-        {"request": request, "product": product, "categories": categories, "brands": brands, "error": None},
+        {
+            "request": request,
+            "product": product,
+            "categories": categories,
+            "brands": brands,
+            "selected_category_id": selected_category_id_str,
+            "effective_category_id": str(effective_category_id),
+            "pending_change": pending_change,
+            "pending_category": pending_category,
+            "characteristics": characteristics,
+            "ch_values": ch_values,
+            "error": None,
+        },
     )
 
 
@@ -259,167 +493,241 @@ async def product_edit(
     discount_percent: str | None = Form(None),
     session: AsyncSession = Depends(get_async_session),
 ):
+    form = await request.form()
+    set_main_id_raw = form.get("set_main_id")
+
+    # валидируем категорию + значения характеристик до сохранения файлов
+    try:
+        cat_uuid = uuid.UUID(category_id)
+    except Exception:
+        raise HTTPException(status_code=400, detail="Некорректная категория.")
+
+    characteristics = await _load_category_characteristics(session, cat_uuid)
+    parsed_ch, ch_error = _parse_characteristics_from_form(form, characteristics)
+
+    if ch_error:
+        # ререндер edit (без попытки сохранить картинки/данные)
+        result = await session.execute(
+            select(Product)
+            .where(Product.id == product_id)
+            .options(
+                selectinload(Product.category),
+                selectinload(Product.brand),
+                selectinload(Product.images),
+                selectinload(Product.characteristics_values).selectinload(ProductCharacteristicValue.characteristic),
+            )
+        )
+        product = result.scalar_one_or_none()
+        if not product:
+            raise HTTPException(status_code=404)
+
+        categories, brands = await _get_form_choices(session, product.category_id)
+
+        return templates.TemplateResponse(
+            "admin/products/edit.html",
+            {
+                "request": request,
+                "product": product,
+                "categories": categories,
+                "brands": brands,
+                "selected_category_id": str(cat_uuid),
+                "effective_category_id": str(cat_uuid),
+                "pending_change": False,
+                "pending_category": None,
+                "characteristics": characteristics,
+                "ch_values": {cid: (vs if vs is not None else vn) for cid, (vs, vn) in parsed_ch.items()},
+                "error": ch_error,
+            },
+            status_code=400,
+        )
+
     new_files: list[str] = []
     old_files_to_delete: list[str] = []
 
-    form = await request.form()
-
-    set_main_id_raw = form.get("set_main_id")
-
     try:
-        async with session.begin():
-            # достаём товар вместе с картинками
-            result = await session.execute(
-                select(Product).where(Product.id == product_id).options(selectinload(Product.images))
+        result = await session.execute(
+            select(Product)
+            .where(Product.id == product_id)
+            .options(
+                selectinload(Product.images),
+                selectinload(Product.characteristics_values),
             )
-            product = result.scalar_one_or_none()
-            if not product:
-                raise HTTPException(status_code=404)
+        )
+        product = result.scalar_one_or_none()
+        if not product:
+            raise HTTPException(status_code=404)
 
-            # обновляем поля товара
-            product.name = name
-            product.description = description
-            product.category_id = uuid.UUID(category_id)
-            product.brand_id = uuid.UUID(brand_id) if brand_id else None
-            product.price = price
-            product.volume_m3 = volume_m3
-            product.weight_kg = weight_kg
-            product.is_active = is_active
-            product.discount_percent = int(discount_percent) if discount_percent else None
+        old_category_id = product.category_id
 
-            # сортируем текущие картинки (главная первой)
-            images_sorted = _sort_images(list(product.images or []))
+        # обновляем поля товара
+        product.name = name
+        product.description = description
+        product.category_id = cat_uuid
+        product.brand_id = uuid.UUID(brand_id) if brand_id else None
+        product.price = price
+        product.volume_m3 = volume_m3
+        product.weight_kg = weight_kg
+        product.is_active = is_active
+        product.discount_percent = int(discount_percent) if discount_percent else None
 
-            if not images_sorted:
-                main_fallback = form.get("main_image_fallback")  # UploadFile или None
-                if main_fallback and getattr(main_fallback, "filename", ""):
-                    try:
-                        p = await _save_product_image(main_fallback)
-                    except ValueError as e:
-                        raise HTTPException(status_code=400, detail=str(e))
+        # ---- картинки (твоя логика, без изменений по смыслу) ----
+        images_sorted = _sort_images(list(product.images or []))
 
-                    new_files.append(p)
-                    session.add(ProductImage(product_id=product.id, file_path=p, is_main=True))
-                    await session.flush()
-
-                    # перечитаем изображения, чтобы дальше работать единообразно
-                    result2 = await session.execute(
-                        select(Product).where(Product.id == product_id).options(selectinload(Product.images))
-                    )
-                    product = result2.scalar_one()
-                    images_sorted = _sort_images(list(product.images or []))
-
-            set_main_id: int | None = None
-            if set_main_id_raw:
+        if not images_sorted:
+            main_fallback = form.get("main_image_fallback")
+            if main_fallback and getattr(main_fallback, "filename", ""):
                 try:
-                    set_main_id = int(str(set_main_id_raw))
-                except Exception:
-                    set_main_id = None
+                    p = await _save_product_image(main_fallback)
+                except ValueError as e:
+                    raise HTTPException(status_code=400, detail=str(e))
 
-            if set_main_id is not None and images_sorted:
-                # 1) проверяем, что выбранное фото существует
-                target = next((img for img in images_sorted if img.id == set_main_id), None)
-                if not target:
-                    raise HTTPException(status_code=400, detail="Выбранное главное фото не найдено.")
-
-                # 2) шаг 1: снимаем главного у всех
-                for img in images_sorted:
-                    img.is_main = False
-                await session.flush()  # гарантирует, что в БД теперь 0 главных
-
-                # 3) шаг 2: назначаем выбранное главным и снова flush
-                target.is_main = True
+                new_files.append(p)
+                session.add(ProductImage(product_id=product.id, file_path=p, is_main=True))
                 await session.flush()
 
-                # пересортируем для дальнейшей логики
-                images_sorted = _sort_images(list(images_sorted))
+                result2 = await session.execute(
+                    select(Product).where(Product.id == product_id).options(selectinload(Product.images))
+                )
+                product = result2.scalar_one()
+                images_sorted = _sort_images(list(product.images or []))
 
-            to_delete: list[ProductImage] = []
+        set_main_id: int | None = None
+        if set_main_id_raw:
+            try:
+                set_main_id = int(str(set_main_id_raw))
+            except Exception:
+                set_main_id = None
 
-            # запомним id удалённого главного (если удаляем)
-            deleted_main_id: int | None = None
+        if set_main_id is not None and images_sorted:
+            target = next((img for img in images_sorted if img.id == set_main_id), None)
+            if not target:
+                raise HTTPException(status_code=400, detail="Выбранное главное фото не найдено.")
 
             for img in images_sorted:
-                replace_file = form.get(f"replace_{img.id}")
-                remove_flag = form.get(f"remove_{img.id}")
-
-                if replace_file and getattr(replace_file, "filename", ""):
-                    try:
-                        new_path = await _save_product_image(replace_file)
-                    except ValueError:
-                        continue
-
-                    new_files.append(new_path)
-                    old_files_to_delete.append(img.file_path)
-                    img.file_path = new_path
-
-                if remove_flag:
-                    if getattr(img, "is_main", False):
-                        deleted_main_id = img.id  # главное удаляют
-                    old_files_to_delete.append(img.file_path)
-                    to_delete.append(img)
-
-            for img in to_delete:
-                await session.delete(img)
-
-            for f in (new_images or []):
-                if not f or not f.filename:
-                    continue
-                try:
-                    p = await _save_product_image(f)
-                except ValueError:
-                    continue
-                new_files.append(p)
-                session.add(ProductImage(product_id=product.id, file_path=p, is_main=False))
-
+                img.is_main = False
             await session.flush()
 
-            result_imgs = await session.execute(
-                select(Product).where(Product.id == product_id).options(selectinload(Product.images))
-            )
-            product = result_imgs.scalar_one()
-            remaining = list(product.images or [])
+            target.is_main = True
+            await session.flush()
 
-            # Если картинок не осталось — ничего не назначаем.
-            if not remaining:
-                # ничего не делаем
-                pass
-            else:
-                # если осталось >0 картинок — гарантируем, что главное ровно одно
-                current_mains = [img for img in remaining if img.is_main]
+            images_sorted = _sort_images(list(images_sorted))
 
-                if len(current_mains) == 1:
-                    pass
-                else:
-                    # шаг 1: снять флаг у всех и flush
-                    for img in remaining:
-                        img.is_main = False
+        to_delete: list[ProductImage] = []
+        deleted_main_id: int | None = None
+
+        for img in images_sorted:
+            replace_file = form.get(f"replace_{img.id}")
+            remove_flag = form.get(f"remove_{img.id}")
+
+            if replace_file and getattr(replace_file, "filename", ""):
+                try:
+                    new_path = await _save_product_image(replace_file)
+                except ValueError:
+                    continue
+
+                new_files.append(new_path)
+                old_files_to_delete.append(img.file_path)
+                img.file_path = new_path
+
+            if remove_flag:
+                if getattr(img, "is_main", False):
+                    deleted_main_id = img.id
+                old_files_to_delete.append(img.file_path)
+                to_delete.append(img)
+
+        for img in to_delete:
+            await session.delete(img)
+
+        for f in (new_images or []):
+            if not f or not f.filename:
+                continue
+            try:
+                p = await _save_product_image(f)
+            except ValueError:
+                continue
+            new_files.append(p)
+            session.add(ProductImage(product_id=product.id, file_path=p, is_main=False))
+
+        await session.flush()
+
+        result_imgs = await session.execute(
+            select(Product).where(Product.id == product_id).options(selectinload(Product.images))
+        )
+        product_imgs = result_imgs.scalar_one()
+        remaining = list(product_imgs.images or [])
+
+        if remaining:
+            current_mains = [img for img in remaining if img.is_main]
+            if len(current_mains) != 1:
+                for img in remaining:
+                    img.is_main = False
+                await session.flush()
+
+                new_main = _pick_next_main_after_delete(remaining, deleted_main_id)
+                if new_main:
+                    new_main.is_main = True
                     await session.flush()
 
-                    # шаг 2: назначить нового главного и flush
-                    new_main = _pick_next_main_after_delete(remaining, deleted_main_id)
-                    if new_main:
-                        new_main.is_main = True
-                        await session.flush()
+        # ---- значения характеристик ----
+        allowed_ids = {ch.id for ch in characteristics}
+
+        existing_values: list[ProductCharacteristicValue] = list(product.characteristics_values or [])
+        existing_by_id: dict[int, ProductCharacteristicValue] = {v.characteristic_id: v for v in existing_values}
+
+        # 1) удаляем все значения, которых нет в наборе новой категории
+        for v in existing_values:
+            if v.characteristic_id not in allowed_ids:
+                await session.delete(v)
+
+        # 2) обновляем/создаём значения для allowed набора
+        for ch in characteristics:
+            v_str, v_num = parsed_ch.get(ch.id, (None, None))
+            existing = existing_by_id.get(ch.id)
+
+            # если поле пустое — удаляем запись (если была)
+            if v_str is None and v_num is None:
+                if existing:
+                    await session.delete(existing)
+                continue
+
+            if existing:
+                existing.value_string = v_str
+                existing.value_number = v_num
+            else:
+                session.add(
+                    ProductCharacteristicValue(
+                        product_id=product.id,
+                        characteristic_id=ch.id,
+                        value_string=v_str,
+                        value_number=v_num,
+                    )
+                )
+
+        # Инвариант: при смене категории остаются только пересекающиеся characteristic_id,
+        # остальные удалены (см. allowed_ids).
+        _ = old_category_id  # просто чтобы подчеркнуть смысл (old_category_id используется логически)
+
+
+        await session.commit()
 
         for p in old_files_to_delete:
             delete_product_image_if_local(p)
 
     except HTTPException:
+        await session.rollback()
         for p in new_files:
             delete_product_image_if_local(p)
         raise
     except Exception:
+        await session.rollback()
         for p in new_files:
             delete_product_image_if_local(p)
         raise
 
     return RedirectResponse("/admin/products", status_code=303)
 
-
 @router.post("/admin/products/{product_id}/delete")
 async def product_delete(product_id: uuid.UUID, session: AsyncSession = Depends(get_async_session)):
-    # файлы удаляем после commit, чтобы при ошибке не потерять данные
     old_files_to_delete: list[str] = []
 
     try:

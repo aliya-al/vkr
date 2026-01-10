@@ -7,20 +7,13 @@
 <body>
   <h1>Создать товар</h1>
 
-  <form method="post" action="/admin/products/new" enctype="multipart/form-data">
-    <div>
-      <label>Название
-        <input type="text" name="name" required>
-      </label>
-    </div>
+  {% if error %}
+    <p><strong>Ошибка:</strong> {{ error }}</p>
+  {% endif %}
 
-    <div>
-      <label>Описание
-        <textarea name="description"></textarea>
-      </label>
-    </div>
-
-    <div>
+  {% if not selected_category %}
+    <h3>Шаг 1: выбери категорию</h3>
+    <form method="get" action="/admin/products/new">
       <label>Категория
         <select name="category_id" required>
           {% for category in categories %}
@@ -28,66 +21,118 @@
           {% endfor %}
         </select>
       </label>
-    </div>
+      <button type="submit">Далее (заполнить характеристики)</button>
+    </form>
 
-    <div>
-      <label>Бренд
-        <select name="brand_id">
-          <option value="">(нет)</option>
-          {% for brand in brands %}
-            <option value="{{ brand.id }}">{{ brand.name }}</option>
-          {% endfor %}
-        </select>
-      </label>
-    </div>
+    <p><a href="/admin/products">Назад</a></p>
+  {% else %}
+    <p>
+      Категория: <strong>{{ selected_category.name }}</strong>
+      (<a href="/admin/products/new">сменить</a>)
+    </p>
 
-    <div>
-      <label>Цена
-        <input type="number" name="price" min="0" step="1" required>
-      </label>
-    </div>
+    <h3>Шаг 2: заполни товар и характеристики</h3>
 
-    <div>
-      <label>Объем, м³
-        <input type="number" name="volume_m3" min="0" step="0.01" required>
-      </label>
-    </div>
+    <form method="post" action="/admin/products/new" enctype="multipart/form-data">
+      <input type="hidden" name="category_id" value="{{ selected_category_id }}">
 
-    <div>
-      <label>Вес, кг
-        <input type="number" name="weight_kg" min="0" step="0.01" required>
-      </label>
-    </div>
+      <div>
+        <label>Название
+          <input type="text" name="name" required value="{{ form_data.name if form_data else '' }}">
+        </label>
+      </div>
 
-    <div>
-      <label>Скидка, %
-        <input type="number" name="discount_percent" min="0" max="100" step="1">
-      </label>
-    </div>
+      <div>
+        <label>Описание
+          <textarea name="description">{{ form_data.description if form_data else '' }}</textarea>
+        </label>
+      </div>
 
-    <div>
-      <label>
-        <input type="checkbox" name="is_active" value="true" checked> Активен
-      </label>
-    </div>
+      <div>
+        <label>Бренд
+          <select name="brand_id">
+            <option value="">(нет)</option>
+            {% for brand in brands %}
+              <option value="{{ brand.id }}"
+                {% if form_data and form_data.brand_id == (brand.id|string) %}selected{% endif %}>
+                {{ brand.name }}
+              </option>
+            {% endfor %}
+          </select>
+        </label>
+      </div>
 
-    <hr>
+      <div>
+        <label>Цена
+          <input type="number" name="price" min="0" step="1" required value="{{ form_data.price if form_data else '' }}">
+        </label>
+      </div>
 
-    <div>
-      <label>Главное фото (обязательно)
-        <input type="file" name="main_image" accept="image/*" required>
-      </label>
-    </div>
+      <div>
+        <label>Объем, м³
+          <input type="number" name="volume_m3" min="0" step="0.01" required value="{{ form_data.volume_m3 if form_data else '' }}">
+        </label>
+      </div>
 
-    <div>
-      <label>
-        <input type="file" name="extra_images" accept="image/*" multiple>
-      </label>
-    </div>
+      <div>
+        <label>Вес, кг
+          <input type="number" name="weight_kg" min="0" step="0.01" required value="{{ form_data.weight_kg if form_data else '' }}">
+        </label>
+      </div>
 
-    <button type="submit">Сохранить</button>
-  </form>
+      <div>
+        <label>Скидка, %
+          <input type="number" name="discount_percent" min="0" max="100" step="1" value="{{ form_data.discount_percent if form_data else '' }}">
+        </label>
+      </div>
 
-  <p><a href="/admin/products">Назад</a></p>
+      <div>
+        <label>
+          <input type="checkbox" name="is_active" value="true"
+            {% if not form_data %}checked{% else %}{% if form_data.is_active %}checked{% endif %}{% endif %}>
+          Активен
+        </label>
+      </div>
+
+      <hr>
+
+      <h3>Характеристики</h3>
+      {% if characteristics %}
+        {% for ch in characteristics %}
+          <div>
+            <label>
+              {{ ch.name }}
+              {% if ch.unit %} ({{ ch.unit }}){% endif %}
+              {% if ch.value_type.value == 'number' %}
+                <input type="number" step="0.01" name="ch_{{ ch.id }}" value="{{ ch_values.get(ch.id, '') }}">
+              {% else %}
+                <input type="text" name="ch_{{ ch.id }}" value="{{ ch_values.get(ch.id, '') }}">
+              {% endif %}
+            </label>
+          </div>
+        {% endfor %}
+      {% else %}
+        <p>У категории нет характеристик.</p>
+      {% endif %}
+
+      <hr>
+
+      <div>
+        <label>Главное фото (обязательно)
+          <input type="file" name="main_image" accept="image/*" required>
+        </label>
+      </div>
+
+      <div>
+        <label>
+          <input type="file" name="extra_images" accept="image/*" multiple>
+        </label>
+      </div>
+
+      <button type="submit">Сохранить</button>
+    </form>
+
+    <p><a href="/admin/products">Назад</a></p>
+  {% endif %}
 </body>
 </html>

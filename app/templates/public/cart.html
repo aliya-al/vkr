@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <title>Корзина</title>
+</head>
+<body>
+  <p><a href="/catalog/">← Каталог</a></p>
+  <h1>Корзина</h1>
+
+  {% if not items %}
+    <p>Корзина пуста.</p>
+  {% else %}
+    <table border="1" cellpadding="6">
+      <thead>
+        <tr>
+          <th>Товар</th>
+          <th>Кол-во</th>
+          <th>Цена</th>
+          <th>Сумма</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for it in items %}
+          <tr>
+            <td>{{ it.name }}</td>
+            <td>{{ it.qty }}</td>
+            <td>{{ it.unit_price }}</td>
+            <td>{{ it.line_total }}</td>
+            <td>
+              <form method="post" action="/cart/remove">
+                <input type="hidden" name="product_id" value="{{ it.id }}">
+                <button type="submit">Убрать</button>
+              </form>
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+
+    <p><strong>Итого:</strong> {{ total }}</p>
+
+    <form method="post" action="/cart/clear">
+      <button type="submit">Очистить корзину</button>
+    </form>
+
+    <p><a href="/checkout">Оформить заказ</a></p>
+  {% endif %}
+</body>
+</html>

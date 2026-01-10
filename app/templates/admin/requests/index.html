@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <title>Заявки</title>
+</head>
+<body>
+  <h1>Заявки</h1>
+
+  <p><a href="/admin/dashboard">← Дашборд</a></p>
+  <p>Роль: {{ admin.role }}</p>
+
+  {% if not orders %}
+    <p>Заявок нет.</p>
+  {% else %}
+    <table border="1" cellpadding="6">
+      <thead>
+        <tr>
+          <th>Дата</th>
+          <th>Клиент</th>
+          <th>Телефон</th>
+          <th>Получение</th>
+          <th>Статус / Менеджер</th>
+          <th></th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for o in orders %}
+          <tr>
+            <td>{{ o.created_at | moscow_dt if o.created_at else "" }}</td>
+            <td>{{ o.customer_name }}</td>
+            <td>{{ o.customer_phone }}</td>
+            <td>{{ delivery_labels.get(o.delivery_type.value if o.delivery_type else "", "") }}</td>
+
+            <td>
+              <form method="post" action="/admin/requests/{{ o.id }}/edit">
+                <select name="status">
+                  {% for val, label in status_choices %}
+                    <option value="{{ val }}" {% if o.status and o.status.value == val %}selected{% endif %}>
+                      {{ label }}
+                    </option>
+                  {% endfor %}
+                </select>
+
+                {% if admin.role == "admin" %}
+                  <select name="manager_id">
+                    <option value="">нет</option>
+                    {% for m in managers %}
+                      <option value="{{ m.id }}" {% if o.manager_id == m.id %}selected{% endif %}>
+                        {{ m.login }}
+                      </option>
+                    {% endfor %}
+                  </select>
+                {% else %}
+                  <select name="manager_id">
+                    <option value="" {% if not o.manager_id %}selected{% endif %}>нет</option>
+                    <option value="{{ admin.id }}" {% if o.manager_id and (o.manager_id|string == admin.id|string) %}selected{% endif %}>
+                      {{ me_login or "я" }}
+                    </option>
+                  </select>
+                {% endif %}
+
+                <button type="submit">Сохранить</button>
+              </form>
+            </td>
+
+            <td><a href="/admin/requests/{{ o.id }}/edit">Открыть</a></td>
+
+            <td>
+              {% if admin.role == "admin" %}
+                <form method="post" action="/admin/requests/{{ o.id }}/delete" onsubmit="return confirm('Удалить заявку?');">
+                  <button type="submit">Удалить</button>
+                </form>
+              {% else %}
+                -
+              {% endif %}
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% endif %}
+</body>
+</html>
