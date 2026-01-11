@@ -40,6 +40,15 @@
             <input type="hidden" name="product_id" value="{{ p.id }}">
             <button type="submit">В корзину</button>
           </form>
+
+          <form method="post" action="/compare/add/{{ p.id }}">
+            <button type="submit">Сравнить</button>
+          </form>
+          <form method="post" action="/favorites/add/{{ p.id }}">
+            <button type="submit">В избранное</button>
+          </form>
+
+
         </li>
       {% endfor %}
     </ul>

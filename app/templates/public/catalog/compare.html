@@ -1,0 +1,50 @@
+<!-- app/templates/public/catalog/compare.html -->
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <title>Сравнение</title>
+</head>
+<body>
+<p><a href="/catalog/">К каталогу</a></p>
+  <h1>Сравнение</h1>
+
+  {% if not products %}
+    <p>Список сравнения пуст.</p>
+  {% else %}
+    <form method="post" action="/compare/clear">
+      <button type="submit">Очистить</button>
+    </form>
+
+    <table border="1" cellpadding="6" cellspacing="0">
+      <thead>
+        <tr>
+          <th>Характеристика</th>
+          {% for p in products %}
+            <th>
+              <div>{{ p.name }}</div>
+              <div>Цена: {{ p.price }}</div>
+
+              <form method="post" action="/compare/remove/{{ p.id }}">
+                <button type="submit">Убрать</button>
+              </form>
+            </th>
+          {% endfor %}
+        </tr>
+      </thead>
+
+      <tbody>
+        {% for row in rows %}
+          <tr>
+            <td>{{ row.name }}</td>
+            {% for p in products %}
+              <td>{{ row.cells.get(p.id|string, "—") }}</td>
+
+            {% endfor %}
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% endif %}
+</body>
+</html>

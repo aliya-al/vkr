@@ -1,4 +1,4 @@
-# app/routers/admin/catalog_crud/requests.py
+
 from __future__ import annotations
 
 import uuid
@@ -15,6 +15,8 @@ from app.models.user import AdminUser
 from app.utils.database import get_async_session
 from app.utils.deps import require_admin_or_404
 from app.utils.templates import templates
+from app.services.order_totals import fetch_orders_weight_volume
+
 
 router = APIRouter(dependencies=[Depends(require_admin_or_404)])
 
@@ -91,6 +93,8 @@ async def requests_list(
     res = await session.execute(stmt)
     orders = res.scalars().all()
 
+    order_totals = await fetch_orders_weight_volume(session, [o.id for o in orders])
+
     status_choices = [(s.value, STATUS_LABELS[s]) for s in OrderStatus]
 
     return templates.TemplateResponse(
@@ -101,6 +105,7 @@ async def requests_list(
             "orders": orders,
             "status_choices": status_choices,
             "delivery_labels": DELIVERY_LABELS,
+            "order_totals": order_totals,
             "managers": managers,      # только для админа (active)
             "me_login": me_login,      # только для менеджера
         },

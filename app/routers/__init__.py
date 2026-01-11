@@ -5,8 +5,5 @@ from app.routers.public import router as public_router
 
 routers = APIRouter()
 
-# Публичная часть
 routers.include_router(public_router)
-
-# Админка
 routers.include_router(admin_router)

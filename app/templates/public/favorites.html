@@ -1,0 +1,60 @@
+<!-- app/templates/public/favorites.html -->
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <title>Избранное</title>
+</head>
+<body>
+  <p>
+    <a href="/catalog/">Каталог</a> |
+    <a href="/compare">Сравнение</a> |
+    <a href="/cart">Корзина</a>
+  </p>
+
+  <h1>Избранное</h1>
+
+  {% if not products %}
+    <p>Избранное пусто.</p>
+  {% else %}
+    <form method="post" action="/favorites/clear">
+      <button type="submit">Очистить избранное</button>
+    </form>
+
+    <ul>
+      {% for p in products %}
+        <li style="margin-bottom: 14px;">
+          {% if p.main_image %}
+            <div><img src="{{ p.main_image }}" alt="img" style="max-width:120px; height:auto;"></div>
+          {% endif %}
+
+          <div><strong>{{ p.name }}</strong></div>
+
+          {% if p.discount_percent %}
+            <div>
+              Цена: <s>{{ p.price }}</s> → <strong>{{ p.display_price }}</strong> (скидка {{ p.discount_percent }}%)
+            </div>
+          {% else %}
+            <div>Цена: <strong>{{ p.price }}</strong></div>
+          {% endif %}
+
+          <div style="margin-top: 6px;">
+            <form method="post" action="/cart/add" style="display:inline;">
+              <input type="hidden" name="product_id" value="{{ p.id }}">
+              <button type="submit">В корзину</button>
+            </form>
+
+            <form method="post" action="/favorites/remove/{{ p.id }}" style="display:inline;">
+              <button type="submit">Удалить</button>
+            </form>
+
+            <form method="post" action="/compare/add/{{ p.id }}" style="display:inline;">
+              <button type="submit">В сравнение</button>
+            </form>
+          </div>
+        </li>
+      {% endfor %}
+    </ul>
+  {% endif %}
+</body>
+</html>

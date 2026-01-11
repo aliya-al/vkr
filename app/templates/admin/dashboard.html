@@ -1,8 +1,10 @@
+<!-- app/templates/admin/dashboard.html -->
 <!doctype html>
 <html lang="ru">
 <head>
   <meta charset="utf-8">
-  <title>Admin</title>
+  <title>Admin dashboard</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 </head>
 <body>
   <h1>Админка</h1>
@@ -13,7 +15,7 @@
     <li>Role: {{ admin.role }}</li>
   </ul>
 
-  <h2>Каталог</h2>
+  <h2>Навигация</h2>
   <ul>
     <li><a href="/admin/categories">Категории</a></li>
     <li><a href="/admin/brands">Бренды</a></li>
@@ -26,8 +28,289 @@
     {% endif %}
   </ul>
 
+  <hr>
+
+  <h2>Аналитика (только выполненные)</h2>
+
+  <h3>Фильтры (независимо)</h3>
+
+  <!-- 1) Продажи -->
+  <form method="get" action="/admin/dashboard">
+    <input type="hidden" name="growth_group" value="{{ growth_group }}">
+    <input type="hidden" name="categories_group" value="{{ categories_group }}">
+    <input type="hidden" name="top_group" value="{{ top_group }}">
+
+    <div>
+      <label>
+        Продажи (выручка): группировка
+        <select name="sales_group">
+          <option value="day" {% if sales_group == "day" %}selected{% endif %}>day</option>
+          <option value="week" {% if sales_group == "week" %}selected{% endif %}>week</option>
+          <option value="month" {% if sales_group == "month" %}selected{% endif %}>month</option>
+          <option value="year" {% if sales_group == "year" %}selected{% endif %}>year</option>
+        </select>
+      </label>
+      <button type="submit">Применить</button>
+    </div>
+  </form>
+
+  <br>
+
+  <!-- 2) Рост -->
+  <form method="get" action="/admin/dashboard">
+    <input type="hidden" name="sales_group" value="{{ sales_group }}">
+    <input type="hidden" name="categories_group" value="{{ categories_group }}">
+    <input type="hidden" name="top_group" value="{{ top_group }}">
+
+    <div>
+      <label>
+        Рост выручки: группировка
+        <select name="growth_group">
+          <option value="day" {% if growth_group == "day" %}selected{% endif %}>day</option>
+          <option value="week" {% if growth_group == "week" %}selected{% endif %}>week</option>
+          <option value="month" {% if growth_group == "month" %}selected{% endif %}>month</option>
+          <option value="year" {% if growth_group == "year" %}selected{% endif %}>year</option>
+        </select>
+      </label>
+      <button type="submit">Применить</button>
+    </div>
+  </form>
+
+  <br>
+
+  <!-- 3) Категории -->
+  <form method="get" action="/admin/dashboard">
+    <input type="hidden" name="sales_group" value="{{ sales_group }}">
+    <input type="hidden" name="growth_group" value="{{ growth_group }}">
+    <input type="hidden" name="top_group" value="{{ top_group }}">
+
+    <div>
+      <label>
+        Категории (pie): группировка
+        <select name="categories_group">
+          <option value="day" {% if categories_group == "day" %}selected{% endif %}>day</option>
+          <option value="week" {% if categories_group == "week" %}selected{% endif %}>week</option>
+          <option value="month" {% if categories_group == "month" %}selected{% endif %}>month</option>
+          <option value="year" {% if categories_group == "year" %}selected{% endif %}>year</option>
+        </select>
+      </label>
+      <button type="submit">Применить</button>
+    </div>
+  </form>
+
+  <br>
+
+  <!-- 4) Топ товаров -->
+  <form method="get" action="/admin/dashboard">
+    <input type="hidden" name="sales_group" value="{{ sales_group }}">
+    <input type="hidden" name="growth_group" value="{{ growth_group }}">
+    <input type="hidden" name="categories_group" value="{{ categories_group }}">
+
+    <div>
+      <label>
+        Топ-5 товаров: период (группировка окна)
+        <select name="top_group">
+          <option value="day" {% if top_group == "day" %}selected{% endif %}>day</option>
+          <option value="week" {% if top_group == "week" %}selected{% endif %}>week</option>
+          <option value="month" {% if top_group == "month" %}selected{% endif %}>month</option>
+          <option value="year" {% if top_group == "year" %}selected{% endif %}>year</option>
+        </select>
+      </label>
+      <button type="submit">Применить</button>
+    </div>
+  </form>
+
+  <hr>
+
+  <h3>Мини-показатели</h3>
+  <ul>
+    <li>Заказов за неделю (done, последние 7 дней): <b>{{ kpis.done_last_7d }}</b></li>
+    <li>Заявок в работе (in_progress): <b>{{ kpis.in_work }}</b></li>
+    <li>Выполненных заказов (done, всего): <b>{{ kpis.done_total }}</b></li>
+  </ul>
+
+  <hr>
+
+  <h3>Топ-5 товаров</h3>
+  <p>Диапазон: {{ top_range_start | moscow_dt }} — {{ top_range_end | moscow_dt }}</p>
+
+
+  {% if top_products and top_products|length > 0 %}
+    <table border="1" cellpadding="4" cellspacing="0">
+      <thead>
+        <tr>
+          <th>Товар</th>
+          <th>Заказано всего</th>
+          <th>Уникальные заказы</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for p in top_products %}
+          <tr>
+            <td>{{ p.name }}</td>
+            <td>{{ p.total_qty }}</td>
+            <td>{{ p.unique_orders }}</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <p>Нет данных за выбранный период.</p>
+  {% endif %}
+
+  <hr>
+
+  <h3>Продажи (выручка) по периодам</h3>
+  <p>Диапазон: {{ sales_range_start | moscow_dt}} — {{ sales_range_end | moscow_dt}}</p>
+  <canvas id="salesChart" width="800" height="260"></canvas>
+
+  <hr>
+
+  <h3>Рост выручки (кумулятивно)</h3>
+  <p>Диапазон: {{ growth_range_start | moscow_dt}} — {{ growth_range_end | moscow_dt}}</p>
+  <canvas id="growthChart" width="800" height="260"></canvas>
+
+  <hr>
+
+  <h3>Продажи по категориям (pie)</h3>
+  <p>Диапазон: {{ categories_range_start | moscow_dt}} — {{ categories_range_end | moscow_dt}}</p>
+  <canvas id="categoryChart" width="800" height="260"></canvas>
+
+  <hr>
+
   <form method="post" action="/admin/logout">
     <button type="submit">Выйти</button>
   </form>
+
+  <script>
+    const sales = {{ sales | default([], true) | tojson }};
+    const growth = {{ growth | default([], true) | tojson }};
+    const categories = {{ categories | default([], true) | tojson }};
+
+    function buildBarChart(canvasId, title, series) {
+  const canvas = document.getElementById(canvasId);
+  if (!canvas) {
+    console.warn('Нет canvas:', canvasId);
+    return;
+  }
+  if (!Array.isArray(series)) {
+    console.warn('Ожидали массив, получили:', canvasId, series);
+    return;
+  }
+  if (series.length === 0) {
+    console.warn('Пустая серия данных:', canvasId);
+    return;
+  }
+
+  // Поддержка разных ключей (если на бэке названия другие)
+  const labels = series.map(x => x.label ?? x.period ?? '');
+  const values = series.map(x => Number(x.value ?? x.revenue ?? 0));
+
+  console.log(canvasId, { labels, values });
+
+  const ctx = canvas.getContext('2d');
+  new Chart(ctx, {
+    type: 'bar',
+    data: { labels, datasets: [{ label: title, data: values }] },
+    options: { responsive: false, plugins: { legend: { display: true } } }
+  });
+}
+
+function buildPieChart(canvasId, title, series) {
+  const canvas = document.getElementById(canvasId);
+  if (!canvas) {
+    console.warn('Нет canvas:', canvasId);
+    return;
+  }
+  if (!Array.isArray(series)) {
+    console.warn('Ожидали массив, получили:', canvasId, series);
+    return;
+  }
+  if (series.length === 0) {
+    console.warn('Пустая серия данных:', canvasId);
+    return;
+  }
+
+  const labels = series.map(x => x.name ?? x.label ?? '');
+  const values = series.map(x => Number(x.value ?? 0));
+
+  console.log(canvasId, { labels, values });
+
+  const ctx = canvas.getContext('2d');
+  new Chart(ctx, {
+    type: 'pie',
+    data: { labels, datasets: [{ label: title, data: values }] },
+    options: { responsive: false, plugins: { legend: { display: true } } }
+  });
+}
+
+function buildHistogramChart(canvasId, title, series, binCount = 10) {
+  const canvas = document.getElementById(canvasId);
+  if (!canvas) return;
+
+  // Берём только числа роста
+  const values = (Array.isArray(series) ? series : [])
+    .map(x => Number(x.value))
+    .filter(v => Number.isFinite(v));
+
+  if (values.length === 0) {
+    console.warn('Нет данных для гистограммы:', canvasId, series);
+    return;
+  }
+
+  let min = Math.min(...values);
+  let max = Math.max(...values);
+
+  // Если все значения одинаковые — расширим диапазон, иначе шаг будет 0
+  if (min === max) {
+    min = min - 1;
+    max = max + 1;
+  }
+
+  const step = (max - min) / binCount;
+
+  // Границы бинов
+  const bins = [];
+  for (let i = 0; i <= binCount; i++) {
+    bins.push(min + step * i);
+  }
+
+  // Счётчики
+  const counts = new Array(binCount).fill(0);
+
+  // Раскладываем по корзинам
+  for (const v of values) {
+    let idx = Math.floor((v - min) / step);
+    if (idx < 0) idx = 0;
+    if (idx >= binCount) idx = binCount - 1; // max кладём в последний бин
+    counts[idx] += 1;
+  }
+
+  // Подписи интервалов
+  const labels = [];
+  for (let i = 0; i < binCount; i++) {
+    const a = bins[i];
+    const b = bins[i + 1];
+    labels.push(`${a.toFixed(1)} … ${b.toFixed(1)}`);
+  }
+
+  const ctx = canvas.getContext('2d');
+  new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [{ label: title, data: counts }]
+    },
+    options: {
+      responsive: false,
+      plugins: { legend: { display: true } }
+    }
+  });
+}
+
+    buildBarChart('salesChart', 'Выручка', sales);
+buildBarChart('growthChart', 'Рост выручки (кумулятивно)', growth);
+buildPieChart('categoryChart', 'Категории', categories);
+  </script>
 </body>
 </html>
