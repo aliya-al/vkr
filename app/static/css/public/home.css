@@ -1,0 +1,566 @@
+/* =========================
+   HOME (локальные токены + var(...) из theme.css)
+   Страница: /static/css/public/home.css
+   ========================= */
+
+.home {
+  /* базовые привязки к глобальным токенам theme.css */
+  --home-line: var(--color-line);
+  --home-surface: var(--color-surface);
+  --home-bg: var(--color-bg);
+  --home-text: var(--color-text);
+
+  /* геометрия/ритм */
+  --home-radius: 18px;
+  --home-gap: 24px;
+
+  /* HERO */
+  --hero-h: 320px;
+
+  padding: var(--space-6) 0 var(--space-8);
+}
+
+/* ---------- HERO ---------- */
+.home-hero {
+  margin-top: var(--space-4);
+  margin-bottom: var(--space-7);
+}
+
+.home-hero__grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--home-gap);
+  align-items: stretch;
+}
+
+/* ---------- NEWS ---------- */
+.home-news {
+  height: var(--hero-h);
+  border-radius: var(--home-radius);
+  background: var(--home-surface);
+
+  overflow: hidden;
+  position: relative;
+
+  --news-nav-size: 44px;
+  --news-nav-gap: 10px;
+
+  --news-frame-pad: 16px;
+  --news-frame-radius: 18px;
+}
+
+.home-news__nav {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+
+  width: var(--news-nav-size);
+  height: var(--news-nav-size);
+  border-radius: var(--radius-xl);
+
+  display: grid;
+  place-items: center;
+
+  background: var(--home-bg);
+  border: 1px solid var(--home-line);
+  color: var(--home-text);
+
+  cursor: pointer;
+  z-index: 10;
+}
+
+.home-news__nav svg { width: 18px; height: 18px; }
+.home-news__nav--prev { left: var(--news-nav-gap); }
+.home-news__nav--next { right: var(--news-nav-gap); }
+
+.home-news__nav:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.home-news__viewport {
+  height: 100%;
+  padding-inline: calc(var(--news-nav-size) + var(--news-nav-gap));
+}
+
+.home-news__track {
+  height: 100%;
+  display: flex;
+
+  overflow-x: auto;
+  overflow-y: hidden;
+
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+
+  scrollbar-width: none;
+}
+.home-news__track::-webkit-scrollbar { height: 0; }
+
+.home-news__card {
+  flex: 0 0 100%;
+  height: 100%;
+  scroll-snap-align: start;
+
+  display: grid;
+  place-items: stretch;
+
+  padding: var(--news-frame-pad);
+  text-decoration: none;
+  color: inherit;
+}
+
+.home-news__frame {
+  width: 100%;
+  height: 100%;
+  border: var(--news-frame-border);
+  border-radius: var(--news-frame-radius);
+  background: var(--home-bg);
+  overflow: hidden;
+}
+
+.home-news__img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+}
+.home-news__img--ph { background: var(--home-surface); }
+
+/* ---------- CATEGORIES PANEL (viewport scroll + arrows) ---------- */
+.home-cats {
+  height: var(--hero-h);
+  border-radius: var(--home-radius);
+  background: var(--home-surface);
+  padding: 22px;
+
+  overflow: hidden;
+  position: relative;
+
+  display: grid;
+  grid-template-rows: auto 1fr;
+
+  --cats-nav-size: 44px;
+  --cats-nav-gap: 10px;
+}
+
+.home-cats__title {
+  margin: 0 0 14px;
+  text-align: center;
+  font-family: var(--font-serif);
+  font-weight: 600;
+  font-size: calc(var(--fs-lg) * 1.35);
+  line-height: 1.1;
+  color: var(--home-text);
+}
+
+.home-cats__nav {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+
+  width: var(--cats-nav-size);
+  height: var(--cats-nav-size);
+  border-radius: var(--radius-xl);
+
+  display: grid;
+  place-items: center;
+
+  background: var(--home-bg);
+  border: 1px solid var(--home-line);
+  color: var(--home-text);
+
+  cursor: pointer;
+  z-index: 10;
+}
+
+.home-cats__nav svg { width: 18px; height: 18px; }
+.home-cats__nav--prev { left: var(--cats-nav-gap); }
+.home-cats__nav--next { right: var(--cats-nav-gap); }
+
+.home-cats__nav:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+/* скроллит viewport (важно для iPhone) */
+.home-cats__viewport {
+  height: 100%;
+  padding: 12px calc(var(--cats-nav-size) + var(--cats-nav-gap)) 0;
+
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+
+  scrollbar-width: none;
+}
+.home-cats__viewport::-webkit-scrollbar { height: 0; }
+
+/* трек — просто лента */
+.home-cats__track {
+  height: 100%;
+  display: flex;
+  gap: 16px;
+}
+
+/* ---------- CATEGORY CARD (как на макете, внутри) ---------- */
+.home-cat {
+  flex: 0 0 140px;
+  height: 190px;
+
+  background: var(--home-bg);
+  border-radius: 16px;
+
+  padding: 10px;
+
+  text-decoration: none;
+  color: inherit;
+
+  display: grid;
+  place-items: stretch;
+}
+
+.home-cat__inner {
+  width: 100%;
+  height: 100%;
+
+  background: var(--home-bg);
+  border-radius: 12px;
+
+  display: grid;
+  grid-template-rows: auto 1fr;
+  justify-items: center;
+  align-items: start;
+
+  padding: 12px 10px;
+  gap: 10px;
+}
+
+.home-cat__name {
+  max-width: 100%;
+  font-size: var(--fs-sm);
+  line-height: 1.15;
+  font-weight: 500;
+  text-align: center;
+  color: var(--home-text);
+
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.home-cat__thumb {
+margin-top: 10px;
+  width: 100px;
+  height: 100px;
+
+  border-radius: 10px;
+  overflow: hidden;
+
+  background: var(--home-surface);
+
+  display: grid;
+  place-items: center;
+}
+
+.home-cat__img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+}
+
+.home-cat__ph {
+  width: 100%;
+  height: 100%;
+  display: block;
+  background: var(--home-surface);
+}
+
+/* ---------- SECTIONS ---------- */
+.home-section { margin-top: var(--space-7); }
+.home-section--last { margin-bottom: var(--space-7); }
+
+.home-section__title {
+  margin: 0 0 var(--space-5);
+  text-align: center;
+  font-family: var(--font-serif);
+  font-size: calc(var(--fs-lg) * 1.35);
+  font-weight: 600;
+  color: var(--home-text);
+}
+
+/* ---------- PRODUCT GRID ---------- */
+.p-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: var(--space-6);
+}
+
+.p-card {
+  background: var(--home-surface);
+  border-radius: var(--home-radius);
+  padding: var(--space-4);
+}
+
+.p-card__media {
+  display: block;
+  aspect-ratio: 1 / 1;
+  background: var(--color-bg);
+  border-radius: calc(var(--home-radius) - 2px);
+  border: 1px solid var(--home-line);
+  overflow: hidden;
+  text-decoration: none;
+  color: inherit;
+}
+
+.p-card__img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+
+.p-card__img--ph { background: var(--home-line); }
+
+.p-card__body {
+  padding-top: var(--space-4);
+  display: grid;
+  gap: var(--space-3);
+}
+
+.p-card__name {
+  font-size: var(--fs-sm);
+  line-height: 1.25;
+  color: var(--home-text);
+  text-decoration: none;
+  text-align: center;
+  display: block;
+
+  /* 1 строка + троеточие */
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+
+
+.p-card__price {
+  font-size: var(--fs-sm);
+  color: var(--home-text);
+  text-align: center;
+  display: flex;
+  justify-content: center;
+  align-items: baseline;
+  gap: 10px;
+}
+
+.p-card__price-old {
+  text-decoration: line-through;
+  opacity: 0.65;
+}
+
+.p-card__price-new {
+  font-weight: 700;
+}
+
+
+.p-card__actions {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.p-card__btn {
+  height: 28px;
+  padding: 0 var(--space-3);
+  border: 1px solid var(--home-line);
+  background: var(--color-bg);
+
+  /* менее скруглённая кнопка */
+  border-radius: 10px;
+
+  font-size: var(--fs-xs);
+  cursor: pointer;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.p-card__btn-icon {
+  width: 16px;
+  height: 16px;
+  display: block;
+}
+
+
+.p-card__icons {
+  display: flex;
+  gap: var(--space-2);
+  align-items: center;
+}
+
+.p-card__icon {
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-xl);
+  border: 1px solid var(--home-line);
+  background: var(--color-bg);
+  display: grid;
+  place-items: center;
+  padding: 0;
+  cursor: pointer;
+}
+
+.p-card__icon img {
+  width: 14px;
+  height: 14px;
+  display: block;
+}
+
+/* =========================
+   RESPONSIVE
+   ========================= */
+
+@media (max-width: 1100px) {
+  .p-grid { grid-template-columns: repeat(4, 1fr); }
+}
+
+@media (max-width: 900px) {
+  .home-hero__grid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+  .home-news,
+  .home-cats {
+    height: 300px;
+  }
+
+  .p-grid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: var(--space-5);
+  }
+}
+
+/* iPhone / телефоны */
+@media (max-width: 430px) {
+  .home {
+    --home-gap: 14px;
+    --hero-h: 276px;
+    padding: var(--space-5) 0 var(--space-7);
+  }
+
+  .home-hero__grid {
+    grid-template-columns: 1fr;
+    gap: var(--home-gap);
+  }
+
+  /* NEWS */
+  .home-news {
+    height: var(--hero-h);
+    --news-frame-pad: 12px;
+    --news-frame-radius: 16px;
+
+    --news-nav-size: 38px;
+    --news-nav-gap: 8px;
+  }
+
+  .home-news__nav svg { width: 16px; height: 16px; }
+
+  /* CATS */
+  .home-cats {
+    height: var(--hero-h);
+    padding: 16px;
+
+    --cats-nav-size: 38px;
+    --cats-nav-gap: 8px;
+  }
+
+  .home-cats__nav svg { width: 16px; height: 16px; }
+
+  .home-cats__title {
+    margin-bottom: 12px;
+    font-size: calc(var(--fs-lg) * 1.15);
+  }
+
+  .home-cats__track { gap: 12px; }
+
+  /* только размеры на мобилке, внутренняя компоновка уже задана в базе */
+  .home-cat { flex: 0 0 128px; height: 176px; }
+  .home-cat__thumb { width: 92px; height: 92px; }
+
+  /* PRODUCTS */
+  .home-section { margin-top: var(--space-6); }
+
+  .home-section__title {
+    margin-bottom: var(--space-4);
+    font-size: calc(var(--fs-lg) * 1.15);
+  }
+
+  .p-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--space-4);
+  }
+
+  .p-card { padding: var(--space-3); }
+
+
+  .p-card__actions { gap: var(--space-2); }
+
+  .p-card__btn,
+  .p-card__icon { height: 30px; }
+
+  .p-card__icon { width: 30px; }
+}
+
+@media (max-width: 390px) {
+  .home {
+    --home-gap: 12px;
+    --hero-h: 262px;
+  }
+
+  .home-news {
+    --news-frame-pad: 10px;
+    --news-frame-radius: 15px;
+  }
+
+  .home-cats { padding: 14px; }
+
+  .home-cat { flex: 0 0 122px; height: 168px; }
+  .home-cat__thumb { width: 88px; height: 88px; }
+
+}
+@media (max-width: 360px) {
+  .home { --hero-h: 248px; }
+
+  .home-news {
+    --news-nav-size: 36px;
+    --news-nav-gap: 6px;
+  }
+
+  .home-cats {
+    --cats-nav-size: 36px;
+    --cats-nav-gap: 6px;
+  }
+
+  .home-cat { flex: 0 0 116px; height: 162px; }
+  .home-cat__thumb { width: 84px; height: 84px; }
+
+  .p-grid { gap: var(--space-3); }
+}
+
+@media (max-width: 900px) and (orientation: landscape) {
+  .home { --hero-h: 240px; }
+
+  .home-news,
+  .home-cats {
+    height: var(--hero-h);
+  }
+
+  .p-grid { grid-template-columns: repeat(3, 1fr); }
+}

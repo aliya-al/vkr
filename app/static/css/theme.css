@@ -1,0 +1,118 @@
+@import url("https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700&family=Playfair+Display:wght@400;600;700&display=swap");
+
+:root {
+  /* =========================
+     MAIN CONTROLS (меняете только тут)
+     ========================= */
+
+  /* Масштаб типографики: меняете только его — пропорционально меняются размеры */
+  --type-scale: 1;
+
+  /* =========================
+     FONTS
+     ========================= */
+  --font-sans: "Lato", system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+  --font-serif: "Playfair Display", Georgia, "Times New Roman", serif;
+
+  /* =========================
+     COLORS
+     ========================= */
+
+  /* Base */
+  --color-bg: #ffffff;
+  --color-text: #1f1f1f;
+
+  /* Brand / accent */
+  --color-primary: #6b2cff;
+  --color-primary-strong: #4f14e8; /* hover/active */
+  --color-primary-soft: #efe8ff;   /* мягкая подложка */
+
+  /* Neutrals */
+  --color-muted: #6b6b6b;
+  --color-line: #dedede;
+  --color-surface: #f2f2f2;
+
+  /* =========================
+     TYPOGRAPHY (всё от одной базы)
+     ========================= */
+  --fs-base: calc(16px * var(--type-scale));
+  --fs-sm:   calc(var(--fs-base) * 0.875);
+  --fs-xs:   calc(var(--fs-base) * 0.75);
+  --fs-lg:   calc(var(--fs-base) * 1.125);
+
+  /* Компонентные токены */
+  --fs-logo: calc(var(--fs-base) * 1.75);
+
+  --lh-base: 1.4;
+
+  /* =========================
+     LAYOUT / UI TOKENS
+     ========================= */
+  --container-max: 1200px;
+  --container-pad: 24px;
+
+  --radius-xl: 999px;
+  --radius-md: 12px;
+
+  --shadow-sticky: 0 1px 0 rgba(0,0,0,0.06);
+
+          /* =========================
+           SPACING SCALE (design system)
+           ========================= */
+        --space-1: 4px;
+        --space-2: 8px;
+        --space-3: 12px;
+        --space-4: 16px;
+        --space-5: 20px;
+        --space-6: 24px;
+        --space-7: 28px;
+        --space-8: 32px;
+
+
+  /* Focus */
+  --focus-outline: rgba(0,0,0,0.35);
+}
+
+/* =========================
+   BASE RESET
+   ========================= */
+* { box-sizing: border-box; }
+
+html, body { height: 100%; }
+
+body {
+  margin: 0;
+  font-family: var(--font-sans);
+  font-size: var(--fs-base);
+  line-height: var(--lh-base);
+  color: var(--color-text);
+  background: var(--color-bg);
+}
+
+a { color: inherit; text-decoration: none; }
+
+a:focus-visible,
+input:focus-visible,
+button:focus-visible {
+  outline: 2px solid var(--focus-outline);
+  outline-offset: 2px;
+}
+
+/* Layout helpers */
+.container {
+  width: 100%;
+  max-width: var(--container-max);
+  margin: 0 auto;
+  padding: 0 var(--container-pad);
+}
+
+.page {
+  min-height: 60vh;
+}
+
+/* Global responsive tokens */
+@media (max-width: 520px) {
+  :root {
+    --container-pad: 16px;
+  }
+}

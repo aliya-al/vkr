@@ -1,0 +1,371 @@
+{% extends "public/base.html" %}
+
+{% block title %}Главная{% endblock %}
+
+{% block head %}
+  <link rel="stylesheet" href="/static/css/public/home.css">
+{% endblock %}
+
+{% block content %}
+<div class="home">
+  <div class="container">
+
+    <!-- HERO: Новости (1 на экран, горизонтальный скролл внутри блока) + Категории (горизонтальный скролл внутри панели) -->
+    <section class="home-hero" aria-label="Новости и категории">
+      <div class="home-hero__grid">
+
+        <section class="home-news" aria-label="Новости">
+  <button class="home-news__nav home-news__nav--prev"
+          type="button"
+          aria-label="Предыдущая новость">
+    <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+      <path d="M15 18l-6-6 6-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+  </button>
+
+  <button class="home-news__nav home-news__nav--next"
+          type="button"
+          aria-label="Следующая новость">
+    <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+      <path d="M9 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+  </button>
+
+  <div class="home-news__viewport" tabindex="0">
+            <div class="home-news__track" role="list">
+              {% if news and news|length %}
+                {% for n in news %}
+                  {% set src = n.image_path %}
+                  {% if src and not src.startswith('/') %}
+                    {% set src = '/' ~ src %}
+                  {% endif %}
+
+                  <a class="home-news__card" role="listitem" aria-label="{{ n.title }}">
+                    <div class="home-news__frame">
+                      {% if src %}
+                        <img class="home-news__img" src="{{ src }}" alt="{{ n.title }}" loading="lazy">
+                      {% else %}
+                        <div class="home-news__img home-news__img--ph" aria-hidden="true"></div>
+                      {% endif %}
+                    </div>
+                  </a>
+                {% endfor %}
+              {% else %}
+                {% for _ in range(3) %}
+                  <div class="home-news__card" role="listitem" aria-hidden="true">
+                    <div class="home-news__frame">
+                      <div class="home-news__img home-news__img--ph"></div>
+                    </div>
+                  </div>
+                {% endfor %}
+              {% endif %}
+            </div>
+          </div>
+        </section>
+
+<!-- CATEGORIES -->
+<aside class="home-cats" aria-label="Категории">
+  <h2 class="home-cats__title">Категории</h2>
+
+  <button class="home-cats__nav home-cats__nav--prev"
+          type="button"
+          aria-label="Предыдущие категории">
+    <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+      <path d="M15 18l-6-6 6-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+  </button>
+
+  <button class="home-cats__nav home-cats__nav--next"
+          type="button"
+          aria-label="Следующие категории">
+    <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+      <path d="M9 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+  </button>
+
+  <div class="home-cats__viewport" tabindex="0">
+    <div class="home-cats__track" role="list">
+      {% if categories and categories|length %}
+        {% for c in categories %}
+          {% set src = (c.image_path if c.image_path is defined else None) %}
+          {% if src and not src.startswith('/') %}
+            {% set src = '/' ~ src %}
+          {% endif %}
+
+          <a class="home-cat" role="listitem" href="/catalog/{{ c.slug }}" aria-label="{{ c.name }}">
+  <span class="home-cat__inner">
+    <span class="home-cat__name">
+      {{ (c.name[:15] ~ '…') if (c.name and (c.name|length > 15)) else c.name }}
+    </span>
+
+    <span class="home-cat__thumb" aria-hidden="true">
+      {% if src %}
+        <img class="home-cat__img" src="{{ src }}" alt="" loading="lazy">
+      {% else %}
+        <span class="home-cat__ph"></span>
+      {% endif %}
+    </span>
+  </span>
+</a>
+
+        {% endfor %}
+      {% else %}
+        {% for _ in range(6) %}
+          <div class="home-cat" role="listitem" aria-hidden="true">
+  <span class="home-cat__inner">
+    <span class="home-cat__name">Название категори…</span>
+    <span class="home-cat__thumb" aria-hidden="true"><span class="home-cat__ph"></span></span>
+  </span>
+</div>
+
+        {% endfor %}
+      {% endif %}
+    </div>
+  </div>
+</aside>
+
+      </div>
+    </section>
+
+    <!-- PROMOTIONS (только если есть акционные товары) -->
+    {% set promo_products = (products|selectattr('discount_percent')|list) if products else [] %}
+    {% if promo_products and promo_products|length %}
+      <section class="home-section">
+        <h2 class="home-section__title">Акции</h2>
+
+        <div class="p-grid">
+          {% for p in promo_products %}
+            {% set pslug = (p.slug if p.slug is defined else p.id) %}
+            {% set href = "/product/" ~ pslug %}
+
+            {% set main_img = None %}
+            {% if p.images and p.images|length %}
+              {% set main_img = p.images[0].file_path %}
+              {% if main_img and not main_img.startswith('/') %}
+                {% set main_img = '/' ~ main_img %}
+              {% endif %}
+            {% endif %}
+
+            {% set new_price = (p.price * (100 - p.discount_percent) // 100) %}
+
+            <article class="p-card">
+              <a class="p-card__media" href="{{ href }}" aria-label="{{ p.name }}">
+                {% if main_img %}
+                  <img class="p-card__img" src="{{ main_img }}" alt="{{ p.name }}" loading="lazy">
+                {% else %}
+                  <div class="p-card__img p-card__img--ph" aria-hidden="true"></div>
+                {% endif %}
+              </a>
+
+              <div class="p-card__body">
+                <a class="p-card__name" href="{{ href }}">{{ p.name }}</a>
+
+                <div class="p-card__price" aria-label="Цена со скидкой">
+                  <span class="p-card__price-old">{{ p.price }}р/шт.</span>
+                  <span class="p-card__price-new">{{ new_price }}р/шт.</span>
+                </div>
+
+                <div class="p-card__actions">
+                  <button class="p-card__btn" type="button">
+                    <img class="p-card__btn-icon"
+                         src="/static/img/icons/public/cart.png"
+                         alt=""
+                         aria-hidden="true"
+                         loading="lazy">
+                    <span>в корзину</span>
+                  </button>
+
+
+                  <div class="p-card__icons">
+                    <button class="p-card__icon" type="button" aria-label="В избранное">
+                      <img src="/static/img/icons/public/heart.png" alt="" loading="lazy">
+                    </button>
+                    <button class="p-card__icon" type="button" aria-label="Сравнить">
+                      <img src="/static/img/icons/public/compare.png" alt="" loading="lazy">
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </article>
+          {% endfor %}
+        </div>
+      </section>
+    {% endif %}
+
+    <!-- PRODUCTS -->
+    <section class="home-section home-section--last">
+      <h2 class="home-section__title">Товары</h2>
+
+      <div class="p-grid">
+        {% if products and products|length %}
+          {% for p in products %}
+            {% set pslug = (p.slug if p.slug is defined else p.id) %}
+            {% set href = "/product/" ~ pslug %}
+
+            {% set main_img = None %}
+            {% if p.images and p.images|length %}
+              {% set main_img = p.images[0].file_path %}
+              {% if main_img and not main_img.startswith('/') %}
+                {% set main_img = '/' ~ main_img %}
+              {% endif %}
+            {% endif %}
+
+            <article class="p-card">
+              <a class="p-card__media" href="{{ href }}" aria-label="{{ p.name }}">
+                {% if main_img %}
+                  <img class="p-card__img" src="{{ main_img }}" alt="{{ p.name }}" loading="lazy">
+                {% else %}
+                  <div class="p-card__img p-card__img--ph" aria-hidden="true"></div>
+                {% endif %}
+              </a>
+
+              <div class="p-card__body">
+                <a class="p-card__name" href="{{ href }}">{{ p.name }}</a>
+
+                <div class="p-card__price">
+  {% if p.discount_percent %}
+    {% set new_price = (p.price * (100 - p.discount_percent) // 100) %}
+    <span class="p-card__price-old">{{ p.price }}р/шт.</span>
+    <span class="p-card__price-new">{{ new_price }}р/шт.</span>
+  {% else %}
+    <span>{{ p.price }}р/шт.</span>
+  {% endif %}
+</div>
+
+                <div class="p-card__actions">
+                  <button class="p-card__btn" type="button">в корзину</button>
+
+                  <div class="p-card__icons">
+                    <button class="p-card__icon" type="button" aria-label="В избранное">
+                      <img src="/static/img/icons/public/heart.png" alt="" loading="lazy">
+                    </button>
+                    <button class="p-card__icon" type="button" aria-label="Сравнить">
+                      <img src="/static/img/icons/public/compare.png" alt="" loading="lazy">
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </article>
+          {% endfor %}
+        {% endif %}
+      </div>
+    </section>
+
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+(() => {
+  const root = document.querySelector('.home-news');
+  if (!root) return;
+
+  const track = root.querySelector('.home-news__track');
+  const prevBtn = root.querySelector('.home-news__nav--prev');
+  const nextBtn = root.querySelector('.home-news__nav--next');
+  if (!track || !prevBtn || !nextBtn) return;
+
+  const cards = Array.from(track.querySelectorAll('.home-news__card'));
+  const count = cards.length;
+
+  const getCardWidth = () => {
+    const el = cards[0];
+    if (!el) return root.clientWidth;
+    return Math.max(1, Math.round(el.getBoundingClientRect().width));
+  };
+
+  const getIndex = () => {
+    const w = getCardWidth();
+    return Math.round(track.scrollLeft / w);
+  };
+
+  const scrollToIndex = (i) => {
+    const w = getCardWidth();
+    const max = Math.max(0, count - 1);
+    const idx = Math.min(max, Math.max(0, i));
+    track.scrollTo({ left: idx * w, behavior: 'smooth' });
+  };
+
+  const sync = () => {
+    const idx = getIndex();
+    prevBtn.disabled = (count <= 1) || (idx <= 0);
+    nextBtn.disabled = (count <= 1) || (idx >= count - 1);
+  };
+
+  prevBtn.addEventListener('click', () => scrollToIndex(getIndex() - 1));
+  nextBtn.addEventListener('click', () => scrollToIndex(getIndex() + 1));
+
+  track.addEventListener('scroll', () => {
+    if (track._raf) return;
+    track._raf = requestAnimationFrame(() => {
+      track._raf = null;
+      sync();
+    });
+  });
+
+  window.addEventListener('resize', () => {
+    scrollToIndex(getIndex());
+    sync();
+  });
+
+  sync();
+})();
+</script>
+
+<script>
+(() => {
+  const root = document.querySelector('.home-cats');
+  if (!root) return;
+
+  const viewport = root.querySelector('.home-cats__viewport');
+  const prevBtn = root.querySelector('.home-cats__nav--prev');
+  const nextBtn = root.querySelector('.home-cats__nav--next');
+
+  if (!viewport || !prevBtn || !nextBtn) return;
+
+  const page = () => Math.max(1, Math.round(viewport.getBoundingClientRect().width));
+  const maxLeft = () => Math.max(0, viewport.scrollWidth - viewport.clientWidth);
+
+  const clamp = (x) => Math.min(maxLeft(), Math.max(0, x));
+
+  const snapToPage = () => {
+    const p = page();
+    const target = clamp(Math.round(viewport.scrollLeft / p) * p);
+    viewport.scrollTo({ left: target, behavior: 'smooth' });
+  };
+
+  const sync = () => {
+    const x = viewport.scrollLeft;
+    const max = maxLeft();
+    prevBtn.disabled = x <= 1;
+    nextBtn.disabled = x >= (max - 1);
+  };
+
+  const scrollByPage = (dir) => {
+    const target = clamp(viewport.scrollLeft + dir * page());
+    viewport.scrollTo({ left: target, behavior: 'smooth' });
+  };
+
+  prevBtn.addEventListener('click', () => scrollByPage(-1));
+  nextBtn.addEventListener('click', () => scrollByPage(1));
+
+  // после свайпа/drag делаем page-snap
+  let t = null;
+  viewport.addEventListener('scroll', () => {
+    sync();
+    if (t) clearTimeout(t);
+    t = setTimeout(() => snapToPage(), 120);
+  }, { passive: true });
+
+  window.addEventListener('resize', () => {
+    snapToPage();
+    sync();
+  });
+
+  sync();
+})();
+</script>
+
+
+{% endblock %}

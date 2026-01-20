@@ -1,0 +1,117 @@
+.pub-footer {
+  --footer-bg: var(--color-surface);
+  --footer-text: var(--color-text);
+
+  --footer-font: var(--font-sans);
+  --footer-fs: var(--fs-xs);
+  --footer-lh: var(--lh-base);
+
+  --footer-pad-y: var(--space-6);
+  --footer-gap: var(--space-2);
+
+  width: 100%;
+  background: var(--footer-bg);
+  color: var(--footer-text);
+  padding: var(--footer-pad-y) 0;
+}
+
+
+.pub-footer__inner {
+  display: flex;
+  justify-content: center;
+}
+
+.pub-footer__content {
+  width: 100%;
+  text-align: center;
+}
+
+.pub-footer__label {
+  font-family: var(--footer-font);
+  font-size: var(--footer-fs);
+  line-height: var(--footer-lh);
+  font-weight: 700;
+  margin: 0;
+}
+
+.pub-footer__label--spaced {
+  margin-top: var(--footer-gap);
+}
+
+.pub-footer__text {
+  font-family: var(--footer-font);
+  font-size: var(--footer-fs);
+  line-height: var(--footer-lh);
+  font-weight: 400;
+  margin-top: var(--footer-gap);
+}
+
+.pub-footer__phone {
+  display: inline-block;
+  margin-top: var(--footer-gap);
+  font-family: var(--footer-font);
+  font-size: var(--footer-fs);
+  line-height: var(--footer-lh);
+  font-weight: 400;
+  color: var(--footer-text);
+  text-decoration: none;
+}
+
+.pub-footer__phone:hover {
+  text-decoration: underline;
+}
+
+.pub-footer__phone:focus-visible {
+  outline: 2px solid var(--focus-outline);
+  outline-offset: 2px;
+}
+
+@media (max-width: 900px) {
+  .public-topbar {
+    --topbar-fs: var(--fs-sm);
+    --topbar-nav-gap: var(--fs-sm);
+    --topbar-pad-y: calc(var(--container-pad) * 0.5);
+  }
+
+  .public-topbar__inner {
+    grid-template-columns: 1fr;
+    row-gap: calc(var(--topbar-gap) * 0.6);
+  }
+
+  .public-topbar__city {
+    justify-self: start;
+  }
+
+  .public-topbar__nav {
+    justify-self: start;
+    flex-wrap: wrap;
+    white-space: normal;
+    gap: calc(var(--topbar-nav-gap) * 0.8) var(--topbar-nav-gap);
+  }
+
+  .public-topbar__phone {
+    justify-self: start;
+  }
+}
+
+/* mobile */
+@media (max-width: 520px) {
+  .public-topbar {
+    --topbar-fs: var(--fs-sm);
+    --topbar-nav-gap: var(--fs-sm);
+    --topbar-pad-y: calc(var(--container-pad) * 0.45);
+  }
+}
+
+/* узкий смартфон (iPhone 13 = 390px сюда попадает; 430px — тоже) */
+@media (max-width: 430px) {
+  .public-topbar {
+    --topbar-fs: var(--fs-sm);
+    --topbar-nav-gap: var(--fs-sm);
+    --topbar-pad-y: calc(var(--container-pad) * 0.4);
+  }
+
+  .public-topbar__nav {
+    gap: calc(var(--topbar-nav-gap) * 0.7) calc(var(--topbar-nav-gap) * 0.9);
+  }
+}

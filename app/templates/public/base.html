@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>{% block title %}Главная{% endblock %}</title>
+
+  <!-- Общая тема: цвета/шрифты/токены (общая для public+admin) -->
+  <link rel="stylesheet" href="/static/css/theme.css">
+
+  <!-- Публичные стили -->
+  <link rel="stylesheet" href="/static/css/public/header.css">
+  <link rel="stylesheet" href="/static/css/public/footer.css">
+
+  {% block head %}{% endblock %}
+</head>
+<body>
+  {% include "public/components/header.html" %}
+
+  <main class="page">
+    {% block content %}{% endblock %}
+  </main>
+
+  {% include "public/components/footer.html" ignore missing %}
+
+  {% block scripts %}{% endblock %}
+</body>
+</html>
