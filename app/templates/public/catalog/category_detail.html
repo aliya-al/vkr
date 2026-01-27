@@ -1,0 +1,351 @@
+{% extends "public/base.html" %}
+
+{% block title %}{{ category.name }}{% endblock %}
+
+{% block head %}
+  <link rel="stylesheet" href="/static/css/public/home.css">
+  <link rel="stylesheet" href="/static/css/public/category_detail.css">
+{% endblock %}
+
+{% block content %}
+{% set q = request.query_params %}
+{% set selected_subs = selected_subs if selected_subs is defined else q.getlist('sub') %}
+{% set selected_brands = selected_brands if selected_brands is defined else q.getlist('brand') %}
+{% set promo_on = q.get('promo') %}
+{% set sort = q.get('sort', '') %}
+
+{% set abs_min = abs_min if abs_min is defined else 0 %}
+{% set abs_max = abs_max if abs_max is defined else 0 %}
+{% set cur_min = q.get('min', abs_min) %}
+{% set cur_max = q.get('max', abs_max) %}
+
+
+<div class="cat-page">
+  <div class="container">
+
+    <header class="cat-head">
+  <div class="cat-head__top">
+    <a class="cat-back" href="/catalog/">Назад к категориям</a>
+
+    <h1 class="cat-title">{{ category.name }}</h1>
+
+    {# “пустышка” для идеального центрирования заголовка #}
+    <span class="cat-head__ghost" aria-hidden="true"></span>
+  </div>
+
+  <div class="cat-meta">
+    <span class="cat-meta__count">
+      {% if products and products|length %}
+        {{ products|length }} товар(ов)
+      {% else %}
+        Нет товаров
+      {% endif %}
+    </span>
+  </div>
+</header>
+
+
+    <div class="cat-layout">
+
+<aside class="cat-aside" aria-label="Фильтры каталога">
+  <form class="filters" id="filtersForm" method="get" action="">
+
+    <div class="filters__top">
+      <div class="filters__title">Фильтры</div>
+      <button class="filters__reset" type="button" id="filtersReset">Сбросить</button>
+    </div>
+
+    <div class="fsec">
+      <div class="fsec__body">
+        <label class="cbox">
+          <input class="cbox__input" type="checkbox" name="promo" value="1" {% if request.query_params.get('promo') %}checked{% endif %}>
+          <span class="cbox__box" aria-hidden="true"></span>
+          <span class="cbox__label">Акционные</span>
+        </label>
+      </div>
+    </div>
+
+    <div class="fsec">
+      <div class="fsec__body">
+        <input type="hidden" name="sort" id="sortField" value="{{ request.query_params.get('sort','') }}">
+        <button class="sortbtn" type="button" id="sortBtn" data-state="{{ request.query_params.get('sort','') }}">
+          <span class="sortbtn__label">Сортирока по цене</span>
+          <span class="sortbtn__state" aria-hidden="true"></span>
+        </button>
+      </div>
+    </div>
+
+    {% set cur_min = request.query_params.get('min', abs_min) %}
+    {% set cur_max = request.query_params.get('max', abs_max) %}
+
+    <div class="fsec">
+      <div class="fsec__body">
+        <div class="range" data-abs-min="{{ abs_min }}" data-abs-max="{{ abs_max }}">
+          <div class="range__vals">
+            <span class="range__val" id="minVal">{{ cur_min }}</span>
+            <span class="range__dash">—</span>
+            <span class="range__val" id="maxVal">{{ cur_max }}</span>
+            <span class="range__unit">р</span>
+          </div>
+
+          <div class="range__track">
+            <input class="range__in range__in--min"
+                   id="minRange"
+                   type="range"
+                   name="min"
+                   min="{{ abs_min }}"
+                   max="{{ abs_max }}"
+                   value="{{ cur_min }}"
+                   {% if abs_min == abs_max %}disabled{% endif %}>
+
+            <input class="range__in range__in--max"
+                   id="maxRange"
+                   type="range"
+                   name="max"
+                   min="{{ abs_min }}"
+                   max="{{ abs_max }}"
+                   value="{{ cur_max }}"
+                   {% if abs_min == abs_max %}disabled{% endif %}>
+          </div>
+
+
+        </div>
+      </div>
+    </div>
+
+    {% if subcategories and subcategories|length %}
+    <input type="hidden" name="sub_mode" value="1">
+    <div class="fsec">
+      <div class="fsec__title">Подкатегории</div>
+      <div class="fsec__body">
+        <div class="checks">
+          {% for sc in subcategories %}
+            <label class="cbox cbox--row">
+              <input class="cbox__input" type="checkbox" name="sub" value="{{ sc.slug }}"
+                     {% if sc.slug in selected_subs %}checked{% endif %}>
+              <span class="cbox__box" aria-hidden="true"></span>
+              <span class="cbox__label">{{ sc.name }}</span>
+            </label>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+    {% endif %}
+
+{% if brands and brands|length %}
+<input type="hidden" name="brand_mode" value="1">
+<div class="fsec">
+  <div class="fsec__title">Бренды</div>
+  <div class="fsec__body">
+    <div class="checks">
+      {% for b in brands %}
+        <label class="cbox cbox--row">
+          <input class="cbox__input" type="checkbox" name="brand" value="{{ b.slug }}"
+                 {% if b.slug in selected_brands %}checked{% endif %}>
+          <span class="cbox__box" aria-hidden="true"></span>
+          <span class="cbox__label">{{ b.name }}</span>
+        </label>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+{% endif %}
+  </form>
+</aside>
+
+
+      <section class="cat-main" aria-label="Список товаров">
+        <div class="p-grid">
+          {% if products and products|length %}
+            {% for p in products %}
+              {% set pslug = (p.slug if p.slug is defined else p.id) %}
+              {% set href = "/product/" ~ pslug %}
+
+              {% set main_img = p.main_image %}
+              {% if main_img and not main_img.startswith('/') %}
+                {% set main_img = '/' ~ main_img %}
+              {% endif %}
+
+              <article class="p-card">
+                <a class="p-card__media" href="{{ href }}" aria-label="{{ p.name }}">
+                  {% if main_img %}
+                    <img class="p-card__img" src="{{ main_img }}" alt="{{ p.name }}" loading="lazy">
+                  {% else %}
+                    <div class="p-card__img p-card__img--ph" aria-hidden="true"></div>
+                  {% endif %}
+                </a>
+
+                <div class="p-card__body">
+                  <a class="p-card__name" href="{{ href }}">{{ p.name }}</a>
+
+                  <div class="p-card__price">
+                    {% if p.discount_percent %}
+                      <span class="p-card__price-old">{{ p.price }}р/шт.</span>
+                      <span class="p-card__price-new">{{ p.display_price }}р/шт.</span>
+                    {% else %}
+                      <span>{{ p.price }}р/шт.</span>
+                    {% endif %}
+                  </div>
+
+                  <div class="p-card__actions">
+                    <form method="post" action="/cart/add">
+                      <input type="hidden" name="product_id" value="{{ p.id }}">
+                      <input type="hidden" name="qty" value="1">
+                      <button class="p-card__btn" type="submit">
+                        <img class="p-card__btn-icon"
+                             src="/static/img/icons/public/cart.png"
+                             alt=""
+                             aria-hidden="true"
+                             loading="lazy">
+                        <span>в корзину</span>
+                      </button>
+                    </form>
+
+                    <div class="p-card__icons">
+                      <form method="post" action="/favorites/toggle" style="display:inline;">
+                        <input type="hidden" name="product_id" value="{{ p.id }}">
+                        <button class="p-card__icon" type="submit" aria-label="В избранное">
+                          <img src="/static/img/icons/public/heart.png" alt="" loading="lazy">
+                        </button>
+                      </form>
+
+                      <form method="post" action="/compare/toggle" style="display:inline;">
+                        <input type="hidden" name="product_id" value="{{ p.id }}">
+                        <button class="p-card__icon" type="submit" aria-label="Сравнить">
+                          <img src="/static/img/icons/public/compare.png" alt="" loading="lazy">
+                        </button>
+                      </form>
+                    </div>
+                  </div>
+
+                </div>
+              </article>
+            {% endfor %}
+          {% else %}
+            <div class="cat-empty">
+              <div class="cat-empty__card">
+                <div class="cat-empty__title">Ничего не найдено</div>
+                <div class="cat-empty__text">Попробуй снять фильтры или выбрать другие подкатегории.</div>
+                <button class="filters__reset filters__reset--big" type="button" id="filtersReset2">Сбросить фильтры</button>
+              </div>
+            </div>
+          {% endif %}
+        </div>
+      </section>
+
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+(() => {
+  const key = 'catScrollY';
+  const saved = sessionStorage.getItem(key);
+  if (saved !== null) {
+    sessionStorage.removeItem(key);
+    requestAnimationFrame(() => window.scrollTo(0, Number(saved) || 0));
+  }
+
+  const form = document.getElementById('filtersForm');
+  if (!form) return;
+
+  const saveScroll = () => sessionStorage.setItem(key, String(window.scrollY || 0));
+
+  form.addEventListener('submit', saveScroll);
+
+const reset = (e) => {
+  e?.preventDefault();
+  sessionStorage.setItem(key, String(window.scrollY || 0));
+  window.location = window.location.pathname;
+};
+
+document.querySelectorAll('.filters__reset').forEach((btn) => {
+  btn.addEventListener('click', reset);
+});
+
+
+  const sortField = document.getElementById('sortField');
+  const sortBtn = document.getElementById('sortBtn');
+
+  const sortLabel = (v) => {
+    if (v === 'price_asc') return 'Сортировка по цене';
+    if (v === 'price_desc') return 'Сортировка по цене';
+    return 'Сортировка по цене';
+  };
+
+  const setSortUi = (v) => {
+    sortBtn?.setAttribute('data-state', v || '');
+    const labelEl = sortBtn?.querySelector('.sortbtn__label');
+    const stateEl = sortBtn?.querySelector('.sortbtn__state');
+    if (labelEl) labelEl.textContent = sortLabel(v);
+    if (stateEl) stateEl.textContent = (v === 'price_asc') ? '↑' : (v === 'price_desc') ? '↓' : '∙';
+  };
+
+  if (sortBtn && sortField) {
+    setSortUi(sortField.value);
+    sortBtn.addEventListener('click', () => {
+      const v = sortField.value || '';
+      const next = (v === '') ? 'price_asc' : (v === 'price_asc') ? 'price_desc' : '';
+      sortField.value = next;
+      setSortUi(next);
+      saveScroll();
+      form.requestSubmit();
+    });
+  }
+
+  const minR = document.getElementById('minRange');
+  const maxR = document.getElementById('maxRange');
+  const minV = document.getElementById('minVal');
+  const maxV = document.getElementById('maxVal');
+
+  const clampRanges = () => {
+  if (!minR || !maxR) return;
+
+  let a = Number(minR.value);
+  let b = Number(maxR.value);
+  if (a > b) [a, b] = [b, a];
+
+  minR.value = String(a);
+  maxR.value = String(b);
+
+  if (minV) minV.textContent = String(a);
+  if (maxV) maxV.textContent = String(b);
+
+  const track = minR.closest('.range__track');
+  const min = Number(minR.min);
+  const max = Number(minR.max);
+  const span = Math.max(1, max - min);
+  const pa = ((a - min) / span) * 100;
+  const pb = ((b - min) / span) * 100;
+
+  if (track) {
+    track.style.setProperty('--a', pa + '%');
+    track.style.setProperty('--b', pb + '%');
+  }
+};
+
+
+  if (minR && maxR) {
+    clampRanges();
+    minR.addEventListener('input', clampRanges);
+    maxR.addEventListener('input', clampRanges);
+
+    const submitOnChange = () => { saveScroll(); form.requestSubmit(); };
+    minR.addEventListener('change', submitOnChange);
+    maxR.addEventListener('change', submitOnChange);
+  }
+
+  let t = null;
+  form.addEventListener('change', (e) => {
+    const el = e.target;
+    if (!el) return;
+    if (el.matches('input[type="checkbox"]')) {
+      if (t) clearTimeout(t);
+      t = setTimeout(() => { saveScroll(); form.requestSubmit(); }, 120);
+    }
+  });
+})();
+</script>
+{% endblock %}

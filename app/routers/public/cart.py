@@ -82,7 +82,7 @@ async def cart_page(request: Request, session: AsyncSession = Depends(get_async_
     if not cart:
         return templates.TemplateResponse(
             "public/cart.html",
-            {"request": request, "items": [], "total": 0},
+            {"request": request, "items": [], "total": 0, "total_base": 0},
         )
 
     # грузим товары одним запросом
@@ -97,7 +97,7 @@ async def cart_page(request: Request, session: AsyncSession = Depends(get_async_
         request.session["cart"] = {}
         return templates.TemplateResponse(
             "public/cart.html",
-            {"request": request, "items": [], "total": 0},
+            {"request": request, "items": [], "total": 0, "total_base": 0},
         )
 
     res = await session.execute(select(Product).where(Product.id.in_(ids)))
@@ -106,41 +106,97 @@ async def cart_page(request: Request, session: AsyncSession = Depends(get_async_
 
     items = []
     total = 0
+    total_base = 0
 
     for pid_str, qty in cart.items():
         p = by_id.get(pid_str)
         if not p:
             continue
 
-        unit = _calc_display_price(p.price, p.discount_percent)
+        qty = int(qty) if qty else 1
+        if qty < 1:
+            continue
+
+        base_unit = int(p.price)
+        unit = _calc_display_price(base_unit, p.discount_percent)
+
         line_total = unit * qty
+        line_total_base = base_unit * qty
+
         total += line_total
+        total_base += line_total_base
 
         items.append(
             {
                 "id": pid_str,
                 "name": p.name,
                 "qty": qty,
-                "unit_price": unit,
+                "unit_price": unit,               # отображаемая (со скидкой, если есть)
+                "base_unit_price": base_unit,     # цена до скидки
                 "line_total": line_total,
             }
         )
 
     return templates.TemplateResponse(
         "public/cart.html",
-        {"request": request, "items": items, "total": total},
+        {"request": request, "items": items, "total": total, "total_base": total_base},
     )
 
+
+@router.post("/cart/update")
+async def cart_update(
+    request: Request,
+    product_id: str = Form(...),
+    qty: int = Form(...),
+):
+    # валидация id
+    try:
+        uuid.UUID(product_id)
+    except Exception:
+        raise HTTPException(status_code=400, detail="Некорректный product_id")
+
+    qty = int(qty) if qty is not None else 1
+
+    cart = _get_cart(request.session)
+
+    if qty < 1:
+        # если qty < 1 — удаляем позицию
+        cart.pop(str(product_id), None)
+    else:
+        cart[str(product_id)] = qty
+
+    request.session["cart"] = cart
+
+    # Если запрос от fetch — вернем JSON (без редиректа)
+    accept = (request.headers.get("accept") or "").lower()
+    xrw = (request.headers.get("x-requested-with") or "").lower()
+    if "application/json" in accept or xrw == "fetch":
+        return {"ok": True}
+
+    referer = request.headers.get("referer")
+    return RedirectResponse(referer or "/cart", status_code=303)
 
 @router.post("/cart/remove")
 async def cart_remove(request: Request, product_id: str = Form(...)):
     cart = _get_cart(request.session)
     cart.pop(str(product_id), None)
     request.session["cart"] = cart
+
+    accept = (request.headers.get("accept") or "").lower()
+    xrw = (request.headers.get("x-requested-with") or "").lower()
+    if "application/json" in accept or xrw == "fetch":
+        return {"ok": True}
+
     return RedirectResponse("/cart", status_code=303)
 
 
 @router.post("/cart/clear")
 async def cart_clear(request: Request):
     request.session["cart"] = {}
+
+    accept = (request.headers.get("accept") or "").lower()
+    xrw = (request.headers.get("x-requested-with") or "").lower()
+    if "application/json" in accept or xrw == "fetch":
+        return {"ok": True}
+
     return RedirectResponse("/cart", status_code=303)

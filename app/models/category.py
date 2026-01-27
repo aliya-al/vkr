@@ -29,6 +29,8 @@ class Category(Base):
         back_populates="children",
     )
 
+    image_path: Mapped[str | None] = mapped_column(String(500), nullable=True)
+
     # Дочерние категории (подкатегории)
     children = relationship(
         "Category",

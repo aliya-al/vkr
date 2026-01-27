@@ -1,51 +1,259 @@
-<!doctype html>
-<html lang="ru">
-<head>
-  <meta charset="utf-8">
-  <title>Корзина</title>
-</head>
-<body>
-  <p><a href="/catalog/">← Каталог</a></p>
-  <h1>Корзина</h1>
+{% extends "public/base.html" %}
 
-  {% if not items %}
-    <p>Корзина пуста.</p>
+{% block title %}Корзина{% endblock %}
+
+{% block head %}
+  <link rel="stylesheet" href="/static/css/public/cart.css">
+{% endblock %}
+
+{% block content %}
+<section class="cart" aria-label="Корзина">
+  <div class="container">
+
+    <header class="cart-head">
+      <h1 class="cart-title">Корзина</h1>
+
+      {% if items and items|length %}
+        <form class="cart-head__clear" method="post" action="/cart/clear">
+          <button class="cart-btn cart-btn--ghost" type="submit">Очистить</button>
+        </form>
+      {% endif %}
+    </header>
+
+    {% if not items or items|length == 0 %}
+      <div class="cart-empty" role="status" aria-live="polite">
+        <div class="cart-empty__card">
+          <div class="cart-empty__title">В корзине пока пусто</div>
+          <div class="cart-empty__text">Добавьте товары из каталога, чтобы оформить заказ.</div>
+          <div class="cart-empty__actions">
+            <a class="cart-btn cart-btn--primary" href="/catalog">Перейти в каталог</a>
+            <a class="cart-btn" href="/">На главную</a>
+          </div>
+        </div>
+      </div>
+    {% else %}
+      <div class="cart-grid">
+
+        <!-- ITEMS -->
+        <div class="cart-list" role="list" aria-label="Товары в корзине">
+          {% for it in items %}
+            <article class="cart-item" role="listitem" data-cart-item data-unit="{{ it.unit_price }}">
+  <div class="cart-item__main">
+    <a class="cart-item__name" href="/product/{{ it.id }}" title="{{ it.name }}">
+      {{ it.name }}
+    </a>
+
+    <div class="cart-item__meta">
+      <div class="cart-item__prices">
+  {% if it.base_unit_price and it.base_unit_price > it.unit_price %}
+    <del class="cart-item__price-old">{{ it.base_unit_price }}р</del>
+    <span class="cart-item__price-new">{{ it.unit_price }}р</span>
+    <span class="cart-item__per">/шт.</span>
   {% else %}
-    <table border="1" cellpadding="6">
-      <thead>
-        <tr>
-          <th>Товар</th>
-          <th>Кол-во</th>
-          <th>Цена</th>
-          <th>Сумма</th>
-          <th></th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for it in items %}
-          <tr>
-            <td>{{ it.name }}</td>
-            <td>{{ it.qty }}</td>
-            <td>{{ it.unit_price }}</td>
-            <td>{{ it.line_total }}</td>
-            <td>
-              <form method="post" action="/cart/remove">
-                <input type="hidden" name="product_id" value="{{ it.id }}">
-                <button type="submit">Убрать</button>
-              </form>
-            </td>
-          </tr>
-        {% endfor %}
-      </tbody>
-    </table>
+    <span class="cart-item__price-new">{{ it.unit_price }}р</span>
+    <span class="cart-item__per">/шт.</span>
+  {% endif %}
+</div>
 
-    <p><strong>Итого:</strong> {{ total }}</p>
+    </div>
+  </div>
 
-    <form method="post" action="/cart/clear">
-      <button type="submit">Очистить корзину</button>
+  <div class="cart-item__side">
+    <form class="qty" method="post" action="/cart/update" data-qty-form>
+      <!-- ВАЖНО: product_id -->
+      <input type="hidden" name="product_id" value="{{ it.id }}">
+
+      <button class="qty__btn" type="button" data-qty-minus aria-label="Уменьшить количество">−</button>
+
+      <label class="qty__field">
+        <span class="sr-only">Количество</span>
+        <input
+          class="qty__input"
+          type="number"
+          name="qty"
+          min="1"
+          step="1"
+          value="{{ it.qty }}"
+          inputmode="numeric"
+          pattern="[0-9]*"
+          data-qty-input
+          aria-label="Количество"
+        >
+      </label>
+
+      <button class="qty__btn" type="button" data-qty-plus aria-label="Увеличить количество">+</button>
+
+      <button class="qty__save" type="submit">Обновить</button>
     </form>
 
-    <p><a href="/checkout">Оформить заказ</a></p>
-  {% endif %}
-</body>
-</html>
+    <div class="cart-item__totals">
+      <div class="cart-item__line" data-line-total aria-label="Сумма по позиции">
+        {{ it.line_total }}р
+      </div>
+    </div>
+
+    <form class="cart-item__remove" method="post" action="/cart/remove" data-remove-form>
+      <!-- ВАЖНО: product_id -->
+      <input type="hidden" name="product_id" value="{{ it.id }}">
+      <button class="icon-btn" type="submit" aria-label="Удалить из корзины" title="Удалить">
+        <span aria-hidden="true">×</span>
+      </button>
+    </form>
+  </div>
+</article>
+
+          {% endfor %}
+        </div>
+
+        <!-- SUMMARY -->
+        <aside class="cart-summary" aria-label="Итого">
+          <div class="cart-summary__card">
+            <div class="cart-summary__title">Итого</div>
+
+            <div class="cart-summary__row">
+              <span class="cart-summary__label">Сумма</span>
+              <span class="cart-summary__value" data-cart-total>{{ total }}р</span>
+
+            </div>
+
+            <div class="cart-summary__hint">
+              Стоимость доставки и скидки рассчитываются при оформлении.
+            </div>
+
+            <div class="cart-summary__actions">
+              <a class="cart-btn cart-btn--primary cart-btn--block" href="/checkout">
+                Оформить заказ
+              </a>
+              <a class="cart-btn cart-btn--block" href="/catalog">Продолжить покупки</a>
+            </div>
+          </div>
+        </aside>
+
+      </div>
+    {% endif %}
+
+  </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script>
+(() => {
+  const money = (n) => `${n}р`;
+
+  const parseIntSafe = (v, fallback = 0) => {
+    const n = parseInt(String(v).replace(/[^\d]/g, ""), 10);
+    return Number.isFinite(n) ? n : fallback;
+  };
+
+  const getItems = () => Array.from(document.querySelectorAll("[data-cart-item]"));
+  const totalEl = document.querySelector("[data-cart-total]");
+
+  const recalcTotals = () => {
+    const items = getItems();
+    let total = 0;
+
+    items.forEach((item) => {
+      const unit = parseIntSafe(item.getAttribute("data-unit"), 0);
+      const input = item.querySelector("[data-qty-input]");
+      const lineEl = item.querySelector("[data-line-total]");
+      if (!input || !lineEl) return;
+
+      const qty = Math.max(1, parseIntSafe(input.value, 1));
+      const line = unit * qty;
+
+      lineEl.textContent = money(line);
+      total += line;
+    });
+
+    if (totalEl) totalEl.textContent = money(total);
+  };
+
+  const postFormJson = async (form) => {
+    const body = new URLSearchParams(new FormData(form));
+    const res = await fetch(form.action, {
+      method: "POST",
+      headers: {
+        "Accept": "application/json",
+        "X-Requested-With": "fetch"
+      },
+      credentials: "same-origin",
+      body
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    return res.json().catch(() => ({}));
+  };
+
+  // QTY
+  const qtyForms = document.querySelectorAll("[data-qty-form]");
+  qtyForms.forEach((form) => {
+    const item = form.closest("[data-cart-item]");
+    const input = form.querySelector("[data-qty-input]");
+    const minus = form.querySelector("[data-qty-minus]");
+    const plus  = form.querySelector("[data-qty-plus]");
+    if (!item || !input || !minus || !plus) return;
+
+    const saveBtn = form.querySelector(".qty__save");
+    if (saveBtn) saveBtn.style.display = "none";
+
+    let t = null;
+
+    const sync = async () => {
+      // 1) UI мгновенно
+      input.value = String(Math.max(1, parseIntSafe(input.value, 1)));
+      recalcTotals();
+
+      // 2) синхронизация с сессией
+      try {
+        await postFormJson(form);
+      } catch (e) {
+        // fallback: обычный сабмит (перезагрузка)
+        form.requestSubmit();
+      }
+    };
+
+    const step = (dir) => {
+      const cur = Math.max(1, parseIntSafe(input.value, 1));
+      input.value = String(Math.max(1, cur + dir));
+      sync();
+    };
+
+    minus.addEventListener("click", () => step(-1));
+    plus.addEventListener("click",  () => step(1));
+
+    input.addEventListener("change", sync);
+
+    input.addEventListener("input", () => {
+      if (t) clearTimeout(t);
+      t = setTimeout(sync, 250);
+    });
+  });
+
+  // REMOVE
+  const removeForms = document.querySelectorAll("[data-remove-form]");
+  removeForms.forEach((form) => {
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const item = form.closest("[data-cart-item]");
+      try {
+        await postFormJson(form);
+        if (item) item.remove();
+        recalcTotals();
+
+        // если корзина стала пустой — проще перегрузить /cart (чтобы показать empty-state)
+        if (getItems().length === 0) {
+          window.location.href = "/cart";
+        }
+      } catch (err) {
+        // fallback
+        form.submit();
+      }
+    });
+  });
+
+  // initial
+  recalcTotals();
+})();
+</script>
+
+{% endblock %}

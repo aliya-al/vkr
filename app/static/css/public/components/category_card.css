@@ -1,0 +1,132 @@
+/* =========================
+   CATEGORY CARD (reusable)
+   File: /static/css/public/components/category_card.css
+   ========================= */
+
+.cat-card {
+  /* привязки к глобальным токенам theme.css */
+  --cat-line: var(--color-line);
+  --cat-surface: var(--color-surface);
+  --cat-bg: var(--color-bg);
+  --cat-text: var(--color-text);
+
+  /* геометрия (дефолт как на home) */
+  --cat-card-radius: 16px;
+  --cat-card-inner-radius: 12px;
+
+  --cat-card-w: 140px;
+  --cat-card-h: 190px;
+
+  --cat-thumb: 100px;
+  --cat-thumb-radius: 10px;
+  --cat-thumb-mt: 10px;
+
+  width: var(--cat-card-w);
+  height: var(--cat-card-h);
+
+  background: var(--cat-bg);
+  border-radius: var(--cat-card-radius);
+
+  padding: 10px;
+
+  text-decoration: none;
+  color: inherit;
+
+  display: grid;
+  place-items: stretch;
+
+  /* iOS tap */
+  -webkit-tap-highlight-color: transparent;
+}
+
+.cat-card__inner {
+  width: 100%;
+  height: 100%;
+
+  background: var(--cat-bg);
+  border-radius: var(--cat-card-inner-radius);
+
+  display: grid;
+  grid-template-rows: auto 1fr;
+  justify-items: center;
+  align-items: start;
+
+  padding: 12px 10px;
+  gap: 10px;
+}
+
+.cat-card__name {
+  max-width: 100%;
+  font-size: var(--fs-sm);
+  line-height: 1.15;
+  font-weight: 500;
+  text-align: center;
+  color: var(--cat-text);
+
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cat-card__thumb {
+  margin-top: var(--cat-thumb-mt);
+  width: var(--cat-thumb);
+  height: var(--cat-thumb);
+
+  border-radius: var(--cat-thumb-radius);
+  overflow: hidden;
+
+  background: var(--cat-surface);
+
+  display: grid;
+  place-items: center;
+}
+
+.cat-card__img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+}
+
+.cat-card__ph {
+  width: 100%;
+  height: 100%;
+  display: block;
+  background: var(--cat-surface);
+}
+
+/* Модификатор для сеток (когда карточка должна растягиваться по колонке) */
+.cat-card--fluid {
+  width: 100%;
+  height: auto;
+  min-height: var(--cat-card-h);
+}
+
+/* =========================
+   iPhone / phones sizing
+   (если нужно — переопределяйте переменные на странице)
+   ========================= */
+@media (max-width: 430px) {
+  .cat-card {
+    --cat-card-w: 128px;
+    --cat-card-h: 176px;
+    --cat-thumb: 92px;
+  }
+}
+
+@media (max-width: 390px) {
+  .cat-card {
+    --cat-card-w: 122px;
+    --cat-card-h: 168px;
+    --cat-thumb: 88px;
+  }
+}
+
+@media (max-width: 360px) {
+  .cat-card {
+    --cat-card-w: 116px;
+    --cat-card-h: 162px;
+    --cat-thumb: 84px;
+  }
+}

@@ -1,7 +1,7 @@
 import uuid
 from urllib.parse import urlencode
 
-from fastapi import APIRouter, Depends, Form, HTTPException, Request
+from fastapi import APIRouter, Depends, Form, HTTPException, Request, UploadFile, File
 from fastapi.responses import HTMLResponse, RedirectResponse
 from sqlalchemy import delete, exists, select, text, update
 from sqlalchemy.orm import aliased
@@ -16,6 +16,7 @@ from app.utils.database import get_async_session
 from app.utils.delete_product_image import delete_product_image_if_local
 from app.utils.strings import ensure_unique_slug, slugify
 from app.utils.templates import templates
+from app.utils.category_image import find_category_image_url, save_category_image, delete_category_image
 
 router = APIRouter()
 
@@ -234,6 +235,7 @@ async def category_create_page(request: Request, session: AsyncSession = Depends
         "admin/categories/create.html",
         {
             "request": request,
+            "image_url": None,
             "categories": categories,
             "name_value": request.query_params.get("name", ""),
             "parent_id_value": request.query_params.get("parent_id", ""),
@@ -255,8 +257,10 @@ async def category_create(
     parent_id: str | None = Form(None),
     characteristic_ids: list[int] | None = Form(None),
     confirm_move: str | None = Form(None),
+    image: UploadFile | None = File(None),
     session: AsyncSession = Depends(get_async_session),
 ):
+
     name = name.strip()
     parent_uuid = uuid.UUID(parent_id) if parent_id else None
 
@@ -310,6 +314,36 @@ async def category_create(
         session.add(category)
         await session.flush()
 
+        # фото категории (1 штука, новое заменяет старое)
+        if image and image.filename:
+            try:
+                saved_path = save_category_image(str(category.id), image)
+                category.image_path = saved_path
+            except ValueError as e:
+                await session.rollback()
+
+                categories = await _get_category_options(session)
+                characteristics = await _get_all_characteristics(session)
+
+                return templates.TemplateResponse(
+                    "admin/categories/create.html",
+                    {
+                        "request": request,
+                        "categories": categories,
+                        "name_value": name,
+                        "parent_id_value": parent_id or "",
+                        "confirm_required": False,
+                        "confirm_text": "",
+                        "cancel_url": "",
+                        "is_leaf": True,
+                        "characteristics": characteristics,
+                        "selected_characteristic_ids": set(final_characteristic_ids),
+                        "image_url": None,
+                        "image_error": str(e),
+                    },
+                    status_code=200,
+                )
+
         # сохраняем характеристики (на create всегда можно)
         await _replace_category_characteristics(session, category.id, final_characteristic_ids)
 
@@ -323,6 +357,7 @@ async def category_create(
     except Exception:
         await session.rollback()
         raise
+
 
     return RedirectResponse("/admin/categories", status_code=303)
 
@@ -358,10 +393,13 @@ async def category_edit_page(
         characteristics = await _get_all_characteristics(session)
         selected_ids = await _get_selected_characteristic_ids(session, category_id)
 
+    image_url = category_obj.image_path
+
     return templates.TemplateResponse(
         "admin/categories/edit.html",
         {
             "request": request,
+            "image_url": image_url,
             "category": category,
             "categories": categories,
             "name_value": name_value,
@@ -384,6 +422,8 @@ async def category_edit(
     name: str = Form(...),
     characteristic_ids: list[int] | None = Form(None),
     parent_id: str | None = Form(None),
+    image: UploadFile | None = File(None),
+    delete_image: str | None = Form(None),
     confirm_move: str | None = Form(None),
     session: AsyncSession = Depends(get_async_session),
 ):
@@ -462,10 +502,66 @@ async def category_edit(
             )
 
         if can_edit_characteristics:
-            # ВАЖНО: здесь None значит "все сняли" => сохраняем пусто
             await _replace_category_characteristics(session, category_id, _clean_int_list(characteristic_ids))
 
+        # фото категории: удалить по чекбоксу
+        if _truthy(delete_image):
+            delete_category_image(str(category_id))
+            category_obj.image_path = None
+
+        # фото категории: заменить, если загружено новое
+        if image and image.filename:
+            try:
+                saved_path = save_category_image(str(category_id), image)
+                category_obj.image_path = saved_path
+            except ValueError as e:
+                await session.rollback()
+
+                descendants = await _get_subtree_category_ids(session, category_id)
+                categories = await _get_category_options(session, exclude_ids=descendants)
+
+                is_leaf = not await _has_children(session, category_id)
+                can_edit_characteristics = is_leaf
+
+                characteristics: list[dict] = []
+                selected_ids: set[int] = set()
+                if can_edit_characteristics:
+                    characteristics = await _get_all_characteristics(session)
+                    selected_ids = await _get_selected_characteristic_ids(session, category_id)
+
+                image_url = category_obj.image_path
+
+                category = {
+                    "id": str(category_id),
+                    "name": name,
+                    "parent_id": str(new_parent_id) if new_parent_id else "",
+                }
+
+                return templates.TemplateResponse(
+                    "admin/categories/edit.html",
+                    {
+                        "request": request,
+                        "category": category,
+                        "categories": categories,
+                        "name_value": name,
+                        "parent_id_value": parent_id or "",
+                        "confirm_required": False,
+                        "confirm_text": "",
+                        "cancel_url": "",
+                        "is_leaf": is_leaf,
+                        "can_edit_characteristics": can_edit_characteristics,
+                        "characteristics": characteristics,
+                        "selected_characteristic_ids": selected_ids,
+                        "image_url": image_url,
+                        "image_error": str(e),
+                    },
+                    status_code=200,
+                )
+
         await session.commit()
+
+
+
     except Exception:
         await session.rollback()
         raise
@@ -480,6 +576,10 @@ async def category_delete(category_id: uuid.UUID, session: AsyncSession = Depend
 
     async with session.begin():
         category_ids = await _get_subtree_category_ids(session, category_id)
+        # удаляем фото категорий (локальные файлы)
+        for cid in category_ids:
+            delete_category_image(str(cid))
+
         if not category_ids:
             raise HTTPException(status_code=404)
 

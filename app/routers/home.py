@@ -7,6 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.utils.templates import templates
 from app.utils.database import get_async_session
+from app.utils.category_image import find_category_image_url
 
 from app.models.news import News
 from app.models.category import Category
@@ -28,9 +29,22 @@ async def home_index(
 
     # Категории: верхнего уровня (если parent_id используется)
     res_cats = await session.execute(
-        select(Category).where(Category.parent_id.is_(None)).limit(30)
+        select(Category)
+        .where(Category.parent_id.is_(None))
+        .order_by(Category.name)
+        .limit(30)
     )
-    categories = res_cats.scalars().all()
+    cats = res_cats.scalars().all()
+
+    categories = [
+        {
+            "id": str(c.id),
+            "name": c.name,
+            "slug": c.slug,
+            "image_url": find_category_image_url(str(c.id)),
+        }
+        for c in cats
+    ]
 
     # Акции: товары со скидкой (discount_percent > 0)
     res_promo = await session.execute(

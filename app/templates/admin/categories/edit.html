@@ -10,7 +10,7 @@
   {% if confirm_required %}
     <p><strong>{{ confirm_text }}</strong></p>
 
-    <form method="post" action="/admin/categories/{{ category['id'] }}/edit">
+    <form method="post" action="/admin/categories/{{ category['id'] }}/edit" enctype="multipart/form-data">
       <input type="hidden" name="name" value="{{ name_value|default(category['name']) }}">
       <input type="hidden" name="parent_id" value="{{ parent_id_value|default(category['parent_id']) }}">
 
@@ -27,7 +27,8 @@
     <p><a href="/admin/categories">Назад</a></p>
   {% else %}
 
-    <form method="post" action="/admin/categories/{{ category['id'] }}/edit">
+    <form method="post" action="/admin/categories/{{ category['id'] }}/edit" enctype="multipart/form-data">
+
       <div>
         <label>Название
           <input type="text" name="name" value="{{ name_value|default(category['name']) }}" required>
@@ -47,6 +48,34 @@
           </select>
         </label>
       </div>
+
+      <hr>
+<h3>Фото категории</h3>
+
+{% if image_url %}
+  <div style="margin:10px 0;">
+    <img src="{{ image_url }}" alt="category image" style="max-width:240px; height:auto; display:block;">
+  </div>
+
+  <label style="display:block; margin:6px 0;">
+    <input type="checkbox" name="delete_image" value="1">
+    Удалить текущее фото
+  </label>
+{% else %}
+  <p>Фото не загружено.</p>
+{% endif %}
+
+<div style="margin:10px 0;">
+  <label>Заменить фото (1 файл):
+    <input type="file" name="image" accept="image/*">
+
+    {% if image_error %}
+      <p style="color:red; margin:6px 0;"><strong>{{ image_error }}</strong></p>
+    {% endif %}
+
+  </label>
+</div>
+
 
       {% if is_leaf %}
         <hr>

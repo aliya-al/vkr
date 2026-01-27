@@ -1,0 +1,59 @@
+{# templates/public/components/product_card.html #}
+
+{% set pslug = (p.slug if p.slug is defined else p.id) %}
+{% set href = "/product/" ~ pslug %}
+
+{% set main_img = None %}
+{% if p.images and p.images|length %}
+  {% set main_img = p.images[0].file_path %}
+  {% if main_img and not main_img.startswith('/') %}
+    {% set main_img = '/' ~ main_img %}
+  {% endif %}
+{% endif %}
+
+{% set has_sale = (p.discount_percent is defined) and p.discount_percent %}
+{% if has_sale %}
+  {% set new_price = (p.price * (100 - p.discount_percent) // 100) %}
+{% endif %}
+
+<article class="p-card p-card--mock">
+  <a class="p-card__media" href="{{ href }}" aria-label="{{ p.name }}">
+    {% if main_img %}
+      <img class="p-card__img" src="{{ main_img }}" alt="{{ p.name }}" loading="lazy">
+    {% else %}
+      <div class="p-card__img p-card__img--ph" aria-hidden="true"></div>
+    {% endif %}
+  </a>
+
+  <a class="p-card__name" href="{{ href }}">{{ p.name }}</a>
+
+  <div class="p-card__prices" aria-label="Цена">
+    {% if has_sale %}
+      <span class="p-card__old">{{ p.price }}р/шт.</span>
+      <span class="p-card__new">{{ new_price }}р/шт.</span>
+    {% else %}
+      <span class="p-card__new">{{ p.price }}р/шт.</span>
+    {% endif %}
+  </div>
+
+  <div class="p-card__actions">
+    <form class="p-card__form" method="post" action="/cart/add">
+      <input type="hidden" name="product_id" value="{{ p.id }}">
+      <input type="hidden" name="qty" value="1">
+      <button class="p-card__cart" type="submit">
+        <span class="p-card__cart-ico" aria-hidden="true"></span>
+        <span>в корзину</span>
+      </button>
+    </form>
+
+    <div class="p-card__icons" aria-label="Действия">
+      <form class="p-card__form" method="post" action="/favorites/add/{{ p.id }}">
+        <button class="p-card__icon p-card__icon--heart" type="submit" aria-label="В избранное"></button>
+      </form>
+
+      <form class="p-card__form" method="post" action="/compare/add/{{ p.id }}">
+        <button class="p-card__icon p-card__icon--compare" type="submit" aria-label="Сравнить"></button>
+      </form>
+    </div>
+  </div>
+</article>

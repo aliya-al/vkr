@@ -1,33 +1,59 @@
-<!doctype html>
-<html lang="ru">
-<head>
-  <meta charset="utf-8">
-  <title>Каталог</title>
-</head>
-<body>
-  <h1>Каталог</h1>
-  <p><a href="/compare/">Сравнение</a><a href="/favorites/">        Избранное</a></p>
+{% extends "public/base.html" %}
 
-  {% if root_categories %}
-    <ul>
-      {% for c in root_categories %}
-        <li>
-          <a href="/catalog/{{ c.slug }}">{{ c.name }}</a>
+{% block title %}Каталог{% endblock %}
 
-          {% if c.children %}
-            <ul>
-              {% for ch in c.children %}
-                <li><a href="/catalog/{{ ch.slug }}">{{ ch.name }}</a></li>
-              {% endfor %}
-            </ul>
-          {% endif %}
-        </li>
-      {% endfor %}
-    </ul>
-  {% else %}
-    <p>Категорий пока нет.</p>
-  {% endif %}
+{% block head %}
+  <link rel="stylesheet" href="/static/css/public/components/category_card.css">
+  <link rel="stylesheet" href="/static/css/public/category.css">
+{% endblock %}
 
-  <p><a href="/cart">Корзина</a></p>
-</body>
-</html>
+{% block content %}
+<div class="catalog">
+  <div class="container">
+
+    <header class="catalog__head">
+      <h1 class="catalog__title">Каталог</h1>
+      <p class="catalog__sub">Выберите категорию</p>
+    </header>
+
+    <section class="catalog__grid" aria-label="Категории каталога">
+      {% if categories and categories|length %}
+        {% for c in categories %}
+          {% set src = c.image_url %}
+
+
+          <a class="cat-card cat-card--fluid"
+             href="/catalog/{{ c.slug }}/"
+             aria-label="{{ c.name }}">
+            <span class="cat-card__inner">
+              <span class="cat-card__name">
+                {{ (c.name[:28] ~ '…') if (c.name and (c.name|length > 28)) else c.name }}
+              </span>
+
+              <span class="cat-card__thumb" aria-hidden="true">
+                {% if src %}
+                  <img class="cat-card__img" src="{{ src }}" alt="" loading="lazy">
+                {% else %}
+                  <span class="cat-card__ph"></span>
+                {% endif %}
+              </span>
+            </span>
+          </a>
+        {% endfor %}
+      {% else %}
+        {% for _ in range(10) %}
+          <div class="cat-card cat-card--fluid" aria-hidden="true">
+            <span class="cat-card__inner">
+              <span class="cat-card__name">Название категории…</span>
+              <span class="cat-card__thumb" aria-hidden="true">
+                <span class="cat-card__ph"></span>
+              </span>
+            </span>
+          </div>
+        {% endfor %}
+      {% endif %}
+    </section>
+
+  </div>
+</div>
+{% endblock %}

@@ -194,9 +194,14 @@ async def checkout_submit(
                     order_id=order.id,
                     product_id=p.id,
                     quantity=qty,
-                    price_per_item=p.price,          # базовая цена на момент заказа
+                    price_per_item=p.price,  # базовая цена на момент заказа
                     discount_percent=p.discount_percent,
-                    total_price=line_total,          # по цене с учётом скидки
+                    total_price=line_total,  # по цене с учётом скидки
+
+                    product_name=p.name,
+                    product_slug=getattr(p, "slug", None),
+                    weight_kg=float(p.weight_kg or 0.0),
+                    volume_m3=float(p.volume_m3 or 0.0),
                 )
             )
 

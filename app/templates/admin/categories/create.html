@@ -10,7 +10,17 @@
   {% if confirm_required %}
     <p><strong>{{ confirm_text }}</strong></p>
 
-    <form method="post" action="/admin/categories/new">
+    <form method="post" action="/admin/categories/new" enctype="multipart/form-data">
+      <div style="margin:10px 0;">
+        <label>Фото категории (1 файл):
+          <input type="file" name="image" accept="image/*">
+          {% if image_error %}
+            <p style="color:red; margin:6px 0;"><strong>{{ image_error }}</strong></p>
+          {% endif %}
+
+        </label>
+      </div>
+
       <input type="hidden" name="name" value="{{ name_value|default('') }}">
       <input type="hidden" name="parent_id" value="{{ parent_id_value|default('') }}">
 
@@ -28,7 +38,18 @@
   {% else %}
 
 
-    <form method="post" action="/admin/categories/new">
+    <form method="post" action="/admin/categories/new" enctype="multipart/form-data">
+    <div style="margin:10px 0;">
+      <label>Фото категории (1 файл):
+        <input type="file" name="image" accept="image/*">
+
+        {% if image_error %}
+          <p style="color:red; margin:6px 0;"><strong>{{ image_error }}</strong></p>
+        {% endif %}
+
+      </label>
+    </div>
+
       <div>
         <label>Название
           <input type="text" name="name" value="{{ name_value|default('') }}" required>

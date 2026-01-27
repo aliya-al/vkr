@@ -73,6 +73,27 @@
   --focus-outline: rgba(0,0,0,0.35);
 }
 
+:root {
+  /* ...ваши текущие токены... */
+
+  --pc-card-w: 140px;
+  --pc-card-h: 190px;
+
+  --pc-bg: #d9d9d9;
+  --pc-media-bg: #ffffff;
+
+  --pc-pill-bg: #cfcfcf;
+  --pc-icon: #6b6b6b;
+
+  --pc-radius-outer: 12px;
+  --pc-radius-media: 8px;
+  --pc-radius-pill: 999px;
+
+  --pc-gap-x: 56px;  /* расстояние между 5 карточками */
+  --pc-gap-y: 44px;
+}
+
+
 /* =========================
    BASE RESET
    ========================= */

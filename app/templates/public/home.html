@@ -3,6 +3,7 @@
 {% block title %}Главная{% endblock %}
 
 {% block head %}
+  <link rel="stylesheet" href="/static/css/public/components/category_card.css">
   <link rel="stylesheet" href="/static/css/public/home.css">
 {% endblock %}
 
@@ -10,7 +11,6 @@
 <div class="home">
   <div class="container">
 
-    <!-- HERO: Новости (1 на экран, горизонтальный скролл внутри блока) + Категории (горизонтальный скролл внутри панели) -->
     <section class="home-hero" aria-label="Новости и категории">
       <div class="home-hero__grid">
 
@@ -65,7 +65,9 @@
 
 <!-- CATEGORIES -->
 <aside class="home-cats" aria-label="Категории">
+<a class="home-cats__title-link" href="/catalog/" aria-label="Перейти в каталог">
   <h2 class="home-cats__title">Категории</h2>
+</a>
 
   <button class="home-cats__nav home-cats__nav--prev"
           type="button"
@@ -87,22 +89,20 @@
     <div class="home-cats__track" role="list">
       {% if categories and categories|length %}
         {% for c in categories %}
-          {% set src = (c.image_path if c.image_path is defined else None) %}
-          {% if src and not src.startswith('/') %}
-            {% set src = '/' ~ src %}
-          {% endif %}
+          {% set src = c.image_url %}
 
-          <a class="home-cat" role="listitem" href="/catalog/{{ c.slug }}" aria-label="{{ c.name }}">
-  <span class="home-cat__inner">
-    <span class="home-cat__name">
+
+<a class="cat-card" role="listitem" href="/catalog/{{ c.slug }}" aria-label="{{ c.name }}">
+  <span class="cat-card__inner">
+    <span class="cat-card__name">
       {{ (c.name[:15] ~ '…') if (c.name and (c.name|length > 15)) else c.name }}
     </span>
 
-    <span class="home-cat__thumb" aria-hidden="true">
+    <span class="cat-card__thumb" aria-hidden="true">
       {% if src %}
-        <img class="home-cat__img" src="{{ src }}" alt="" loading="lazy">
+        <img class="cat-card__img" src="{{ src }}" alt="" loading="lazy">
       {% else %}
-        <span class="home-cat__ph"></span>
+        <span class="cat-card__ph"></span>
       {% endif %}
     </span>
   </span>
@@ -232,18 +232,40 @@
   {% endif %}
 </div>
 
-                <div class="p-card__actions">
-                  <button class="p-card__btn" type="button">в корзину</button>
+<div class="p-card__actions">
+  <!-- ADD TO CART -->
+  <form method="post" action="/cart/add">
+    <input type="hidden" name="product_id" value="{{ p.id }}">
+    <input type="hidden" name="qty" value="1">
+    <button class="p-card__btn" type="submit">
+      <img class="p-card__btn-icon"
+           src="/static/img/icons/public/cart.png"
+           alt=""
+           aria-hidden="true"
+           loading="lazy">
+      <span>в корзину</span>
+    </button>
+  </form>
 
-                  <div class="p-card__icons">
-                    <button class="p-card__icon" type="button" aria-label="В избранное">
-                      <img src="/static/img/icons/public/heart.png" alt="" loading="lazy">
-                    </button>
-                    <button class="p-card__icon" type="button" aria-label="Сравнить">
-                      <img src="/static/img/icons/public/compare.png" alt="" loading="lazy">
-                    </button>
-                  </div>
-                </div>
+  <div class="p-card__icons">
+    <!-- FAVORITES -->
+    <form method="post" action="/favorites/toggle" style="display:inline;">
+      <input type="hidden" name="product_id" value="{{ p.id }}">
+      <button class="p-card__icon" type="submit" aria-label="В избранное">
+        <img src="/static/img/icons/public/heart.png" alt="" loading="lazy">
+      </button>
+    </form>
+
+    <!-- COMPARE -->
+    <form method="post" action="/compare/toggle" style="display:inline;">
+      <input type="hidden" name="product_id" value="{{ p.id }}">
+      <button class="p-card__icon" type="submit" aria-label="Сравнить">
+        <img src="/static/img/icons/public/compare.png" alt="" loading="lazy">
+      </button>
+    </form>
+  </div>
+</div>
+
               </div>
             </article>
           {% endfor %}
