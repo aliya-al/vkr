@@ -1,4 +1,3 @@
-# app/routers/public/checkout.py
 from __future__ import annotations
 
 import uuid
@@ -6,6 +5,7 @@ import uuid
 from fastapi import APIRouter, Depends, Form, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
 from sqlalchemy import select
+from sqlalchemy.orm import selectinload
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.order import DeliveryType, Order
@@ -46,30 +46,39 @@ def _calc_display_price(price: int, discount_percent: int | None) -> int:
     return int(round(price * (100 - pct) / 100))
 
 
-async def _load_cart_products(session: AsyncSession, cart: dict[str, int]) -> tuple[list[dict], int, float, float]:
+async def _load_cart_products(
+    session: AsyncSession, cart: dict[str, int]
+) -> tuple[list[dict], int, int, float, float]:
     """
     Возвращает:
-      items: [{product, qty, unit_price, line_total}]
-      total_price, total_weight_kg, total_volume_m3
+      items: [{product, qty, unit_price, base_unit_price, line_total, line_total_base}]
+      total_price, total_base, total_weight_kg, total_volume_m3
     """
+    if not cart:
+        return [], 0, 0, 0.0, 0.0
+
+    # приводим ключи корзины к uuid
     ids: list[uuid.UUID] = []
-    for k in cart.keys():
+    for pid_str in cart.keys():
         try:
-            ids.append(uuid.UUID(k))
+            ids.append(uuid.UUID(pid_str))
         except Exception:
             continue
 
     if not ids:
-        return [], 0, 0.0, 0.0
+        return [], 0, 0, 0.0, 0.0
 
     res = await session.execute(
-        select(Product).where(Product.id.in_(ids), Product.is_active.is_(True))
+        select(Product)
+        .options(selectinload(Product.images))
+        .where(Product.id.in_(ids), Product.is_active.is_(True))
     )
-    products = res.scalars().all()
+    products = list(res.scalars().all())
     by_id = {str(p.id): p for p in products}
 
     items: list[dict] = []
     total_price = 0
+    total_base = 0
     total_weight = 0.0
     total_volume = 0.0
 
@@ -78,33 +87,51 @@ async def _load_cart_products(session: AsyncSession, cart: dict[str, int]) -> tu
         if not p:
             continue
 
-        unit_price = _calc_display_price(p.price, p.discount_percent)
+        img_url = None
+        if getattr(p, "images", None):
+            img0 = p.images[0]
+            img_url = (
+                    getattr(img0, "url", None)
+                    or getattr(img0, "image_url", None)
+                    or getattr(img0, "path", None)
+                    or getattr(img0, "file_path", None)
+            )
+
+        base_unit = int(p.price)
+        unit_price = _calc_display_price(base_unit, p.discount_percent)
+
         line_total = unit_price * qty
+        line_total_base = base_unit * qty
 
         total_price += line_total
-        total_weight += float(p.weight_kg) * qty
-        total_volume += float(p.volume_m3) * qty
+        total_base += line_total_base
+        total_weight += float(p.weight_kg or 0.0) * qty
+        total_volume += float(p.volume_m3 or 0.0) * qty
 
         items.append(
             {
                 "product": p,
                 "qty": qty,
                 "unit_price": unit_price,
+                "base_unit_price": base_unit,
                 "line_total": line_total,
+                "line_total_base": line_total_base,
+                "image_url": img_url,
             }
         )
 
-    return items, total_price, total_weight, total_volume
+    return items, total_price, total_base, total_weight, total_volume
 
 
 @router.get("/checkout", response_class=HTMLResponse)
 async def checkout_page(request: Request, session: AsyncSession = Depends(get_async_session)):
     cart = _get_cart(request.session)
-    items, total_price, total_weight, total_volume = await _load_cart_products(session, cart)
+    items, total_price, total_base, total_weight, total_volume = await _load_cart_products(session, cart)
 
     return templates.TemplateResponse(
         "public/checkout.html",
         {
+            "total_base": total_base,
             "request": request,
             "items": items,
             "total_price": total_price,
@@ -126,11 +153,27 @@ async def checkout_submit(
     session: AsyncSession = Depends(get_async_session),
 ):
     cart = _get_cart(request.session)
-    items, total_price, total_weight, total_volume = await _load_cart_products(session, cart)
+    items, total_price, total_base, total_weight, total_volume = await _load_cart_products(session, cart)
 
     # базовые проверки
     customer_name = customer_name.strip()
     customer_phone = customer_phone.strip()
+    digits = "".join(ch for ch in customer_phone if ch.isdigit())
+
+    # 9XXXXXXXXX -> 7XXXXXXXXXX
+    if digits.startswith("9"):
+        digits = "7" + digits
+    # 8XXXXXXXXXX -> 7XXXXXXXXXX
+    if digits.startswith("8") and len(digits) == 11:
+        digits = "7" + digits[1:]
+
+    # строгая проверка
+    if not (len(digits) == 11 and digits.startswith("7")):
+        error = "Укажи телефон в формате +7 (999) 999-99-99."
+    else:
+        # сохраняем в одном нормальном виде
+        customer_phone = f"+7 ({digits[1:4]}) {digits[4:7]}-{digits[7:9]}-{digits[9:11]}"
+
     delivery_address = (delivery_address or "").strip()
     comment = (comment or "").strip() or None
 
@@ -152,6 +195,7 @@ async def checkout_submit(
             {
                 "request": request,
                 "items": items,
+                "total_base": total_base,
                 "total_price": total_price,
                 "total_weight": total_weight,
                 "total_volume": total_volume,
@@ -195,13 +239,16 @@ async def checkout_submit(
                     product_id=p.id,
                     quantity=qty,
                     price_per_item=p.price,  # базовая цена на момент заказа
+                    final_price_per_item=unit_price,  # фактическая цена за штуку на момент заказа
                     discount_percent=p.discount_percent,
-                    total_price=line_total,  # по цене с учётом скидки
+                    total_price=line_total,
 
                     product_name=p.name,
                     product_slug=getattr(p, "slug", None),
                     weight_kg=float(p.weight_kg or 0.0),
                     volume_m3=float(p.volume_m3 or 0.0),
+
+                    product_image=it.get("image_url"),  # снимок картинки
                 )
             )
 
@@ -216,6 +263,7 @@ async def checkout_submit(
                 "items": items,
                 "total_price": total_price,
                 "total_weight": total_weight,
+                "total_base": total_base,
                 "total_volume": total_volume,
                 "error": "Не удалось создать заявку. Попробуй ещё раз.",
                 "form_data": {

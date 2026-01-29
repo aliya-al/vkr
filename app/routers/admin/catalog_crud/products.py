@@ -19,6 +19,8 @@ from app.models.product_image import ProductImage
 from app.utils.database import get_async_session
 from app.utils.delete_product_image import delete_product_image_if_local
 from app.utils.templates import templates
+from app.utils.strings import slugify, ensure_unique_slug
+
 
 router = APIRouter()
 
@@ -338,6 +340,10 @@ async def product_create(
             is_active=is_active,
             discount_percent=int(discount_percent) if discount_percent else None,
         )
+
+        base = slugify(product.name)
+        product.slug = await ensure_unique_slug(session, Product, base_slug=base)
+
         session.add(product)
         await session.flush()
 
@@ -561,6 +567,16 @@ async def product_edit(
 
         # обновляем поля товара
         product.name = name
+
+        # slug при редактировании (так как имя изменилось)
+        base = slugify(product.name)
+        product.slug = await ensure_unique_slug(
+            session,
+            Product,
+            base_slug=base,
+            exclude_id=product.id,  # чтобы не конфликтовать с самим собой
+        )
+
         product.description = description
         product.category_id = cat_uuid
         product.brand_id = uuid.UUID(brand_id) if brand_id else None

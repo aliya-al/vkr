@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import uuid
 
-from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import APIRouter, Depends, HTTPException, Request, Form
 from fastapi.responses import HTMLResponse, RedirectResponse
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -80,6 +80,27 @@ async def favorites_add(
     back = request.headers.get("referer")
     return RedirectResponse(back or "/favorites", status_code=303)
 
+@router.post("/favorites/toggle")
+async def favorites_toggle(
+    request: Request,
+    product_id: uuid.UUID = Form(...),
+    session: AsyncSession = Depends(get_async_session),
+):
+    # проверяем, что товар существует
+    exists = await session.execute(select(Product.id).where(Product.id == product_id))
+    if not exists.scalar_one_or_none():
+        raise HTTPException(status_code=404)
+
+    ids_str = get_favorite_ids(request.session)
+    ids_set = set(ids_str or [])
+
+    if str(product_id) in ids_set:
+        remove_from_favorites(request.session, product_id)
+    else:
+        add_to_favorites(request.session, product_id)
+
+    back = request.headers.get("referer")
+    return RedirectResponse(back or "/favorites", status_code=303)
 
 @router.post("/favorites/remove/{product_id}")
 async def favorites_remove(product_id: uuid.UUID, request: Request):

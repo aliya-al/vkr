@@ -1,7 +1,3 @@
-/* =========================
-   HOME (локальные токены + var(...) из theme.css)
-   Страница: /static/css/public/home.css
-   ========================= */
 
 .home {
   /* базовые привязки к глобальным токенам theme.css */
@@ -171,7 +167,6 @@
   text-underline-offset: 4px;
 }
 
-
 .home-cats__nav {
   position: absolute;
   top: 50%;
@@ -268,7 +263,7 @@
 }
 
 .home-cat__thumb {
-margin-top: 10px;
+  margin-top: 10px;
   width: 100px;
   height: 100px;
 
@@ -324,6 +319,11 @@ margin-top: 10px;
   padding: var(--space-4);
 }
 
+/* NEW: wrap for overlay icons */
+.p-card__media-wrap {
+  position: relative;
+}
+
 .p-card__media {
   display: block;
   aspect-ratio: 1 / 1;
@@ -342,8 +342,22 @@ margin-top: 10px;
   object-fit: cover;
 }
 
-
 .p-card__img--ph { background: var(--home-line); }
+
+/* NEW: icons overlay — vertical stack */
+.p-card__icons {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+
+  z-index: 2;
+}
+
+.p-card__icons form { display: inline; margin: 0; }
 
 .p-card__body {
   padding-top: var(--space-4);
@@ -359,13 +373,10 @@ margin-top: 10px;
   text-align: center;
   display: block;
 
-  /* 1 строка + троеточие */
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
-
-
 
 .p-card__price {
   font-size: var(--fs-sm);
@@ -386,10 +397,9 @@ margin-top: 10px;
   font-weight: 700;
 }
 
-
 .p-card__actions{
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto; /* ключевое */
+  grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
   gap: var(--space-3);
 }
@@ -405,7 +415,6 @@ margin-top: 10px;
   border: 1px solid var(--home-line);
   background: var(--color-bg);
 
-  /* менее скруглённая кнопка */
   border-radius: 10px;
 
   font-size: var(--fs-xs);
@@ -420,31 +429,6 @@ margin-top: 10px;
 .p-card__btn-icon {
   width: 16px;
   height: 16px;
-  display: block;
-}
-
-
-.p-card__icons {
-  display: flex;
-  gap: var(--space-2);
-  align-items: center;
-}
-
-.p-card__icon {
-  width: 28px;
-  height: 28px;
-  border-radius: var(--radius-xl);
-  border: 1px solid var(--home-line);
-  background: var(--color-bg);
-  display: grid;
-  place-items: center;
-  padding: 0;
-  cursor: pointer;
-}
-
-.p-card__icon img {
-  width: 14px;
-  height: 14px;
   display: block;
 }
 
@@ -516,7 +500,6 @@ margin-top: 10px;
 
   .home-cats__track { gap: 12px; }
 
-  /* только размеры на мобилке, внутренняя компоновка уже задана в базе */
   .home-cat { flex: 0 0 128px; height: 176px; }
   .home-cat__thumb { width: 92px; height: 92px; }
 
@@ -535,16 +518,12 @@ margin-top: 10px;
 
   .p-card { padding: var(--space-3); }
 
-
   .p-card__actions { gap: 8px; }
-  .p-card__icons { gap: 6px; }
 
   .p-card__btn{
     padding: 0 10px;
     gap: 6px;
   }
-
-  .p-card__icon { width: 30px; }
 }
 
 @media (max-width: 390px) {
@@ -592,16 +571,4 @@ margin-top: 10px;
   }
 
   .p-grid { grid-template-columns: repeat(3, 1fr); }
-}
-
-@media (max-width: 1100px) {
-  .p-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
-}
-
-@media (max-width: 900px) {
-  .p-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-}
-
-@media (max-width: 430px) {
-  .p-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }

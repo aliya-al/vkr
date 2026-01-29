@@ -10,7 +10,8 @@
 <section class="cart" aria-label="Корзина">
   <div class="container">
 
-    <header class="cart-head">
+    <header class="cart-head {% if not items %}cart-head--empty{% endif %}">
+
       <h1 class="cart-title">Корзина</h1>
 
       {% if items and items|length %}
@@ -39,7 +40,7 @@
           {% for it in items %}
             <article class="cart-item" role="listitem" data-cart-item data-unit="{{ it.unit_price }}">
   <div class="cart-item__main">
-    <a class="cart-item__name" href="/product/{{ it.id }}" title="{{ it.name }}">
+    <a class="cart-item__name" href="/product/{{ it.slug }}" title="{{ it.name }}">
       {{ it.name }}
     </a>
 

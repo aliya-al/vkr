@@ -1,16 +1,43 @@
-<!doctype html>
-<html lang="ru">
-<head>
-  <meta charset="utf-8">
-  <title>Заявка создана</title>
-</head>
-<body>
-  <h1>Молодец, круто 🙂</h1>
+{% extends "public/base.html" %}
 
-  {% if last_order_id %}
-    <p>Номер заявки: <strong>{{ last_order_id }}</strong></p>
-  {% endif %}
+{% block title %}Заявка принята{% endblock %}
 
-  <p><a href="/catalog/">Вернуться в каталог</a></p>
-</body>
-</html>
+{% block head %}
+  <link rel="stylesheet" href="/static/css/public/order_success.css">
+{% endblock %}
+
+{% block content %}
+<section class="os" aria-label="Успешное оформление">
+  <div class="container">
+
+    <div class="os-wrap">
+      <div class="os-card" role="status" aria-live="polite">
+        <div class="os-badge" aria-hidden="true">✓</div>
+
+        <h1 class="os-title">Заявка принята</h1>
+
+        <p class="os-text">
+          Спасибо! Мы получили вашу заявку. В ближайшее время менеджер свяжется с вами, чтобы подтвердить заказ и уточнить детали.
+        </p>
+
+        <!-- {% if last_order_id %}
+          <div class="os-meta">
+            <span class="os-meta__label">Номер заявки:</span> !!!
+            <span class="os-meta__value">{{ last_order_id }}</span>
+          </div>
+        {% endif %}-->
+
+        <div class="os-actions">
+          <a class="os-btn os-btn--primary os-btn--block" href="/catalog/">Продолжить покупки</a>
+          <a class="os-btn os-btn--block" href="/">На главную</a>
+        </div>
+
+        <p class="os-note">
+          Если вы ошиблись в данных или хотите изменить состав заказа — просто ответьте на звонок менеджера.
+        </p>
+      </div>
+    </div>
+
+  </div>
+</section>
+{% endblock %}

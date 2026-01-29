@@ -93,6 +93,9 @@
   --pc-gap-y: 44px;
 }
 
+/* чтобы hidden работал всегда, даже если где-то есть reset */
+[hidden] { display: none !important; }
+
 
 /* =========================
    BASE RESET

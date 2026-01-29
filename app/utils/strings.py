@@ -40,7 +40,6 @@ _RU_TO_LATIN = {
     "я": "ya",
 }
 
-
 def slugify(value: str) -> str:
     transliterated = []
     for char in value.lower():
@@ -54,9 +53,10 @@ def slugify(value: str) -> str:
 
     slug_base = "".join(transliterated)
     slug_base = re.sub(r"[^a-z0-9]+", "_", slug_base)
-    slug_base = slug_base.strip("-")
-    slug_base = re.sub(r"-+", "_", slug_base)
+    slug_base = slug_base.strip("_")
+    slug_base = re.sub(r"_+", "_", slug_base)
     return slug_base
+
 
 async def ensure_unique_slug(
     session: AsyncSession,

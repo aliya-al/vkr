@@ -1,0 +1,664 @@
+{% extends "public/base.html" %}
+
+{% block title %}{{ product.name }}{% endblock %}
+
+{% block head %}
+  <link rel="stylesheet" href="/static/css/public/components/icon_toggle.css">
+  <link rel="stylesheet" href="/static/css/public/product_detail.css">
+{% endblock %}
+
+{% block content %}
+<div class="pdp">
+  <div class="container">
+
+    {% set fav_ids = (ui.fav_ids if ui and ui.fav_ids is defined else []) %}
+    {% set cmp_ids = (ui.cmp_ids if ui and ui.cmp_ids is defined else []) %}
+
+    {# qty из корзины в сессии (без правок роутинга) #}
+    {% set cart_map = (request.session.get('cart') if request and request.session is defined else {}) %}
+    {% set cart_qty = 0 %}
+    {% if cart_map is mapping %}
+      {% set cart_qty = (cart_map.get(product.id|string, 0) | int) %}
+    {% endif %}
+
+    <!-- breadcrumbs -->
+    <nav class="pdp-bc" aria-label="Хлебные крошки">
+      <ol class="pdp-bc__list">
+        {% if breadcrumbs and breadcrumbs|length %}
+          {% for b in breadcrumbs %}
+            <li class="pdp-bc__item">
+              {% if loop.last %}
+                <span class="pdp-bc__cur" aria-current="page">{{ b.title }}</span>
+              {% else %}
+                <a class="pdp-bc__link" href="{{ b.url }}">{{ b.title }}</a>
+                <span class="pdp-bc__sep" aria-hidden="true">/</span>
+              {% endif %}
+            </li>
+          {% endfor %}
+        {% endif %}
+      </ol>
+    </nav>
+
+    <header class="pdp-head">
+      <h1 class="pdp-title">{{ product.name }}</h1>
+
+      <div class="pdp-actions" aria-label="Действия с товаром">
+        <!-- favorite -->
+        <form method="post" action="/favorites/toggle" class="js-icon-toggle pdp-actions__item">
+          <input type="hidden" name="product_id" value="{{ product.id }}">
+          <button class="icon-btn {{ 'is-active' if ((product.id|string) in fav_ids) else '' }}"
+                  type="submit"
+                  aria-label="В избранное">
+            <svg class="icon-btn__svg icon-heart" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+              <path class="i-fill" d="M12 21s-7.2-4.4-9.6-8.6C.6 9.1 2.2 5.8 5.6 5.2c1.7-.3 3.4.3 4.5 1.6L12 8.9l1.9-2.1c1.1-1.3 2.8-1.9 4.5-1.6 3.4.6 5 3.9 3.2 7.2C19.2 16.6 12 21 12 21z"/>
+              <path class="i-stroke" d="M12 21s-7.2-4.4-9.6-8.6C.6 9.1 2.2 5.8 5.6 5.2c1.7-.3 3.4.3 4.5 1.6L12 8.9l1.9-2.1c1.1-1.3 2.8-1.9 4.5-1.6 3.4.6 5 3.9 3.2 7.2C19.2 16.6 12 21 12 21z"/>
+            </svg>
+          </button>
+          <span class="pdp-actions__txt">из избранное</span>
+        </form>
+
+        <!-- compare -->
+        <form method="post" action="/compare/toggle" class="js-icon-toggle pdp-actions__item">
+          <input type="hidden" name="product_id" value="{{ product.id }}">
+          <button class="icon-btn {{ 'is-active' if ((product.id|string) in cmp_ids) else '' }}"
+                  type="submit"
+                  aria-label="В сравнение">
+            <svg class="icon-btn__svg icon-compare" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+              <path class="i-stroke" d="M5 19.5h14M7.5 18V10.5M12 18V6.5M16.5 18V13"/>
+              <rect class="i-fill" x="6.6" y="10.5" width="1.8" height="7.5" rx="0.9"/>
+              <rect class="i-fill" x="11.1" y="6.5" width="1.8" height="11.5" rx="0.9"/>
+              <rect class="i-fill" x="15.6" y="13" width="1.8" height="5" rx="0.9"/>
+            </svg>
+          </button>
+          <span class="pdp-actions__txt">в сравнение</span>
+        </form>
+
+        <!-- share (JS) -->
+        <button class="pdp-share" type="button" aria-label="Поделиться">
+          <svg class="pdp-share__ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+  <!-- левая "скоба" -->
+  <path d="M10 8H7a4 4 0 0 0 0 8h3"
+        fill="none" stroke="currentColor" stroke-width="2"
+        stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- правая "скоба" -->
+  <path d="M14 8h3a4 4 0 0 1 0 8h-3"
+        fill="none" stroke="currentColor" stroke-width="2"
+        stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- перемычка внутри -->
+  <path d="M9 12h6"
+        fill="none" stroke="currentColor" stroke-width="2"
+        stroke-linecap="round"/>
+</svg>
+
+          <span class="pdp-actions__txt">поделиться</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- TOP GRID -->
+    <section class="pdp-top" aria-label="Галерея и основные данные">
+      <!-- GALLERY -->
+      <div class="pdp-gallery" aria-label="Галерея товара">
+        <div class="pdp-thumbs" role="list">
+          {% if gallery and gallery.all and gallery.all|length %}
+            {% set tmax = 3 %}
+            {% for img in gallery.all[:tmax] %}
+              <button class="pdp-thumb"
+                      type="button"
+                      role="listitem"
+                      data-src="{{ img.src }}"
+                      aria-label="Показать фото {{ loop.index }}">
+                <img class="pdp-thumb__img" src="{{ img.src }}" alt="" loading="lazy">
+              </button>
+            {% endfor %}
+          {% else %}
+            {% for _ in range(3) %}
+              <div class="pdp-thumb pdp-thumb--ph" role="listitem" aria-hidden="true"></div>
+            {% endfor %}
+          {% endif %}
+
+          {% if gallery and gallery.all and (gallery.all|length > 3) %}
+            <button class="pdp-showall" type="button">показать все</button>
+          {% endif %}
+        </div>
+
+        <div class="pdp-main">
+          {% if gallery and gallery.main and gallery.main.src %}
+            <img class="pdp-main__img"
+                 id="pdpMainImg"
+                 src="{{ gallery.main.src }}"
+                 alt="{{ product.name }}"
+                 loading="eager">
+          {% else %}
+            <div class="pdp-main__ph" aria-hidden="true"></div>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- RIGHT -->
+      <div class="pdp-right">
+        <!-- SHORT SPECS -->
+        <section class="pdp-meta" aria-label="Короткие характеристики">
+          <div class="pdp-blockhead">
+            <h2 class="pdp-h">Характеристики:</h2>
+          </div>
+
+          <div class="pdp-clamp">
+            <dl class="pdp-kv">
+              <div class="pdp-kv__row">
+                <dt>Бренд:</dt>
+                <dd>{{ product.brand.name if product.brand else "—" }}</dd>
+              </div>
+
+              {% if product.category %}
+                <div class="pdp-kv__row">
+                  <dt>Категория:</dt>
+                  <dd>{{ product.category.name }}</dd>
+                </div>
+              {% endif %}
+
+              {% if characteristics and characteristics|length %}
+                {% for ch in characteristics %}
+                  <div class="pdp-kv__row">
+                    <dt>{{ ch.name }}:</dt>
+                    <dd>{{ ch.value }}{% if ch.unit %} {{ ch.unit }}{% endif %}</dd>
+                  </div>
+                {% endfor %}
+              {% endif %}
+            </dl>
+          </div>
+
+          <a class="pdp-more js-scrollto" href="#pdpSpecsFull">Показать полностью</a>
+        </section>
+
+        <!-- BUY -->
+        <aside class="pdp-buy" aria-label="Покупка">
+          <div class="pdp-buy__label">Цена:</div>
+
+          <div class="pdp-buy__price">
+            {% if pricing and pricing.has_discount %}
+              <div class="pdp-buy__old">{{ pricing.price_fmt }}р / шт.</div>
+              <div class="pdp-buy__new">{{ pricing.final_price_fmt }}р / шт.</div>
+            {% else %}
+              <div class="pdp-buy__new">{{ pricing.price_fmt if pricing else "" }}р / шт.</div>
+            {% endif %}
+          </div>
+
+          <!-- CART (button <-> stepper) -->
+<div class="pdp-cart"
+     data-product-id="{{ product.id }}"
+     data-initial-qty="{{ cart_qty }}">
+
+  <form method="post" action="/cart/add"
+        class="pdp-buy__form js-cart-add"
+        {% if cart_qty|int > 0 %}hidden{% endif %}>
+    <input type="hidden" name="product_id" value="{{ product.id }}">
+    <input type="hidden" name="qty" value="1">
+    <button class="pdp-buy__btn" type="submit">Добавить в корзину</button>
+  </form>
+
+  <div class="pdp-step js-cart-step"
+       {% if cart_qty|int <= 0 %}hidden{% endif %}
+       aria-label="Количество товара">
+    <button class="pdp-step__btn js-step-minus" type="button" aria-label="Уменьшить">−</button>
+    <input class="pdp-step__qty js-step-qty"
+       type="number"
+       inputmode="numeric"
+       min="0"
+       step="1"
+       value="{{ cart_qty if cart_qty|int > 0 else 1 }}"
+       aria-label="Количество">
+
+    <button class="pdp-step__btn js-step-plus" type="button" aria-label="Увеличить">+</button>
+  </div>
+</div>
+
+        </aside>
+
+        <!-- SHORT DESCRIPTION -->
+        <section class="pdp-short" aria-label="Короткое описание">
+          <div class="pdp-blockhead">
+            <h2 class="pdp-h">Описание товара:</h2>
+          </div>
+
+          <div class="pdp-clamp">
+            {% set desc = (product.description or "") %}
+            <p class="pdp-short__p">
+              {{ (desc[:260] ~ "…") if (desc and (desc|length > 260)) else desc }}
+            </p>
+          </div>
+
+          <a class="pdp-more js-scrollto" href="#pdpDescFull">Показать полностью</a>
+        </section>
+      </div>
+    </section>
+
+    <!-- FULL DESCRIPTION -->
+    <section class="pdp-section" id="pdpDescFull" aria-label="Описание товара">
+      <h2 class="pdp-section__title">Описание товара:</h2>
+
+      <div class="pdp-desc">
+        {% set full = (product.description or "") %}
+        {% if full %}
+          {% for para in full.split('\n') %}
+            {% if para.strip() %}
+              <p class="pdp-desc__p">{{ para }}</p>
+            {% endif %}
+          {% endfor %}
+        {% else %}
+          <p class="pdp-desc__p pdp-muted">Описание пока не добавлено.</p>
+        {% endif %}
+      </div>
+    </section>
+
+    <!-- FULL SPECS -->
+    <section class="pdp-section" id="pdpSpecsFull" aria-label="Характеристики товара">
+      <h2 class="pdp-section__title">Характеристики:</h2>
+
+      {% set specs = [] %}
+      {% set specs = specs + [{'k':'Бренд', 'v': (product.brand.name if product.brand else '—')}] %}
+      {% if product.category %}
+        {% set specs = specs + [{'k':'Категория', 'v': product.category.name}] %}
+      {% endif %}
+      {% if characteristics and characteristics|length %}
+        {% for ch in characteristics %}
+          {% set v = (ch.value ~ (' ' ~ ch.unit if ch.unit else '')) %}
+          {% set specs = specs + [{'k': ch.name, 'v': v}] %}
+        {% endfor %}
+      {% endif %}
+
+      {% set cols = specs|batch(6, fill_with=None) %}
+
+      <div class="pdp-speccols" aria-label="Список характеристик">
+        {% for col in cols %}
+          <div class="pdp-speccol">
+            {% for item in col %}
+              {% if item %}
+                <div class="pdp-spec">
+                  <span class="pdp-spec__k">{{ item.k }}:</span>
+                  <span class="pdp-spec__dots" aria-hidden="true"></span>
+                  <span class="pdp-spec__v">{{ item.v }}</span>
+                </div>
+              {% endif %}
+            {% endfor %}
+          </div>
+        {% endfor %}
+      </div>
+    </section>
+
+    <!-- RELATED (оставила как у тебя) -->
+    <section class="pdp-section pdp-section--last" aria-label="Так же берут">
+      <h2 class="pdp-section__title pdp-section__title--left">Так же берут:</h2>
+
+      <div class="p-grid">
+        {% if related and related|length %}
+          {% for p in related %}
+            {% set href = "/product/" ~ p.slug ~ "/" %}
+            <article class="p-card">
+              <div class="p-card__media-wrap">
+                <a class="p-card__media" href="{{ href }}" aria-label="{{ p.name }}">
+                  {% if p.main_image %}
+                    <img class="p-card__img" src="{{ p.main_image }}" alt="{{ p.name }}" loading="lazy">
+                  {% else %}
+                    <div class="p-card__img p-card__img--ph" aria-hidden="true"></div>
+                  {% endif %}
+                </a>
+
+                <div class="p-card__icons">
+                  <form method="post" action="/favorites/toggle" class="js-icon-toggle">
+                    <input type="hidden" name="product_id" value="{{ p.id }}">
+                    <button class="icon-btn {{ 'is-active' if p.is_favorite else '' }}" type="submit" aria-label="В избранное">
+                      <svg class="icon-btn__svg icon-heart" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                        <path class="i-fill" d="M12 21s-7.2-4.4-9.6-8.6C.6 9.1 2.2 5.8 5.6 5.2c1.7-.3 3.4.3 4.5 1.6L12 8.9l1.9-2.1c1.1-1.3 2.8-1.9 4.5-1.6 3.4.6 5 3.9 3.2 7.2C19.2 16.6 12 21 12 21z"/>
+                        <path class="i-stroke" d="M12 21s-7.2-4.4-9.6-8.6C.6 9.1 2.2 5.8 5.6 5.2c1.7-.3 3.4.3 4.5 1.6L12 8.9l1.9-2.1c1.1-1.3 2.8-1.9 4.5-1.6 3.4.6 5 3.9 3.2 7.2C19.2 16.6 12 21 12 21z"/>
+                      </svg>
+                    </button>
+                  </form>
+
+                  <form method="post" action="/compare/toggle" class="js-icon-toggle">
+                    <input type="hidden" name="product_id" value="{{ p.id }}">
+                    <button class="icon-btn {{ 'is-active' if p.is_compared else '' }}" type="submit" aria-label="Сравнить">
+                      <svg class="icon-btn__svg icon-compare" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                        <path class="i-stroke" d="M5 19.5h14M7.5 18V10.5M12 18V6.5M16.5 18V13"/>
+                        <rect class="i-fill" x="6.6" y="10.5" width="1.8" height="7.5" rx="0.9"/>
+                        <rect class="i-fill" x="11.1" y="6.5" width="1.8" height="11.5" rx="0.9"/>
+                        <rect class="i-fill" x="15.6" y="13" width="1.8" height="5" rx="0.9"/>
+                      </svg>
+                    </button>
+                  </form>
+                </div>
+              </div>
+
+              <div class="p-card__body">
+                <a class="p-card__name" href="{{ href }}">{{ p.name }}</a>
+
+                <div class="p-card__price">
+                  {% if p.has_discount %}
+                    <span class="p-card__price-old">{{ p.price_fmt }}р/шт.</span>
+                    <span class="p-card__price-new">{{ p.final_price_fmt }}р/шт.</span>
+                  {% else %}
+                    <span>{{ p.price_fmt }}р/шт.</span>
+                  {% endif %}
+                </div>
+
+                <div class="p-card__actions">
+                  <form method="post" action="/cart/add">
+                    <input type="hidden" name="product_id" value="{{ p.id }}">
+                    <input type="hidden" name="qty" value="1">
+                    <button class="p-card__btn" type="submit">
+                      <img class="p-card__btn-icon"
+                           src="/static/img/icons/public/cart.png"
+                           alt=""
+                           aria-hidden="true"
+                           loading="lazy">
+                      <span>в корзину</span>
+                    </button>
+                  </form>
+                </div>
+              </div>
+            </article>
+          {% endfor %}
+        {% endif %}
+      </div>
+    </section>
+
+    {% if gallery and gallery.all and (gallery.all|length > 3) %}
+      <dialog class="pdp-dlg" id="pdpDlg">
+        <form method="dialog" class="pdp-dlg__bar">
+          <button class="pdp-dlg__close" aria-label="Закрыть">✕</button>
+        </form>
+
+        <div class="pdp-dlg__grid" role="list">
+          {% for img in gallery.all %}
+            <button class="pdp-dlg__item" type="button" data-src="{{ img.src }}" role="listitem" aria-label="Открыть фото {{ loop.index }}">
+              <img class="pdp-dlg__img" src="{{ img.src }}" alt="" loading="lazy">
+            </button>
+          {% endfor %}
+        </div>
+      </dialog>
+    {% endif %}
+
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+(() => {
+  // smooth scroll for "Показать полностью"
+  document.querySelectorAll('a.js-scrollto[href^="#"]').forEach((a) => {
+    a.addEventListener('click', (e) => {
+      const id = a.getAttribute('href');
+      if (!id) return;
+      const el = document.querySelector(id);
+      if (!el) return;
+      e.preventDefault();
+      el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      history.replaceState(null, '', id);
+    });
+  });
+
+  // ajax-toggle (как на home)
+  const forms = document.querySelectorAll('form.js-icon-toggle');
+  if (forms.length) {
+    const postForm = async (form) => {
+      const action = form.getAttribute('action');
+      const data = new URLSearchParams(new FormData(form));
+
+      const btn = form.querySelector('button.icon-btn');
+      if (btn) btn.classList.toggle('is-active');
+
+      try {
+        const res = await fetch(action, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8' },
+          body: data.toString(),
+          credentials: 'same-origin',
+          redirect: 'follow',
+        });
+
+        if (!res.ok && btn) btn.classList.toggle('is-active');
+      } catch (e) {
+        if (btn) btn.classList.toggle('is-active');
+      }
+    };
+
+    forms.forEach((form) => {
+      form.addEventListener('submit', (e) => {
+        e.preventDefault();
+        postForm(form);
+      });
+    });
+  }
+
+  // gallery thumbs -> main
+  const mainImg = document.getElementById('pdpMainImg');
+  const thumbs = document.querySelectorAll('.pdp-thumb[data-src]');
+  thumbs.forEach((b) => {
+    b.addEventListener('click', () => {
+      const src = b.getAttribute('data-src');
+      if (mainImg && src) mainImg.src = src;
+    });
+  });
+
+  // dialog "show all"
+  const dlg = document.getElementById('pdpDlg');
+  const showAll = document.querySelector('.pdp-showall');
+  if (dlg && showAll && typeof dlg.showModal === 'function') {
+    showAll.addEventListener('click', () => dlg.showModal());
+
+    dlg.addEventListener('click', (e) => {
+      const btn = e.target.closest('.pdp-dlg__item');
+      if (!btn) return;
+      const src = btn.getAttribute('data-src');
+      if (mainImg && src) mainImg.src = src;
+      dlg.close();
+    });
+  }
+
+  // share
+  const shareBtn = document.querySelector('.pdp-share');
+  if (shareBtn) {
+    shareBtn.addEventListener('click', async () => {
+      const url = window.location.href;
+      const title = document.title || '';
+      try {
+        if (navigator.share) await navigator.share({ title, url });
+        else await navigator.clipboard.writeText(url);
+      } catch (_) {}
+    });
+  }
+
+// CART
+  const cart = document.querySelector('.pdp-cart');
+  if (cart) {
+    const addForm = cart.querySelector('form.js-cart-add');
+    const step = cart.querySelector('.js-cart-step');
+    const qtyEl = cart.querySelector('.js-step-qty'); // теперь это <input type="number">
+    const plusBtn = cart.querySelector('.js-step-plus');
+    const minusBtn = cart.querySelector('.js-step-minus');
+
+    const productId = cart.getAttribute('data-product-id');
+    let qty = parseInt(cart.getAttribute('data-initial-qty') || '0', 10);
+    if (!Number.isFinite(qty) || qty < 0) qty = 0;
+
+    const setUI = () => {
+      if (!step || !addForm || !qtyEl) return;
+
+      if (qty <= 0) {
+        step.hidden = true;
+        addForm.hidden = false;
+      } else {
+        qtyEl.value = String(qty);
+        addForm.hidden = true;
+        step.hidden = false;
+      }
+    };
+
+    const postQty = async (newQty) => {
+      if (!productId) return false;
+      const data = new URLSearchParams();
+      data.set('product_id', productId);
+      data.set('qty', String(newQty));
+
+      try {
+        const res = await fetch('/cart/update', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8',
+            'Accept': 'application/json',
+            'X-Requested-With': 'fetch',
+          },
+          body: data.toString(),
+          credentials: 'same-origin',
+        });
+        return res.ok;
+      } catch (_) {
+        return false;
+      }
+    };
+
+    const postAdd = async () => {
+      if (!addForm) return { ok: false };
+      const action = addForm.getAttribute('action') || '/cart/add';
+      const data = new URLSearchParams(new FormData(addForm));
+
+      try {
+        const res = await fetch(action, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8',
+            'Accept': 'application/json',
+            'X-Requested-With': 'fetch',
+          },
+          body: data.toString(), // qty=1 из формы
+          credentials: 'same-origin',
+          redirect: 'follow',
+        });
+
+        if (!res.ok) return { ok: false };
+
+        const json = await res.json().catch(() => null);
+        if (json && json.ok) return { ok: true, qty: Number(json.qty) };
+
+        return { ok: true, qty: qty > 0 ? qty : 1 };
+      } catch (_) {
+        return { ok: false };
+      }
+    };
+
+    // ---------- РУЧНОЙ ВВОД ----------
+    const parseQty = (v) => {
+      if (v === '' || v == null) return null;          // пусто — разрешаем временно
+      const n = Number(v);
+      if (!Number.isFinite(n)) return null;
+      return Math.max(0, Math.floor(n));               // только целые >= 0
+    };
+
+    let debounceTimer = null;
+
+    const commitQty = async (next) => {
+      const prev = qty;
+      qty = next;
+      setUI();
+
+      const ok = await postQty(next);
+      if (!ok) {
+        qty = prev;
+        setUI();
+      }
+    };
+
+    if (qtyEl) {
+      qtyEl.addEventListener('input', () => {
+        const next = parseQty(qtyEl.value);
+        if (next === null) return;
+
+        qty = next;
+        setUI();
+
+        clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(() => {
+          commitQty(next);
+        }, 350);
+      });
+
+      qtyEl.addEventListener('blur', () => {
+        clearTimeout(debounceTimer);
+        const next = parseQty(qtyEl.value);
+        const finalNext = (next === null) ? 0 : next; // пусто/мусор -> 0
+
+        qty = finalNext;
+        setUI();
+
+        commitQty(finalNext);
+      });
+
+      qtyEl.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          qtyEl.blur();
+        }
+      });
+    }
+
+    // ---------- ADD ----------
+    if (addForm) {
+      addForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        const prev = qty;
+        qty = Math.max(1, prev || 1);
+        setUI();
+
+        const r = await postAdd();
+        if (!r.ok) {
+          qty = prev;
+          setUI();
+          return;
+        }
+
+        const realQty = Number.isFinite(r.qty) ? r.qty : qty;
+        qty = Math.max(1, realQty);
+        setUI();
+      });
+    }
+
+    // ---------- PLUS / MINUS ----------
+    if (plusBtn) {
+      plusBtn.addEventListener('click', async () => {
+        const prev = qty;
+        const next = prev + 1;
+
+        qty = next;
+        setUI();
+
+        const ok = await postQty(next);
+        if (!ok) {
+          qty = prev;
+          setUI();
+        }
+      });
+    }
+
+    if (minusBtn) {
+      minusBtn.addEventListener('click', async () => {
+        const prev = qty;
+        const next = Math.max(0, prev - 1);
+
+        qty = next;
+        setUI();
+
+        const ok = await postQty(next);
+        if (!ok) {
+          qty = prev;
+          setUI();
+        }
+      });
+    }
+
+    setUI();
+  }
+})();
+</script>
+{% endblock %}

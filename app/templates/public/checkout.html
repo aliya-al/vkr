@@ -1,66 +1,321 @@
-<!doctype html>
-<html lang="ru">
-<head>
-  <meta charset="utf-8">
-  <title>Оформление</title>
-</head>
-<body>
-  <p><a href="/cart">← Корзина</a> | <a href="/catalog/">Каталог</a></p>
-  <h1>Оформление</h1>
+{% extends "public/base.html" %}
 
-  {% if error %}
-    <p><strong>Ошибка:</strong> {{ error }}</p>
-  {% endif %}
+{% block title %}Оформление заказа{% endblock %}
 
-  <h3>Состав заказа</h3>
-  {% if not items %}
-    <p>Корзина пуста.</p>
-  {% else %}
-    <ul>
-      {% for it in items %}
-        <li>{{ it.product.name }} — {{ it.qty }} шт × {{ it.unit_price }} = {{ it.line_total }}</li>
-      {% endfor %}
-    </ul>
-    <p><strong>Итого:</strong> {{ total_price }}</p>
-  {% endif %}
+{% block head %}
+  <link rel="stylesheet" href="/static/css/public/checkout.css">
+{% endblock %}
 
-  <hr>
+{% block content %}
+<div class="checkout">
+  <div class="container">
 
-  <form method="post" action="/checkout">
-    <div>
-      <label>Имя
-        <input type="text" name="customer_name" required value="{{ form_data.customer_name if form_data else '' }}">
-      </label>
-    </div>
+    {% set items = items if items is defined else [] %}
+    {% set pickup_points = pickup_points if pickup_points is defined else [] %}
+    {% set form_data = form_data if form_data is defined else {} %}
+    {% set total_qty = items | sum(attribute="qty") %}
 
-    <div>
-      <label>Телефон
-        <input type="text" name="customer_phone" required value="{{ form_data.customer_phone if form_data else '' }}">
-      </label>
-    </div>
+    {% if not items %}
+      <div class="co-empty">
+        <div class="co-empty__card">
+          <h2 class="co-empty__title">Корзина пуста</h2>
+          <p class="co-empty__text">Добавь товары в корзину, чтобы оформить заказ.</p>
+          <div class="co-empty__actions">
+            <a class="co-btn co-btn--primary" href="/catalog/">Перейти в каталог</a>
+            <a class="co-btn" href="/cart/">В корзину</a>
+          </div>
+        </div>
+      </div>
+    {% else %}
 
-    <div>
-      <label>Способ получения
-        <select name="delivery_type" required>
-          <option value="delivery" {% if form_data and form_data.delivery_type == 'delivery' %}selected{% endif %}>Доставка</option>
-          <option value="pickup" {% if form_data and form_data.delivery_type == 'pickup' %}selected{% endif %}>Самовывоз</option>
-        </select>
-      </label>
-    </div>
+      <div class="co-grid">
+        <section class="co-main">
 
-    <div>
-      <label>Адрес (только если доставка)
-        <input type="text" name="delivery_address" value="{{ form_data.delivery_address if form_data else '' }}">
-      </label>
-    </div>
+          <div class="co-head">
+            <a class="cat-back co-back" href="/cart/">Вернуться в корзину</a>
+            <h1 class="co-title">Оформление заказа</h1>
+          </div>
 
-    <div>
-      <label>Комментарий
-        <textarea name="comment">{{ form_data.comment if form_data else '' }}</textarea>
-      </label>
-    </div>
+          {% if error %}
+            <div class="co-card" style="border:1px solid rgba(255,0,0,.25);">
+              <div style="color: var(--color-text); font-size: var(--fs-sm);">
+                <b>Ошибка:</b> {{ error }}
+              </div>
+            </div>
+          {% endif %}
 
-    <button type="submit">Предварительно оформить</button>
-  </form>
-</body>
-</html>
+          <!-- СОСТАВ ЗАКАЗА -->
+          <div class="co-card">
+            <div class="co-card__head">
+              <h2 class="co-card__title">Состав заказа</h2>
+              <div class="co-pill">{{ total_qty }} шт.</div>
+            </div>
+
+            <div class="co-list">
+              {% for it in items %}
+                {% set p = it["product"] %}
+                {% set qty = it["qty"] %}
+                {% set unit_price = it["unit_price"] %}
+                {% set line_total = it["line_total"] %}
+
+                {% set base_unit = p.price %}
+                {% set disc = p.discount_percent %}
+                {% set has_disc = disc is not none and (disc|int) > 0 %}
+                {% set unit_old = base_unit %}
+                {% set line_old = unit_old * qty %}
+
+                {% set img = it["image_url"] if ("image_url" in it) else None %}
+
+                <article class="co-item">
+                  <a class="co-item__media" href="/product/{{ p.id }}" aria-label="Открыть товар">
+                    {% if img %}
+                      <img class="co-item__img" src="{{ img }}" alt="{{ p.name }}">
+                    {% else %}
+                      <span class="co-item__ph" aria-hidden="true"></span>
+                    {% endif %}
+                  </a>
+
+                  <div class="co-item__body">
+                    <a class="co-item__name" href="/product/{{ p.id }}">{{ p.name }}</a>
+                    <div class="co-item__meta">
+                      <span class="co-item__qty">Кол-во: <b>{{ qty }}</b></span>
+                    </div>
+                  </div>
+
+                  <div class="co-item__prices">
+                    {% if has_disc and unit_old > unit_price %}
+                      <span class="co-item__old">{{ line_old }} ₽</span>
+                      <span class="co-item__new">{{ line_total }} ₽</span>
+                    {% else %}
+                      <span class="co-item__new">{{ line_total }} ₽</span>
+                    {% endif %}
+                  </div>
+                </article>
+              {% endfor %}
+            </div>
+          </div>
+
+          <!-- ИТОГО + ФОРМА -->
+          <div class="co-card">
+            <h2 class="co-card__title co-card__title--center">Итого</h2>
+
+            <div class="co-total">
+              <div class="co-total__row">
+                <span class="co-total__label">Сумма</span>
+                <span class="co-total__value">
+                  {% if total_base is defined and total_base > total_price %}
+                    <span class="co-total__old">{{ total_base }} ₽</span>
+                  {% endif %}
+                  <span class="co-total__new">{{ total_price }} ₽</span>
+                </span>
+              </div>
+
+              <p class="co-total__hint">Предварительное оформление — менеджер подтвердит заказ.</p>
+            </div>
+
+            <form class="co-form" action="/checkout" method="post" id="checkoutForm" novalidate>
+              <div class="co-form__grid">
+                <label class="co-field">
+                  <span class="co-field__label">Имя <b class="co-req">*</b></span>
+                  <input class="co-input"
+                         type="text"
+                         name="customer_name"
+                         required
+                         autocomplete="name"
+                         value="{{ form_data.get('customer_name','') }}" />
+                </label>
+
+                <label class="co-field">
+                  <span class="co-field__label">Телефон <b class="co-req">*</b></span>
+                  <input class="co-input"
+                     type="tel"
+                     name="customer_phone"
+                     id="customerPhone"
+                     required
+                     autocomplete="tel"
+                     inputmode="tel"
+                     placeholder="+7 (___) ___-__-__"
+                     value="{{ form_data.get('customer_phone','') }}" />
+
+                </label>
+              </div>
+
+              <div class="co-form__block">
+                <div class="co-field__label co-field__label--center">Способ получения</div>
+
+                <div class="co-toggle" role="group" aria-label="Способ получения">
+                  <button class="co-toggle__btn" type="button" data-value="pickup" aria-pressed="false">
+                    Самовывоз
+                  </button>
+                  <button class="co-toggle__btn" type="button" data-value="delivery" aria-pressed="false">
+                    Доставка
+                  </button>
+                </div>
+
+                {% set dt = form_data.get('delivery_type','pickup') %}
+                <input type="hidden" name="delivery_type" id="deliveryType" value="{{ dt }}" />
+
+                <!-- PICKUP -->
+                <div class="co-pane" id="panePickup">
+                  <label class="co-field">
+                    <span class="co-field__label">Пункт самовывоза <b class="co-req">*</b></span>
+                    {% set pick_val = form_data.get('pickup_address','') %}
+                    <select class="co-input" name="pickup_address" id="pickupAddress" required>
+                      {% if pickup_points and pickup_points|length > 0 %}
+                        {% for addr in pickup_points %}
+                          <option value="{{ addr }}" {% if addr == pick_val %}selected{% endif %}>{{ addr }}</option>
+                        {% endfor %}
+                      {% else %}
+                        <option value="ул. Примерная, 1" {% if pick_val in ('','ул. Примерная, 1') %}selected{% endif %}>ул. Примерная, 1</option>
+                        <option value="пр-т Тестовый, 10" {% if pick_val == 'пр-т Тестовый, 10' %}selected{% endif %}>пр-т Тестовый, 10</option>
+                      {% endif %}
+                    </select>
+                  </label>
+                  <p class="co-note">Адреса самовывоза позже подключим из БД.</p>
+                </div>
+
+                <!-- DELIVERY -->
+                <div class="co-pane is-hidden" id="paneDelivery">
+                  <label class="co-field">
+                    <span class="co-field__label">Адрес доставки <b class="co-req">*</b></span>
+                    <input class="co-input"
+                           type="text"
+                           name="delivery_address"
+                           id="deliveryAddress"
+                           placeholder="Город, улица, дом, квартира"
+                           value="{{ form_data.get('delivery_address','') }}" />
+                  </label>
+                </div>
+              </div>
+
+              <label class="co-field">
+                <span class="co-field__label">Комментарий (необязательно)</span>
+                <textarea class="co-input co-textarea"
+                          name="comment"
+                          rows="3"
+                          placeholder="Например: удобное время, домофон, подъезд…">{{ form_data.get('comment','') }}</textarea>
+              </label>
+
+              <div class="co-actions">
+                <button class="co-btn co-btn--primary co-btn--block" type="submit">
+                  Предварительно оформить
+                </button>
+                <a class="co-btn co-btn--block" href="/cart/">Вернуться в корзину</a>
+              </div>
+
+              <p class="co-legal">
+                Нажимая «Предварительно оформить», вы соглашаетесь на обработку данных для связи по заказу.
+              </p>
+            </form>
+          </div>
+
+        </section>
+      </div>
+
+    {% endif %}
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function () {
+  const phoneEl = document.getElementById('customerPhone');
+  if (!phoneEl) return;
+
+  const digitsOnly = (s) => (s || '').replace(/\D/g, '');
+
+  const normalizeRu = (digits) => {
+    // принимаем: 9XXXXXXXXX -> 7XXXXXXXXXX
+    //          8XXXXXXXXXX -> 7XXXXXXXXXX
+    //          7XXXXXXXXXX -> 7XXXXXXXXXX
+    if (!digits) return '';
+    if (digits[0] === '9') digits = '7' + digits;
+    if (digits[0] === '8') digits = '7' + digits.slice(1);
+    if (digits[0] !== '7') return digits; // оставим как есть, но дальше провалится на проверке
+    return digits.slice(0, 11);
+  };
+
+  const formatRu = (digits11) => {
+    // digits11: 7XXXXXXXXXX
+    if (!digits11) return '';
+    const d = digits11;
+    const a = d.slice(1, 4);
+    const b = d.slice(4, 7);
+    const c = d.slice(7, 9);
+    const e = d.slice(9, 11);
+
+    let out = '+7';
+    if (a) out += ` (${a}`;
+    if (a.length === 3) out += ')';
+    if (b) out += ` ${b}`;
+    if (c) out += `-${c}`;
+    if (e) out += `-${e}`;
+    return out;
+  };
+
+  const applyMask = () => {
+    const raw = digitsOnly(phoneEl.value);
+    const norm = normalizeRu(raw);
+    phoneEl.value = formatRu(norm);
+
+    // Валидация: строго 11 цифр и начинается с 7
+    const ok = norm.length === 11 && norm[0] === '7';
+    phoneEl.setCustomValidity(ok || phoneEl.value === '' ? '' : 'Введите телефон в формате +7 (999) 999-99-99');
+  };
+
+  phoneEl.addEventListener('input', applyMask);
+  phoneEl.addEventListener('blur', applyMask);
+
+  // если при ошибке бекенд вернул значение — сразу отформатируем
+  applyMask();
+
+  // перед отправкой формы — ещё раз зафиксируем маску/валидность
+  const form = document.getElementById('checkoutForm');
+  if (form) {
+    form.addEventListener('submit', () => applyMask());
+  }
+})();
+</script>
+
+<script>
+(function () {
+  const btns = document.querySelectorAll('.co-toggle__btn');
+  const deliveryType = document.getElementById('deliveryType');
+
+  const panePickup = document.getElementById('panePickup');
+  const paneDelivery = document.getElementById('paneDelivery');
+
+  const pickupAddress = document.getElementById('pickupAddress');
+  const deliveryAddress = document.getElementById('deliveryAddress');
+
+  function setMode(mode) {
+    if (deliveryType) deliveryType.value = mode;
+
+    const isPickup = mode === 'pickup';
+    panePickup?.classList.toggle('is-hidden', !isPickup);
+    paneDelivery?.classList.toggle('is-hidden', isPickup);
+
+    // required: только нужное поле
+    if (pickupAddress) pickupAddress.required = isPickup;
+    if (deliveryAddress) deliveryAddress.required = !isPickup;
+
+    btns.forEach(b => {
+      const active = b.dataset.value === mode;
+      b.classList.toggle('is-active', active);
+      b.setAttribute('aria-pressed', active ? 'true' : 'false');
+    });
+  }
+
+  btns.forEach(b => {
+    b.addEventListener('click', (e) => {
+      e.preventDefault();
+      setMode(b.dataset.value);
+    });
+  });
+
+  // дефолт: берем из hidden input (сервер кладет form_data.delivery_type)
+  setMode(deliveryType ? deliveryType.value : 'pickup');
+})();
+</script>
+{% endblock %}

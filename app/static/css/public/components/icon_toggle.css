@@ -1,0 +1,72 @@
+
+.icon-btn {
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-xl);
+  border: 1px solid var(--color-line);
+  background: var(--color-bg);
+  display: grid;
+  place-items: center;
+  padding: 0;
+  cursor: pointer;
+
+  /* важное: цвет управляет SVG через currentColor */
+  color: var(--color-text);
+
+  transition:
+    color 160ms ease,
+    border-color 160ms ease,
+    background-color 160ms ease,
+    transform 120ms ease;
+}
+
+.icon-btn:active { transform: scale(0.96); }
+
+@media (hover: hover) {
+  .icon-btn:hover {
+    border-color: color-mix(in oklab, var(--color-line), var(--color-text) 18%);
+    background: color-mix(in oklab, var(--color-bg), var(--color-surface) 55%);
+  }
+}
+
+/* SVG размер + базовая геометрия */
+.icon-btn__svg {
+  width: 16px;
+  height: 16px;
+  display: block;
+}
+
+/* по умолчанию — “контурные” иконки */
+.icon-btn__svg .i-stroke {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.9;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* то, что должно заливаться при active */
+.icon-btn__svg .i-fill {
+  fill: none;
+  stroke: none;
+}
+
+.icon-btn {
+  color: color-mix(in oklab, var(--color-text), var(--color-bg) 55%);
+}
+
+.icon-btn.is-active {
+  color: color-mix(in oklab, var(--color-text), var(--color-bg) 15%);
+  border-color: color-mix(in oklab, var(--color-line), var(--color-text) 25%);
+  background: color-mix(in oklab, var(--color-surface), var(--color-bg) 55%);
+}
+
+.icon-btn.is-active .icon-heart .i-fill { fill: currentColor; }
+.icon-btn.is-active .icon-compare .i-fill { fill: currentColor; }
+
+
+/* Фокус */
+.icon-btn:focus-visible {
+  outline: 2px solid var(--focus-outline);
+  outline-offset: 2px;
+}

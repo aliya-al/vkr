@@ -71,7 +71,13 @@ async def cart_add(
     cart[key] = int(cart.get(key, 0)) + qty
     request.session["cart"] = cart
 
-    # возвращаемся туда, откуда пришли, если возможно
+    # Если запрос от fetch — вернем JSON (без редиректа)
+    accept = (request.headers.get("accept") or "").lower()
+    xrw = (request.headers.get("x-requested-with") or "").lower()
+    if "application/json" in accept or xrw == "fetch":
+        return {"ok": True, "qty": cart.get(key, 0)}
+
+    # иначе — обычный редирект
     referer = request.headers.get("referer")
     return RedirectResponse(referer or "/cart", status_code=303)
 
@@ -129,10 +135,11 @@ async def cart_page(request: Request, session: AsyncSession = Depends(get_async_
         items.append(
             {
                 "id": pid_str,
+                "slug": p.slug,
                 "name": p.name,
                 "qty": qty,
-                "unit_price": unit,               # отображаемая (со скидкой, если есть)
-                "base_unit_price": base_unit,     # цена до скидки
+                "unit_price": unit,
+                "base_unit_price": base_unit,
                 "line_total": line_total,
             }
         )

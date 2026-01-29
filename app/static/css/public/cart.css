@@ -28,6 +28,17 @@
   margin-top: var(--space-4);
   margin-bottom: var(--space-6);
 }
+
+/* Когда корзина пустая — центрируем заголовок по реальной ширине */
+.cart-head--empty{
+  grid-template-columns: 1fr;
+}
+
+.cart-head--empty .cart-title{
+  justify-self: center;
+}
+
+
 .cart-title {
 justify-self: center;
   margin: 0;
@@ -165,14 +176,41 @@ justify-self: center;
 .qty__input {
   width: 56px;
   height: 32px;
+
+  padding: 0;
+  margin: 0;
+  text-align: center;
+  line-height: 32px;
+
   border-radius: 10px;
   border: 1px solid var(--cart-line);
   background: var(--cart-bg);
   color: var(--cart-text);
-  text-align: center;
   font-size: var(--fs-sm);
-  padding: 0 8px;
+  font: inherit;
+
+  outline: none;
+  box-shadow: none;
+  -webkit-tap-highlight-color: transparent;
 }
+
+.qty__input:focus,
+.qty__input:focus-visible,
+.qty__input:active {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+.qty__input::-webkit-outer-spin-button,
+.qty__input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+.qty__input {
+  -moz-appearance: textfield;
+}
+
+
 
 .qty__save {
   height: 32px;
@@ -298,7 +336,14 @@ justify-self: center;
 
 .cart-btn--ghost {
   background: transparent;
+  color: var(--cart-muted);
 }
+
+.cart-btn--ghost:hover {
+  color: var(--cart-text);
+}
+
+
 
 /* ---------- EMPTY ---------- */
 .cart-empty {

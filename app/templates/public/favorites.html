@@ -1,60 +1,111 @@
-<!-- app/templates/public/favorites.html -->
-<!doctype html>
-<html lang="ru">
-<head>
-  <meta charset="utf-8">
-  <title>Избранное</title>
-</head>
-<body>
-  <p>
-    <a href="/catalog/">Каталог</a> |
-    <a href="/compare">Сравнение</a> |
-    <a href="/cart">Корзина</a>
-  </p>
+{% extends "public/base.html" %}
 
-  <h1>Избранное</h1>
+{% block title %}Избранное{% endblock %}
 
-  {% if not products %}
-    <p>Избранное пусто.</p>
-  {% else %}
-    <form method="post" action="/favorites/clear">
-      <button type="submit">Очистить избранное</button>
-    </form>
+{% block head %}
+  <link rel="stylesheet" href="/static/css/public/favorites.css">
+{% endblock %}
 
-    <ul>
-      {% for p in products %}
-        <li style="margin-bottom: 14px;">
-          {% if p.main_image %}
-            <div><img src="{{ p.main_image }}" alt="img" style="max-width:120px; height:auto;"></div>
-          {% endif %}
+{% block content %}
+<section class="fav" aria-label="Избранное">
+  <div class="container">
 
-          <div><strong>{{ p.name }}</strong></div>
+    {% set products = products if products is defined else [] %}
 
-          {% if p.discount_percent %}
-            <div>
-              Цена: <s>{{ p.price }}</s> → <strong>{{ p.display_price }}</strong> (скидка {{ p.discount_percent }}%)
-            </div>
-          {% else %}
-            <div>Цена: <strong>{{ p.price }}</strong></div>
-          {% endif %}
+    <header class="fav-head">
+      <span class="fav-head__ghost" aria-hidden="true"></span>
 
-          <div style="margin-top: 6px;">
-            <form method="post" action="/cart/add" style="display:inline;">
-              <input type="hidden" name="product_id" value="{{ p.id }}">
-              <button type="submit">В корзину</button>
-            </form>
+      <h1 class="fav-title">Избранное</h1>
 
-            <form method="post" action="/favorites/remove/{{ p.id }}" style="display:inline;">
-              <button type="submit">Удалить</button>
-            </form>
+      {% if products %}
+        <form class="fav-head__clear" method="post" action="/favorites/clear">
+          <button class="fav-btn fav-btn--ghost" type="submit">Очистить</button>
+        </form>
+      {% else %}
+        <span class="fav-head__ghost" aria-hidden="true"></span>
+      {% endif %}
+    </header>
 
-            <form method="post" action="/compare/add/{{ p.id }}" style="display:inline;">
-              <button type="submit">В сравнение</button>
-            </form>
+    {% if not products %}
+      <div class="fav-empty" role="status" aria-live="polite">
+        <div class="fav-empty__card">
+          <div class="fav-empty__title">Пока ничего нет</div>
+          <div class="fav-empty__text">Добавляйте товары в избранное, чтобы быстро возвращаться к ним.</div>
+          <div class="fav-empty__actions">
+            <a class="fav-btn fav-btn--primary" href="/catalog/">Перейти в каталог</a>
+            <a class="fav-btn" href="/">На главную</a>
           </div>
-        </li>
-      {% endfor %}
-    </ul>
-  {% endif %}
-</body>
-</html>
+        </div>
+      </div>
+    {% else %}
+
+      <div class="fav-grid" aria-label="Товары в избранном">
+        {% for p in products %}
+          {% set pslug = (p.slug if p.slug is defined else p.id) %}
+          {% set href = "/product/" ~ pslug %}
+
+          {# картинка: сначала p.main_image, иначе p.images[0].(url|image_url|path|file_path) #}
+          {% set main_img = (p.main_image if p.main_image is defined else None) %}
+          {% if (not main_img) and (p.images is defined) and p.images and (p.images|length > 0) %}
+            {% set img0 = p.images[0] %}
+            {% set main_img =
+              (img0.url if img0.url is defined else
+              (img0.image_url if img0.image_url is defined else
+              (img0.path if img0.path is defined else
+              (img0.file_path if img0.file_path is defined else None))))
+            %}
+          {% endif %}
+          {% if main_img and not main_img.startswith('/') %}
+            {% set main_img = '/' ~ main_img %}
+          {% endif %}
+
+          {% set disc = (p.discount_percent if p.discount_percent is defined else None) %}
+          {% set has_disc = disc is not none and (disc|int) > 0 %}
+          {% set show_new = (p.display_price if p.display_price is defined else None) %}
+
+          <article class="fav-card">
+            <a class="fav-card__media" href="{{ href }}" aria-label="{{ p.name }}">
+              {% if main_img %}
+                <img class="fav-card__img" src="{{ main_img }}" alt="{{ p.name }}" loading="lazy">
+              {% else %}
+                <div class="fav-card__ph" aria-hidden="true"></div>
+              {% endif %}
+            </a>
+
+            <div class="fav-card__body">
+              <a class="fav-card__name" href="{{ href }}">{{ p.name }}</a>
+
+              <div class="fav-card__price">
+                {% if has_disc and show_new is not none %}
+                  <span class="fav-card__old">{{ p.price }}р/шт.</span>
+                  <span class="fav-card__new">{{ show_new }}р/шт.</span>
+                {% else %}
+                  <span class="fav-card__new">{{ p.price }}р/шт.</span>
+                {% endif %}
+              </div>
+
+              <div class="fav-card__actions">
+                <form method="post" action="/cart/add">
+                  <input type="hidden" name="product_id" value="{{ p.id }}">
+                  <input type="hidden" name="qty" value="1">
+                  <button class="fav-btn fav-btn--primary fav-btn--block" type="submit">
+                    В корзину
+                  </button>
+                </form>
+
+                <form method="post" action="/favorites/remove/{{ p.id }}">
+                  <button class="fav-btn fav-btn--ghost fav-btn--block" type="submit" aria-label="Убрать из избранного">
+                    Убрать
+                  </button>
+                </form>
+              </div>
+            </div>
+          </article>
+        {% endfor %}
+      </div>
+
+    {% endif %}
+
+  </div>
+</section>
+{% endblock %}

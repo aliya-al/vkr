@@ -13,6 +13,8 @@ from app.models.brand import Brand
 from app.utils.database import get_async_session
 from app.utils.templates import templates
 from app.utils.category_image import find_category_image_url
+from app.routers.public.favorites import get_favorite_ids
+from app.routers.public.compare import get_compare_ids
 
 router = APIRouter()
 
@@ -198,6 +200,7 @@ async def catalog_category(slug: str, request: Request, session: AsyncSession = 
         product_cards.append(
             {
                 "id": str(p.id),
+                "slug": p.slug,
                 "name": p.name,
                 "price": p.price,
                 "discount_percent": p.discount_percent,
@@ -221,6 +224,9 @@ async def catalog_category(slug: str, request: Request, session: AsyncSession = 
         for b in brands_db
     ]
 
+    fav_ids = get_favorite_ids(request.session)
+    cmp_ids = get_compare_ids(request.session)
+
     return templates.TemplateResponse(
         "public/catalog/category_detail.html",
         {
@@ -233,5 +239,7 @@ async def catalog_category(slug: str, request: Request, session: AsyncSession = 
             "abs_min": abs_min,
             "abs_max": abs_max,
             "products": product_cards,
+            "fav_ids": fav_ids,
+            "cmp_ids": cmp_ids,
         },
     )

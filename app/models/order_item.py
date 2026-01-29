@@ -23,9 +23,10 @@ class OrderItem(Base):
     quantity: Mapped[int] = mapped_column(Integer, nullable=False)
 
     # snapshot-цены на момент заказа
-    price_per_item: Mapped[int] = mapped_column(Integer, nullable=False)              # базовая цена
-    discount_percent: Mapped[int | None] = mapped_column(Integer, nullable=True)     # скидка
-    total_price: Mapped[int] = mapped_column(Integer, nullable=False)                # line_total по цене со скидкой
+    price_per_item: Mapped[int] = mapped_column(Integer, nullable=False)  # базовая цена
+    final_price_per_item: Mapped[int] = mapped_column(Integer, nullable=False, default=0)  # фактическая за штуку (со скидкой)
+    discount_percent: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    total_price: Mapped[int] = mapped_column(Integer, nullable=False)
 
     # snapshot-данные товара (минимум, чтобы история не зависела от products)
     product_name: Mapped[str] = mapped_column(String(255), nullable=False)
