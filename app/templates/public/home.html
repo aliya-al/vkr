@@ -5,6 +5,7 @@
 {% block head %}
   <link rel="stylesheet" href="/static/css/public/components/category_card.css">
   <link rel="stylesheet" href="/static/css/public/components/icon_toggle.css">
+  <link rel="stylesheet" href="/static/css/public/components/product_cards.css">
   <link rel="stylesheet" href="/static/css/public/home.css">
 {% endblock %}
 
@@ -12,9 +13,7 @@
 <div class="home">
   <div class="container">
 
-    {# один раз — чтобы не плодить set в каждой карточке #}
-    {% set fav_ids = fav_ids if fav_ids is defined else (favorites_ids if favorites_ids is defined else []) %}
-    {% set cmp_ids = cmp_ids if cmp_ids is defined else (compare_ids if compare_ids is defined else []) %}
+    {% set cart_map = request.session.get('cart') if request and request.session is defined else {} %}
 
     <section class="home-hero" aria-label="Новости и категории">
       <div class="home-hero__grid">
@@ -68,7 +67,6 @@
           </div>
         </section>
 
-        <!-- CATEGORIES -->
         <aside class="home-cats" aria-label="Категории">
           <a class="home-cats__title-link" href="/catalog/" aria-label="Перейти в каталог">
             <h2 class="home-cats__title">Категории</h2>
@@ -95,7 +93,6 @@
               {% if categories and categories|length %}
                 {% for c in categories %}
                   {% set src = c.image_url %}
-
                   <a class="cat-card" role="listitem" href="/catalog/{{ c.slug }}" aria-label="{{ c.name }}">
                     <span class="cat-card__inner">
                       <span class="cat-card__name">
@@ -111,7 +108,6 @@
                       </span>
                     </span>
                   </a>
-
                 {% endfor %}
               {% else %}
                 {% for _ in range(6) %}
@@ -130,7 +126,6 @@
       </div>
     </section>
 
-    <!-- PROMOTIONS (только если есть акционные товары) -->
     {% set promo_products = (products|selectattr('discount_percent')|list) if products else [] %}
     {% if promo_products and promo_products|length %}
       <section class="home-section">
@@ -151,6 +146,11 @@
 
             {% set new_price = (p.price * (100 - p.discount_percent) // 100) %}
 
+            {% set cart_qty = 0 %}
+            {% if cart_map is mapping %}
+              {% set cart_qty = (cart_map.get(p.id|string, 0) | int) %}
+            {% endif %}
+
             <article class="p-card">
               <div class="p-card__media-wrap">
                 <a class="p-card__media" href="{{ href }}" aria-label="{{ p.name }}">
@@ -161,11 +161,10 @@
                   {% endif %}
                 </a>
 
-                <!-- icons OVER image -->
                 <div class="p-card__icons">
                   <form method="post" action="/favorites/toggle" class="js-icon-toggle">
                     <input type="hidden" name="product_id" value="{{ p.id }}">
-                    <button class="icon-btn {{ 'is-active' if (p.id in fav_ids) else '' }}" type="submit" aria-label="В избранное">
+                    <button class="icon-btn {{ 'is-active' if ((p.id|string) in fav_ids_set) else '' }}" type="submit" aria-label="В избранное">
                       <svg class="icon-btn__svg icon-heart" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
                         <path class="i-fill" d="M12 21s-7.2-4.4-9.6-8.6C.6 9.1 2.2 5.8 5.6 5.2c1.7-.3 3.4.3 4.5 1.6L12 8.9l1.9-2.1c1.1-1.3 2.8-1.9 4.5-1.6 3.4.6 5 3.9 3.2 7.2C19.2 16.6 12 21 12 21z"/>
                         <path class="i-stroke" d="M12 21s-7.2-4.4-9.6-8.6C.6 9.1 2.2 5.8 5.6 5.2c1.7-.3 3.4.3 4.5 1.6L12 8.9l1.9-2.1c1.1-1.3 2.8-1.9 4.5-1.6 3.4.6 5 3.9 3.2 7.2C19.2 16.6 12 21 12 21z"/>
@@ -175,7 +174,7 @@
 
                   <form method="post" action="/compare/toggle" class="js-icon-toggle">
                     <input type="hidden" name="product_id" value="{{ p.id }}">
-                    <button class="icon-btn {{ 'is-active' if (p.id in cmp_ids) else '' }}" type="submit" aria-label="Сравнить">
+                    <button class="icon-btn {{ 'is-active' if ((p.id|string) in cmp_ids_set) else '' }}" type="submit" aria-label="Сравнить">
                       <svg class="icon-btn__svg icon-compare" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
                         <path class="i-stroke" d="M5 19.5h14M7.5 18V10.5M12 18V6.5M16.5 18V13"/>
                         <rect class="i-fill" x="6.6" y="10.5" width="1.8" height="7.5" rx="0.9"/>
@@ -196,14 +195,40 @@
                 </div>
 
                 <div class="p-card__actions">
-                  <button class="p-card__btn" type="button">
-                    <img class="p-card__btn-icon"
-                         src="/static/img/icons/public/cart.png"
-                         alt=""
-                         aria-hidden="true"
-                         loading="lazy">
-                    <span>в корзину</span>
-                  </button>
+                  <div class="cartw"
+                       data-cart-widget
+                       data-product-id="{{ p.id }}"
+                       data-initial-qty="{{ cart_qty }}">
+
+                    <form method="post" action="/cart/add"
+                          class="js-cart-add"
+                          {% if cart_qty|int > 0 %}hidden{% endif %}>
+                      <input type="hidden" name="product_id" value="{{ p.id }}">
+                      <input type="hidden" name="qty" value="1">
+                      <button class="cartw__btn" type="submit">
+                        <img class="p-card__btn-icon"
+                             src="/static/img/icons/public/cart.png"
+                             alt=""
+                             aria-hidden="true"
+                             loading="lazy">
+                        <span>в корзину</span>
+                      </button>
+                    </form>
+
+                    <div class="cartw__step js-cart-step"
+                         {% if cart_qty|int <= 0 %}hidden{% endif %}
+                         aria-label="Количество товара">
+                      <button class="cartw__step-btn js-step-minus" type="button" aria-label="Уменьшить">−</button>
+                      <input class="cartw__qty js-step-qty"
+                             type="number"
+                             inputmode="numeric"
+                             min="0"
+                             step="1"
+                             value="{{ cart_qty if cart_qty|int > 0 else 1 }}"
+                             aria-label="Количество">
+                      <button class="cartw__step-btn js-step-plus" type="button" aria-label="Увеличить">+</button>
+                    </div>
+                  </div>
                 </div>
               </div>
             </article>
@@ -213,7 +238,6 @@
       </section>
     {% endif %}
 
-    <!-- PRODUCTS -->
     <section class="home-section home-section--last">
       <h2 class="home-section__title">Товары</h2>
 
@@ -231,6 +255,11 @@
               {% endif %}
             {% endif %}
 
+            {% set cart_qty = 0 %}
+            {% if cart_map is mapping %}
+              {% set cart_qty = (cart_map.get(p.id|string, 0) | int) %}
+            {% endif %}
+
             <article class="p-card">
               <div class="p-card__media-wrap">
                 <a class="p-card__media" href="{{ href }}" aria-label="{{ p.name }}">
@@ -241,11 +270,10 @@
                   {% endif %}
                 </a>
 
-                <!-- icons OVER image (same as promo) -->
                 <div class="p-card__icons">
                   <form method="post" action="/favorites/toggle" class="js-icon-toggle">
                     <input type="hidden" name="product_id" value="{{ p.id }}">
-                    <button class="icon-btn {{ 'is-active' if (p.id in fav_ids) else '' }}" type="submit" aria-label="В избранное">
+                    <button class="icon-btn {{ 'is-active' if ((p.id|string) in fav_ids_set) else '' }}" type="submit" aria-label="В избранное">
                       <svg class="icon-btn__svg icon-heart" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
                         <path class="i-fill" d="M12 21s-7.2-4.4-9.6-8.6C.6 9.1 2.2 5.8 5.6 5.2c1.7-.3 3.4.3 4.5 1.6L12 8.9l1.9-2.1c1.1-1.3 2.8-1.9 4.5-1.6 3.4.6 5 3.9 3.2 7.2C19.2 16.6 12 21 12 21z"/>
                         <path class="i-stroke" d="M12 21s-7.2-4.4-9.6-8.6C.6 9.1 2.2 5.8 5.6 5.2c1.7-.3 3.4.3 4.5 1.6L12 8.9l1.9-2.1c1.1-1.3 2.8-1.9 4.5-1.6 3.4.6 5 3.9 3.2 7.2C19.2 16.6 12 21 12 21z"/>
@@ -255,7 +283,7 @@
 
                   <form method="post" action="/compare/toggle" class="js-icon-toggle">
                     <input type="hidden" name="product_id" value="{{ p.id }}">
-                    <button class="icon-btn {{ 'is-active' if (p.id in cmp_ids) else '' }}" type="submit" aria-label="Сравнить">
+                    <button class="icon-btn {{ 'is-active' if ((p.id|string) in cmp_ids_set) else '' }}" type="submit" aria-label="Сравнить">
                       <svg class="icon-btn__svg icon-compare" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
                         <path class="i-stroke" d="M5 19.5h14M7.5 18V10.5M12 18V6.5M16.5 18V13"/>
                         <rect class="i-fill" x="6.6" y="10.5" width="1.8" height="7.5" rx="0.9"/>
@@ -281,20 +309,42 @@
                 </div>
 
                 <div class="p-card__actions">
-                  <!-- ADD TO CART -->
-                  <form method="post" action="/cart/add">
-                    <input type="hidden" name="product_id" value="{{ p.id }}">
-                    <input type="hidden" name="qty" value="1">
-                    <button class="p-card__btn" type="submit">
-                      <img class="p-card__btn-icon"
-                           src="/static/img/icons/public/cart.png"
-                           alt=""
-                           aria-hidden="true"
-                           loading="lazy">
-                      <span>в корзину</span>
-                    </button>
-                  </form>
+                  <div class="cartw"
+                       data-cart-widget
+                       data-product-id="{{ p.id }}"
+                       data-initial-qty="{{ cart_qty }}">
+
+                    <form method="post" action="/cart/add"
+                          class="js-cart-add"
+                          {% if cart_qty|int > 0 %}hidden{% endif %}>
+                      <input type="hidden" name="product_id" value="{{ p.id }}">
+                      <input type="hidden" name="qty" value="1">
+                      <button class="cartw__btn" type="submit">
+                        <img class="p-card__btn-icon"
+                             src="/static/img/icons/public/cart.png"
+                             alt=""
+                             aria-hidden="true"
+                             loading="lazy">
+                        <span>в корзину</span>
+                      </button>
+                    </form>
+
+                    <div class="cartw__step js-cart-step"
+                         {% if cart_qty|int <= 0 %}hidden{% endif %}
+                         aria-label="Количество товара">
+                      <button class="cartw__step-btn js-step-minus" type="button" aria-label="Уменьшить">−</button>
+                      <input class="cartw__qty js-step-qty"
+                             type="number"
+                             inputmode="numeric"
+                             min="0"
+                             step="1"
+                             value="{{ cart_qty if cart_qty|int > 0 else 1 }}"
+                             aria-label="Количество">
+                      <button class="cartw__step-btn js-step-plus" type="button" aria-label="Увеличить">+</button>
+                    </div>
+                  </div>
                 </div>
+
               </div>
             </article>
           {% endfor %}
@@ -401,7 +451,6 @@
   prevBtn.addEventListener('click', () => scrollByPage(-1));
   nextBtn.addEventListener('click', () => scrollByPage(1));
 
-  // после свайпа/drag делаем page-snap
   let t = null;
   viewport.addEventListener('scroll', () => {
     sync();

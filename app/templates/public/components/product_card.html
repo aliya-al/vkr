@@ -46,14 +46,24 @@
       </button>
     </form>
 
+    {% set pid_s = p.id|string %}
     <div class="p-card__icons" aria-label="Действия">
-      <form class="p-card__form" method="post" action="/favorites/add/{{ p.id }}">
-        <button class="p-card__icon p-card__icon--heart" type="submit" aria-label="В избранное"></button>
+      <form class="p-card__form" method="post" action="/favorites/toggle">
+        <input type="hidden" name="product_id" value="{{ p.id }}">
+        <button
+          class="p-card__icon p-card__icon--heart {{ 'is-active' if (fav_ids_set is defined and pid_s in fav_ids_set) else '' }}"
+          type="submit"
+          aria-label="В избранное"></button>
       </form>
 
-      <form class="p-card__form" method="post" action="/compare/add/{{ p.id }}">
-        <button class="p-card__icon p-card__icon--compare" type="submit" aria-label="Сравнить"></button>
+      <form class="p-card__form" method="post" action="/compare/toggle">
+        <input type="hidden" name="product_id" value="{{ p.id }}">
+        <button
+          class="p-card__icon p-card__icon--compare {{ 'is-active' if (cmp_ids_set is defined and pid_s in cmp_ids_set) else '' }}"
+          type="submit"
+          aria-label="Сравнить"></button>
       </form>
     </div>
+
   </div>
 </article>

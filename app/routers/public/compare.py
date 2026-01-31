@@ -58,7 +58,7 @@ async def compare_page(
     ids_str = get_compare_ids(request.session)
     if not ids_str:
         return templates.TemplateResponse(
-            "public/catalog/compare.html",
+            "public/compare.html",
             {
                 "request": request,
                 "products": [],
@@ -76,7 +76,7 @@ async def compare_page(
 
     if not ids:
         return templates.TemplateResponse(
-            "public/catalog/compare.html",
+            "public/compare.html",
             {"request": request, "products": [], "rows": []},
         )
 
@@ -143,7 +143,7 @@ async def compare_page(
     rows.sort(key=_row_sort_key)
 
     return templates.TemplateResponse(
-        "public/catalog/compare.html",
+        "public/compare.html",
         {
             "request": request,
             "products": ordered_products,

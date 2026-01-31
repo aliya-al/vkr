@@ -13,8 +13,9 @@ from app.models.brand import Brand
 from app.utils.database import get_async_session
 from app.utils.templates import templates
 from app.utils.category_image import find_category_image_url
-from app.routers.public.favorites import get_favorite_ids
-from app.routers.public.compare import get_compare_ids
+from app.services.favorites import get_favorite_ids
+from app.services.compare import get_compare_ids
+
 
 router = APIRouter()
 
@@ -226,6 +227,8 @@ async def catalog_category(slug: str, request: Request, session: AsyncSession = 
 
     fav_ids = get_favorite_ids(request.session)
     cmp_ids = get_compare_ids(request.session)
+    fav_ids_set = set(fav_ids or [])
+    cmp_ids_set = set(cmp_ids or [])
 
     return templates.TemplateResponse(
         "public/catalog/category_detail.html",
@@ -241,5 +244,7 @@ async def catalog_category(slug: str, request: Request, session: AsyncSession = 
             "products": product_cards,
             "fav_ids": fav_ids,
             "cmp_ids": cmp_ids,
+            "fav_ids_set": fav_ids_set,
+            "cmp_ids_set": cmp_ids_set,
         },
     )

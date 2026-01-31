@@ -13,6 +13,10 @@ from app.models.news import News
 from app.models.category import Category
 from app.models.product import Product
 
+from app.services.favorites import get_favorite_ids
+from app.services.compare import get_compare_ids
+
+
 router = APIRouter()
 
 
@@ -66,6 +70,11 @@ async def home_index(
     )
     products = res_products.scalars().all()
 
+    fav_ids = get_favorite_ids(request.session) or []
+    cmp_ids = get_compare_ids(request.session) or []
+    fav_ids_set = set(fav_ids)
+    cmp_ids_set = set(cmp_ids)
+
     return templates.TemplateResponse(
         "public/home.html",
         {
@@ -74,5 +83,8 @@ async def home_index(
             "categories": categories,
             "promo_products": promo_products,
             "products": products,
+            "fav_ids_set": fav_ids_set,
+            "cmp_ids_set": cmp_ids_set,
         },
     )
+

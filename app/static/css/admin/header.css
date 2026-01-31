@@ -1,0 +1,61 @@
+/* Админский хедер: логотип слева, заголовок строго по центру, без серой верхней полосы */
+
+.admin-header {
+  background: var(--color-bg);
+  box-shadow: var(--shadow-sticky);
+}
+
+.admin-header__inner {
+  display: grid;
+  grid-template-columns: 180px 1fr 180px; /* симметрия для идеального центра */
+  align-items: center;
+  gap: 12px;
+  min-height: 64px;
+  padding-block: 14px;
+}
+
+.admin-header__logo {
+  justify-self: start;
+  font-family: var(--font-serif);
+  font-weight: 600;
+  font-size: var(--fs-logo);
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.admin-header__title {
+  margin: 0;
+  justify-self: center;
+  text-align: center;
+  font-family: var(--font-serif);
+  font-weight: 600;
+  font-size: calc(var(--fs-base) * 1.5);
+  line-height: 1.1;
+}
+
+.admin-header__right {
+  justify-self: end;
+}
+
+/* iPhone / узкие экраны */
+@media (max-width: 520px) {
+  .admin-header__inner {
+    grid-template-columns: 1fr;
+    min-height: auto;
+    padding-block: 12px;
+    gap: 6px;
+  }
+
+  .admin-header__logo {
+    justify-self: center;
+    font-size: calc(var(--fs-logo) * 0.9);
+  }
+
+  .admin-header__title {
+    font-size: calc(var(--fs-base) * 1.25);
+  }
+
+  .admin-header__right {
+    display: none;
+  }
+}

@@ -1,4 +1,3 @@
-
 .home {
   /* базовые привязки к глобальным токенам theme.css */
   --home-line: var(--color-line);
@@ -14,7 +13,10 @@
   --hero-h: 320px;
 
   padding: var(--space-6) 0 var(--space-8);
+  --p-card-btn-h: 34px;
 }
+
+.cartw { --cartw-h: 32px; }
 
 /* ---------- HERO ---------- */
 .home-hero {
@@ -198,55 +200,43 @@
 
 /* скроллит viewport (важно для iPhone) */
 .home-cats__viewport {
+  overflow: hidden;
+  padding-inline: calc(var(--cats-nav-size) + var(--cats-nav-gap));
+}
+
+.home-cats__track {
   height: 100%;
-  padding: 12px calc(var(--cats-nav-size) + var(--cats-nav-gap)) 0;
+
+  display: flex;
+  gap: 16px;
 
   overflow-x: auto;
   overflow-y: hidden;
+
+  scroll-snap-type: x mandatory;
   -webkit-overflow-scrolling: touch;
 
   scrollbar-width: none;
 }
-.home-cats__viewport::-webkit-scrollbar { height: 0; }
+.home-cats__track::-webkit-scrollbar { height: 0; }
 
-/* трек — просто лента */
-.home-cats__track {
-  height: 100%;
-  display: flex;
-  gap: 16px;
-}
-
-/* ---------- CATEGORY CARD (как на макете, внутри) ---------- */
 .home-cat {
-  flex: 0 0 140px;
-  height: 190px;
+  flex: 0 0 136px;
+  height: 184px;
 
   background: var(--home-bg);
-  border-radius: 16px;
-
-  padding: 10px;
-
-  text-decoration: none;
-  color: inherit;
-
-  display: grid;
-  place-items: stretch;
-}
-
-.home-cat__inner {
-  width: 100%;
-  height: 100%;
-
-  background: var(--home-bg);
-  border-radius: 12px;
+  border-radius: 18px;
+  border: 1px solid var(--home-line);
 
   display: grid;
   grid-template-rows: auto 1fr;
-  justify-items: center;
-  align-items: start;
 
   padding: 12px 10px;
-  gap: 10px;
+
+  scroll-snap-align: start;
+
+  text-decoration: none;
+  color: inherit;
 }
 
 .home-cat__name {
@@ -303,142 +293,9 @@
   color: var(--home-text);
 }
 
-/* ---------- PRODUCT GRID ---------- */
-.p-grid {
-  display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
-  gap: var(--space-6);
-}
-
-.p-card { min-width: 0; }
-.p-card__name { min-width: 0; }
-
-.p-card {
-  background: var(--home-surface);
-  border-radius: var(--home-radius);
-  padding: var(--space-4);
-}
-
-/* NEW: wrap for overlay icons */
-.p-card__media-wrap {
-  position: relative;
-}
-
-.p-card__media {
-  display: block;
-  aspect-ratio: 1 / 1;
-  background: var(--color-bg);
-  border-radius: calc(var(--home-radius) - 2px);
-  border: 1px solid var(--home-line);
-  overflow: hidden;
-  text-decoration: none;
-  color: inherit;
-}
-
-.p-card__img {
-  display: block;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.p-card__img--ph { background: var(--home-line); }
-
-/* NEW: icons overlay — vertical stack */
-.p-card__icons {
-  position: absolute;
-  top: 10px;
-  right: 10px;
-
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-
-  z-index: 2;
-}
-
-.p-card__icons form { display: inline; margin: 0; }
-
-.p-card__body {
-  padding-top: var(--space-4);
-  display: grid;
-  gap: var(--space-3);
-}
-
-.p-card__name {
-  font-size: var(--fs-sm);
-  line-height: 1.25;
-  color: var(--home-text);
-  text-decoration: none;
-  text-align: center;
-  display: block;
-
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.p-card__price {
-  font-size: var(--fs-sm);
-  color: var(--home-text);
-  text-align: center;
-  display: flex;
-  justify-content: center;
-  align-items: baseline;
-  gap: 10px;
-}
-
-.p-card__price-old {
-  text-decoration: line-through;
-  opacity: 0.65;
-}
-
-.p-card__price-new {
-  font-weight: 700;
-}
-
-.p-card__actions{
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  align-items: center;
-  gap: var(--space-3);
-}
-
-.p-card__actions > form { min-width: 0; }
-
-.p-card__btn {
-  height: 28px;
-  width: 100%;
-  min-width: 0;
-  white-space: nowrap;
-  padding: 0 var(--space-3);
-  border: 1px solid var(--home-line);
-  background: var(--color-bg);
-
-  border-radius: 10px;
-
-  font-size: var(--fs-xs);
-  cursor: pointer;
-
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-}
-
-.p-card__btn-icon {
-  width: 16px;
-  height: 16px;
-  display: block;
-}
-
 /* =========================
    RESPONSIVE
    ========================= */
-
-@media (max-width: 1100px) {
-  .p-grid { grid-template-columns: repeat(4, 1fr); }
-}
 
 @media (max-width: 900px) {
   .home-hero__grid {
@@ -449,11 +306,6 @@
   .home-news,
   .home-cats {
     height: 300px;
-  }
-
-  .p-grid {
-    grid-template-columns: repeat(3, 1fr);
-    gap: var(--space-5);
   }
 }
 
@@ -503,26 +355,12 @@
   .home-cat { flex: 0 0 128px; height: 176px; }
   .home-cat__thumb { width: 92px; height: 92px; }
 
-  /* PRODUCTS */
+  /* PRODUCTS (теперь в product_cards.css) */
   .home-section { margin-top: var(--space-6); }
 
   .home-section__title {
     margin-bottom: var(--space-4);
     font-size: calc(var(--fs-lg) * 1.15);
-  }
-
-  .p-grid {
-    grid-template-columns: repeat(2, 1fr);
-    gap: var(--space-4);
-  }
-
-  .p-card { padding: var(--space-3); }
-
-  .p-card__actions { gap: 8px; }
-
-  .p-card__btn{
-    padding: 0 10px;
-    gap: 6px;
   }
 }
 
@@ -543,6 +381,7 @@
   .home-cat__thumb { width: 88px; height: 88px; }
 
 }
+
 @media (max-width: 360px) {
   .home { --hero-h: 248px; }
 
@@ -558,8 +397,6 @@
 
   .home-cat { flex: 0 0 116px; height: 162px; }
   .home-cat__thumb { width: 84px; height: 84px; }
-
-  .p-grid { gap: var(--space-3); }
 }
 
 @media (max-width: 900px) and (orientation: landscape) {
@@ -569,6 +406,4 @@
   .home-cats {
     height: var(--hero-h);
   }
-
-  .p-grid { grid-template-columns: repeat(3, 1fr); }
 }

@@ -1,4 +1,3 @@
-# app/routers/public/favorites.py
 from __future__ import annotations
 
 import uuid
@@ -16,6 +15,7 @@ from app.services.favorites import (
     get_favorite_ids,
     remove_from_favorites,
 )
+from app.services.compare import get_compare_ids
 from app.utils.database import get_async_session
 from app.utils.templates import templates
 
@@ -58,9 +58,19 @@ async def favorites_page(
     by_id = {p.id: p for p in products}
     ordered_products = [by_id[i] for i in ids if i in by_id]
 
+    fav_ids = get_favorite_ids(request.session) or []
+    cmp_ids = get_compare_ids(request.session) or []
+    fav_ids_set = set(fav_ids)
+    cmp_ids_set = set(cmp_ids)
+
     return templates.TemplateResponse(
         "public/favorites.html",
-        {"request": request, "products": ordered_products},
+        {
+            "request": request,
+            "products": ordered_products,
+            "fav_ids_set": fav_ids_set,
+            "cmp_ids_set": cmp_ids_set,
+        },
     )
 
 

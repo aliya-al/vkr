@@ -57,7 +57,6 @@
 
 .icon-btn.is-active {
   color: color-mix(in oklab, var(--color-text), var(--color-bg) 15%);
-  border-color: color-mix(in oklab, var(--color-line), var(--color-text) 25%);
   background: color-mix(in oklab, var(--color-surface), var(--color-bg) 55%);
 }
 

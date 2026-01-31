@@ -255,19 +255,21 @@
     <section class="pdp-section" id="pdpSpecsFull" aria-label="Характеристики товара">
       <h2 class="pdp-section__title">Характеристики:</h2>
 
-      {% set specs = [] %}
-      {% set specs = specs + [{'k':'Бренд', 'v': (product.brand.name if product.brand else '—')}] %}
+      {% set ns = namespace(specs=[]) %}
+
+      {% set ns.specs = ns.specs + [{'k':'Бренд', 'v': (product.brand.name if product.brand else '—')}] %}
       {% if product.category %}
-        {% set specs = specs + [{'k':'Категория', 'v': product.category.name}] %}
+        {% set ns.specs = ns.specs + [{'k':'Категория', 'v': product.category.name}] %}
       {% endif %}
+
       {% if characteristics and characteristics|length %}
         {% for ch in characteristics %}
           {% set v = (ch.value ~ (' ' ~ ch.unit if ch.unit else '')) %}
-          {% set specs = specs + [{'k': ch.name, 'v': v}] %}
+          {% set ns.specs = ns.specs + [{'k': ch.name, 'v': v}] %}
         {% endfor %}
       {% endif %}
 
-      {% set cols = specs|batch(6, fill_with=None) %}
+      {% set cols = ns.specs|batch(6, fill_with=None) %}
 
       <div class="pdp-speccols" aria-label="Список характеристик">
         {% for col in cols %}
@@ -285,6 +287,7 @@
         {% endfor %}
       </div>
     </section>
+
 
     <!-- RELATED (оставила как у тебя) -->
     <section class="pdp-section pdp-section--last" aria-label="Так же берут">

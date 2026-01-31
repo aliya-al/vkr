@@ -1,0 +1,329 @@
+/* Shared product grid/cards (Home / Favorites / etc.)
+   Использует только глобальные токены из theme.css
+*/
+
+.p-grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: var(--space-6);
+}
+
+.p-card { min-width: 0; }
+.p-card__name { min-width: 0; }
+
+.p-card {
+  background: var(--color-surface);
+  border-radius: var(--radius-card, 18px);
+  padding: var(--space-4);
+}
+
+/* wrap for overlay icons */
+.p-card__media-wrap {
+  position: relative;
+}
+
+.p-card__media {
+  display: block;
+  aspect-ratio: 1 / 1;
+  background: var(--color-bg);
+  border-radius: calc(var(--radius-card, 18px) - 2px);
+  border: 1px solid var(--color-line);
+  overflow: hidden;
+  text-decoration: none;
+  color: inherit;
+}
+
+.p-card__img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.p-card__img--ph { background: var(--color-line); }
+
+/* icons overlay — vertical stack */
+.p-card__icons {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+
+  z-index: 2;
+}
+
+.p-card__icons form { display: inline; margin: 0; }
+
+.p-card__body {
+  padding-top: var(--space-4);
+  display: grid;
+  gap: var(--space-3);
+}
+
+.p-card__name {
+  font-size: var(--fs-sm);
+  line-height: 1.25;
+  color: var(--color-text);
+  text-decoration: none;
+  text-align: center;
+  display: block;
+
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.p-card__price {
+  font-size: var(--fs-sm);
+  color: var(--color-text);
+  text-align: center;
+  display: flex;
+  justify-content: center;
+  align-items: baseline;
+  gap: 10px;
+}
+
+.p-card__price-old {
+  text-decoration: line-through;
+  opacity: 0.65;
+}
+
+.p-card__price-new {
+  font-weight: 700;
+}
+
+.p-card__actions{
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.p-card__actions > form { min-width: 0; }
+
+.p-card__btn {
+  height: var(--p-card-btn-h, 36px);
+  width: 100%;
+  min-width: 0;
+  white-space: nowrap;
+  padding: 0 var(--space-3);
+  border: 1px solid var(--color-line);
+  background: var(--color-bg);
+
+  border-radius: 10px;
+
+  font-size: var(--fs-xs);
+  cursor: pointer;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.p-card__btn-icon {
+  width: 16px;
+  height: 16px;
+  display: block;
+}
+
+/* =========================
+   Card cart widget: button <-> stepper
+   ========================= */
+
+.p-card__actions{
+  display: block;
+}
+
+.pc-cart{
+  width: 100%;
+}
+
+.pc-step{
+  width: 100%;
+  height: var(--p-card-btn-h, 36px);
+  border-radius: 10px;
+  border: 1px solid var(--color-line);
+  background: var(--color-bg);
+
+  display: grid;
+  grid-template-columns: 34px 1fr 34px;
+  align-items: stretch;
+  overflow: hidden;
+}
+
+.pc-step__btn{
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  font-size: 18px;
+  line-height: 1;
+  display: grid;
+  place-items: center;
+}
+.pc-step__btn:hover{ background: var(--color-surface); }
+
+.pc-step__qty{
+  width: 56px;
+  height: 100%;
+  padding: 0;
+  margin: 0;
+
+  justify-self: center;
+  align-self: center;
+
+  text-align: center;
+  border: 0;
+  background: transparent;
+  font: inherit;
+  color: inherit;
+
+  outline: none;
+  box-shadow: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.pc-step__qty::-webkit-outer-spin-button,
+.pc-step__qty::-webkit-inner-spin-button{
+  -webkit-appearance: none;
+  margin: 0;
+}
+.pc-step__qty{ appearance: textfield; }
+
+
+/* =========================
+   RESPONSIVE
+   ========================= */
+
+@media (max-width: 1100px) {
+  .p-grid { grid-template-columns: repeat(4, 1fr); }
+}
+
+@media (max-width: 900px) {
+  .p-grid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: var(--space-5);
+  }
+}
+
+/* iPhone / телефоны */
+@media (max-width: 430px) {
+  .p-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--space-4);
+  }
+
+  .p-card { padding: var(--space-3); }
+
+  .p-card__actions { gap: 8px; }
+
+  .p-card__btn{
+    padding: 0 10px;
+    gap: 6px;
+  }
+}
+
+@media (max-width: 360px) {
+  .p-grid { gap: var(--space-3); }
+}
+
+@media (max-width: 900px) and (orientation: landscape) {
+  .p-grid { grid-template-columns: repeat(3, 1fr); }
+}
+
+
+.cartw{
+  --cartw-line: var(--color-line);
+  --cartw-bg: var(--color-bg);
+  --cartw-surface: var(--color-surface);
+  --cartw-text: var(--color-text);
+
+  --cartw-h: 28px;
+  --cartw-r: 10px;
+}
+
+/* кнопка "в корзину" */
+.cartw__btn{
+  width: 100%;
+  height: var(--cartw-h);
+  padding: 0 var(--space-3);
+
+  border-radius: var(--cartw-r);
+  border: 1px solid var(--cartw-line);
+  background: var(--cartw-bg);
+
+  font-size: var(--fs-xs);
+  cursor: pointer;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+
+  white-space: nowrap;
+}
+
+.cartw__btn:hover{ background: var(--cartw-surface); }
+
+/* степпер - [qty] + */
+.cartw__step{
+  width: 100%;
+  height: var(--cartw-h);
+
+  border-radius: var(--cartw-r);
+  border: 1px solid var(--cartw-line);
+  background: var(--cartw-bg);
+
+  display: grid;
+  grid-template-columns: var(--cartw-h) 1fr var(--cartw-h);
+  align-items: stretch;
+  overflow: hidden;
+}
+
+.cartw__step-btn{
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+
+  font-size: 16px;
+  line-height: 1;
+
+  display: grid;
+  place-items: center;
+}
+
+.cartw__step-btn:hover{ background: var(--cartw-surface); }
+
+.cartw__qty{
+  width: 100%;
+  border: 0;
+  background: transparent;
+
+  text-align: center;
+  font: inherit;
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  color: inherit;
+
+  outline: none;
+  box-shadow: none;
+  appearance: textfield;
+}
+
+/* убрать стрелки у number */
+.cartw__qty::-webkit-outer-spin-button,
+.cartw__qty::-webkit-inner-spin-button{
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+/* фокус без "фиолетовых" бордеров */
+.cartw__qty:focus,
+.cartw__qty:focus-visible,
+.cartw__qty:active{
+  outline: none !important;
+  box-shadow: none !important;
+}
