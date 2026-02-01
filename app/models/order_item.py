@@ -36,8 +36,13 @@ class OrderItem(Base):
     weight_kg: Mapped[float] = mapped_column(Float, nullable=False, default=0.0)
     volume_m3: Mapped[float] = mapped_column(Float, nullable=False, default=0.0)
 
-    # опционально: сохранить картинку/путь на момент заказа
+    # сохранить картинку/путь на момент заказа
     product_image: Mapped[str | None] = mapped_column(String, nullable=True)
+
+    # snapshot категории на момент заказа
+    category_id: Mapped[uuid.UUID | None] = mapped_column(nullable=True)
+    category_name: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    category_slug: Mapped[str | None] = mapped_column(String(255), nullable=True)
 
     order = relationship("Order", back_populates="items")
 

@@ -225,10 +225,11 @@ async def catalog_category(slug: str, request: Request, session: AsyncSession = 
         for b in brands_db
     ]
 
-    fav_ids = get_favorite_ids(request.session)
-    cmp_ids = get_compare_ids(request.session)
-    fav_ids_set = set(fav_ids or [])
-    cmp_ids_set = set(cmp_ids or [])
+    fav_ids = [str(x) for x in (get_favorite_ids(request.session) or [])]
+    cmp_ids = [str(x) for x in (get_compare_ids(request.session) or [])]
+
+    fav_ids_set = set(fav_ids)
+    cmp_ids_set = set(cmp_ids)
 
     return templates.TemplateResponse(
         "public/catalog/category_detail.html",

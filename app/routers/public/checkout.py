@@ -70,9 +70,13 @@ async def _load_cart_products(
 
     res = await session.execute(
         select(Product)
-        .options(selectinload(Product.images))
+        .options(
+            selectinload(Product.images),
+            selectinload(Product.category),
+        )
         .where(Product.id.in_(ids), Product.is_active.is_(True))
     )
+
     products = list(res.scalars().all())
     by_id = {str(p.id): p for p in products}
 
@@ -233,13 +237,15 @@ async def checkout_submit(
             unit_price: int = it["unit_price"]
             line_total: int = it["line_total"]
 
+            cat = getattr(p, "category", None)
+
             session.add(
                 OrderItem(
                     order_id=order.id,
                     product_id=p.id,
                     quantity=qty,
-                    price_per_item=p.price,  # базовая цена на момент заказа
-                    final_price_per_item=unit_price,  # фактическая цена за штуку на момент заказа
+                    price_per_item=p.price,
+                    final_price_per_item=unit_price,
                     discount_percent=p.discount_percent,
                     total_price=line_total,
 
@@ -247,8 +253,11 @@ async def checkout_submit(
                     product_slug=getattr(p, "slug", None),
                     weight_kg=float(p.weight_kg or 0.0),
                     volume_m3=float(p.volume_m3 or 0.0),
+                    product_image=it.get("image_url"),
 
-                    product_image=it.get("image_url"),  # снимок картинки
+                    category_id=getattr(p, "category_id", None),
+                    category_name=getattr(cat, "name", None),
+                    category_slug=getattr(cat, "slug", None),
                 )
             )
 

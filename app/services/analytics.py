@@ -9,10 +9,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.order import Order, OrderStatus
 from app.models.order_item import OrderItem
-from app.models.product import Product
-from app.models.category import Category
 
 GroupBy = Literal["year", "month", "week", "day"]
+Scope = Literal["recent", "all"]
 
 MOSCOW_TZ_NAME = "Europe/Moscow"
 
@@ -26,7 +25,6 @@ class KPI:
 
 
 def default_periods(group: GroupBy) -> int:
-    # сколько “столбиков” показываем по умолчанию
     if group == "day":
         return 14
     if group == "week":
@@ -39,15 +37,13 @@ def default_periods(group: GroupBy) -> int:
 def compute_range(now: datetime, group: GroupBy, periods: int) -> tuple[datetime, datetime]:
     """
     Возвращает [start_dt, end_dt) как tz-aware datetimes.
-    now должен быть tz-aware (в твоём dashboard.py он уже Moscow tz).
+    now должен быть tz-aware.
     """
     if periods <= 0:
         periods = default_periods(group)
 
-    # end_dt — “сейчас”
     end_dt = now
 
-    # start_dt — назад на N периодов (приблизительно; точная “нарезка” делается SQL date_trunc)
     if group == "day":
         start_dt = now - timedelta(days=periods)
     elif group == "week":
@@ -60,23 +56,40 @@ def compute_range(now: datetime, group: GroupBy, periods: int) -> tuple[datetime
     return start_dt, end_dt
 
 
+async def compute_range_scoped(
+    session: AsyncSession,
+    now: datetime,
+    group: GroupBy,
+    periods: int,
+    scope: Scope,
+) -> tuple[datetime, datetime]:
+    """
+    scope=recent -> как раньше (последние N периодов)
+    scope=all -> всё время по выполненным заказам (DONE)
+    """
+    if scope == "recent":
+        return compute_range(now=now, group=group, periods=periods)
+
+    # scope == "all"
+    # защита от перегруза: all+day может дать тысячи точек
+    if group == "day":
+        # лучше явно заставить выбирать week/month/year для all-time
+        # (можно снять ограничение позже, если захочешь)
+        raise ValueError("Для 'всё время' выбери group=week/month/year (day слишком тяжёлый).")
+
+    min_dt = await session.scalar(
+        select(func.min(Order.created_at)).where(Order.status == OrderStatus.done)
+    )
+    start_dt = min_dt or (now - timedelta(days=365))
+    return start_dt, now
+
+
 def _bucket_expr(group: GroupBy):
-    """
-    SQL выражение для группировки по периоду в московском времени.
-    Возвращает timestamp (начало bucket-а).
-    """
     created_msk = func.timezone(MOSCOW_TZ_NAME, Order.created_at)
     return func.date_trunc(group, created_msk)
 
 
 async def fetch_kpis(session: AsyncSession, now: datetime) -> KPI:
-    """
-    Мини-показатели:
-    - заказов за неделю (DONE)
-    - заявок/заказов в работе (NEW + IN_PROGRESS)
-    - выполненные заказы (DONE, всего)
-    - выручка за 30 дней (DONE)
-    """
     week_start = now - timedelta(days=7)
     month_start = now - timedelta(days=30)
 
@@ -118,7 +131,6 @@ async def fetch_sales_series(
 ) -> list[dict]:
     """
     Выручка (revenue) по выполненным заказам (DONE), сгруппированная по периодам.
-    Используем Order.total_price (снимок), не Product.price.
     """
     bucket = _bucket_expr(group).label("bucket")
     value = func.coalesce(func.sum(Order.total_price), 0).label("value")
@@ -140,11 +152,6 @@ async def fetch_sales_series(
 
 
 def build_cumulative(series: list[dict]) -> list[dict]:
-    """
-    Накопительный рост выручки по уже агрегированной серии.
-    На входе: [{"label": "...", "value": 100}, ...]
-    На выходе value становится cumulative.
-    """
     total = 0
     out: list[dict] = []
     for p in series:
@@ -160,10 +167,8 @@ async def fetch_top_products_total_qty(
     limit: int = 5,
 ) -> list[dict]:
     """
-    Топ товаров по количеству (DONE заказы):
-    - total_qty: сумма quantity
-    - unique_orders: количество уникальных заказов
-    - revenue: сумма OrderItem.total_price (снимок по строкам)
+    Топ товаров по количеству (DONE):
+    Берём из snapshot OrderItem, чтобы не зависеть от products (товар могли удалить).
     """
     total_qty = func.coalesce(func.sum(OrderItem.quantity), 0).label("total_qty")
     unique_orders = func.count(distinct(OrderItem.order_id)).label("unique_orders")
@@ -171,21 +176,27 @@ async def fetch_top_products_total_qty(
 
     stmt = (
         select(
-            Product.id.label("product_id"),
-            Product.name.label("product_name"),
+            OrderItem.product_id.label("product_id"),
+            OrderItem.product_name.label("product_name"),
+            OrderItem.product_slug.label("product_slug"),
+            OrderItem.product_image.label("product_image"),
             total_qty,
             unique_orders,
             revenue,
         )
         .select_from(OrderItem)
         .join(Order, Order.id == OrderItem.order_id)
-        .join(Product, Product.id == OrderItem.product_id)
         .where(
             Order.status == OrderStatus.done,
             Order.created_at >= start_dt,
             Order.created_at < end_dt,
         )
-        .group_by(Product.id, Product.name)
+        .group_by(
+            OrderItem.product_id,
+            OrderItem.product_name,
+            OrderItem.product_slug,
+            OrderItem.product_image,
+        )
         .order_by(total_qty.desc(), revenue.desc())
         .limit(limit)
     )
@@ -193,8 +204,10 @@ async def fetch_top_products_total_qty(
     rows = (await session.execute(stmt)).mappings().all()
     return [
         {
-            "product_id": str(r["product_id"]),
+            "product_id": str(r["product_id"]) if r["product_id"] else None,
             "name": r["product_name"],
+            "slug": r["product_slug"],
+            "image": r["product_image"],
             "total_qty": int(r["total_qty"] or 0),
             "unique_orders": int(r["unique_orders"] or 0),
             "revenue": int(r["revenue"] or 0),
@@ -210,37 +223,37 @@ async def fetch_category_breakdown(
     limit: int = 12,
 ) -> list[dict]:
     """
-    Доли по категориям (pie):
-    считаем выручку по сумме OrderItem.total_price (DONE), группируем по Category.
+    Продаваемые категории (pie) по метрике unique orders:
+    - считаем количество уникальных заказов, где встречалась категория
+    - группируем по snapshot OrderItem.category_*
     """
-    revenue = func.coalesce(func.sum(OrderItem.total_price), 0).label("revenue")
+    orders_cnt = func.count(distinct(OrderItem.order_id)).label("orders_cnt")
 
     stmt = (
         select(
-            Category.id.label("category_id"),
-            Category.name.label("category_name"),
-            revenue,
+            OrderItem.category_id.label("category_id"),
+            OrderItem.category_name.label("category_name"),
+            orders_cnt,
         )
         .select_from(OrderItem)
         .join(Order, Order.id == OrderItem.order_id)
-        .join(Product, Product.id == OrderItem.product_id)
-        .join(Category, Category.id == Product.category_id)
         .where(
             Order.status == OrderStatus.done,
             Order.created_at >= start_dt,
             Order.created_at < end_dt,
+            OrderItem.category_name.is_not(None),
         )
-        .group_by(Category.id, Category.name)
-        .order_by(revenue.desc())
+        .group_by(OrderItem.category_id, OrderItem.category_name)
+        .order_by(orders_cnt.desc())
         .limit(limit)
     )
 
     rows = (await session.execute(stmt)).mappings().all()
     return [
         {
-            "category_id": str(r["category_id"]),
+            "category_id": str(r["category_id"]) if r["category_id"] else None,
             "name": r["category_name"],
-            "value": int(r["revenue"] or 0),
+            "value": int(r["orders_cnt"] or 0),
         }
         for r in rows
     ]

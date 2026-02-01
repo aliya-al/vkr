@@ -1,0 +1,53 @@
+{# app/templates/admin/dashboard_manager.html #}
+{% extends "admin/base.html" %}
+
+{% block title %}Дашборд{% endblock %}
+
+{% block head %}
+  <link rel="stylesheet" href="/static/css/admin/dashboard.css">
+{% endblock %}
+
+{% block content %}
+<div class="dash">
+  <div class="container">
+
+    <header class="dash__top">
+      <div class="dash__logo">Логотип</div>
+      <h1 class="dash__title">Аналитика продаж</h1>
+      <div class="dash__topRight">
+        <select class="dash__siteSelect" id="siteSelect" aria-label="Управление сайтом">
+          <option value="" selected>Управление сайтом</option>
+          <option value="/admin/requests">Заявки</option>
+          <option value="/admin/products">Товары</option>
+          <option value="/admin/categories">Категории</option>
+        </select>
+      </div>
+    </header>
+
+    <div class="dash__grid dash__grid--manager">
+      <section class="dash__main">
+        <div class="card card--note">
+          <div class="noteTitle">Режим менеджера</div>
+          <div class="noteText">Аналитика доступна супер-админу. Ниже — ваши заявки / неприкреплённые.</div>
+        </div>
+
+        {% include "admin/components/dashboard_requests_table.html" %}
+      </section>
+
+      <aside class="dash__side">
+        <section class="card card--note">
+          <div class="noteTitle">Быстрые действия</div>
+          <div class="noteText">
+            Откройте <a class="noteLink" href="/admin/requests">список заявок</a>, чтобы взять заявку или изменить статус.
+          </div>
+        </section>
+      </aside>
+    </div>
+
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+  <script src="/static/js/admin/dashboard.js"></script>
+{% endblock %}

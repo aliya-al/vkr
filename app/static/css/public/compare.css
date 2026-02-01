@@ -1,0 +1,337 @@
+.cmp{
+  --cmp-line: var(--color-line);
+  --cmp-surface: var(--color-surface);
+  --cmp-bg: var(--color-bg);
+  --cmp-text: var(--color-text);
+  --cmp-muted: var(--color-muted);
+
+  --cmp-radius: 18px;
+
+  --cmp-name-w: 190px;
+  --cmp-col-w: 180px;
+  --cmp-gap-x: 16px;
+  --cmp-gap-y: 12px;
+
+  --cmp-btn: 40px;
+  --cmp-btn-gap: 8px;
+
+  --cart-line: var(--cmp-line);
+  --cart-bg: var(--cmp-bg);
+  --cart-text: var(--cmp-text);
+  --cart-muted: var(--cmp-muted);
+
+  padding: var(--space-6) 0 var(--space-8);
+}
+
+.cmp-head{
+  margin-top: var(--space-4);
+  margin-bottom: var(--space-6);
+
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: var(--space-4);
+}
+
+.cmp-head__ghost{
+  min-height: 1px;
+}
+
+.cmp-head__clear{
+  justify-self: end;
+}
+
+.cmp-title{
+  margin: 0;
+  justify-self: center;
+
+  font-family: var(--font-serif);
+  font-weight: 600;
+  font-size: calc(var(--fs-lg) * 1.35);
+  line-height: 1.1;
+  color: var(--cmp-text);
+}
+
+/* ===== Empty state (как в избранном) ===== */
+.cmp-empty{
+  display: grid;
+  place-items: center;
+  padding: var(--space-8) 0;
+}
+
+.cmp-empty__card{
+  width: min(640px, 100%);
+  background: var(--cmp-surface);
+  border-radius: var(--radius-card, 18px);
+  padding: var(--space-6);
+  text-align: center;
+  border: 1px solid var(--cmp-line);
+}
+
+.cmp-empty__title{
+  font-family: var(--font-serif);
+  font-weight: 600;
+  font-size: calc(var(--fs-lg) * 1.15);
+  margin: 0 0 var(--space-3);
+  color: var(--cmp-text);
+}
+
+.cmp-empty__text{
+  color: var(--cmp-muted);
+  font-size: var(--fs-sm);
+  margin: 0 0 var(--space-5);
+}
+
+.cmp-empty__actions{
+  display: flex;
+  gap: var(--space-3);
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.cmp-btn{
+  height: 36px;
+  padding: 0 var(--space-4);
+  border: 1px solid var(--cmp-line);
+  background: var(--cmp-bg);
+  border-radius: 12px;
+  font-size: var(--fs-sm);
+  cursor: pointer;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  text-decoration: none;
+  color: inherit;
+}
+
+.cmp-btn--primary{
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+  color: #fff;
+}
+
+.cmp-btn--primary:hover{
+  background: var(--color-primary-strong);
+  border-color: var(--color-primary-strong);
+}
+
+/* ===== Board ===== */
+.cmp-board{
+  position: relative;
+}
+
+.cmp-frame{
+  position: relative;
+}
+
+.cmp-nav{
+  position: absolute;
+  top: var(--cmp-nav-y, 52px);
+  transform: translateY(-50%);
+
+  width: var(--cmp-btn);
+  height: var(--cmp-btn);
+
+  display: grid;
+  place-items: center;
+
+  border: 1px solid var(--cmp-line);
+  background: var(--cmp-bg);
+  border-radius: var(--radius-xl);
+
+  padding: 0;
+  cursor: pointer;
+  z-index: 70;
+
+  color: color-mix(in oklab, var(--cmp-text), var(--cmp-bg) 55%);
+
+  transition:
+    color 160ms ease,
+    border-color 160ms ease,
+    background-color 160ms ease,
+    transform 120ms ease;
+}
+
+.cmp-nav svg{
+  width: 16px;
+  height: 16px;
+  display: block;
+}
+
+.cmp-nav:active{
+  transform: translateY(-50%) scale(0.96);
+}
+
+@media (hover: hover){
+  .cmp-nav:hover{
+    background: color-mix(in oklab, var(--cmp-bg), var(--cmp-surface) 28%);
+    color: color-mix(in oklab, var(--cmp-text), var(--cmp-bg) 35%);
+  }
+}
+
+.cmp-nav:disabled{
+  opacity: 0.35;
+  cursor: default;
+  background: var(--cmp-bg);
+}
+
+.cmp-nav:focus-visible{
+  outline: 2px solid var(--focus-outline);
+  outline-offset: 2px;
+}
+
+.cmp-nav--prev{
+  left: calc(var(--cmp-name-w) + var(--cmp-gap-x) - var(--cmp-btn) - var(--cmp-btn-gap));
+}
+
+.cmp-nav--next{
+  right: calc(-1 * (var(--cmp-btn) + var(--cmp-btn-gap)));
+}
+
+.cmp-viewport{
+  position: relative;
+  overflow: hidden;
+}
+
+.cmp-mask{
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+
+  width: calc(var(--cmp-name-w) + var(--cmp-gap-x));
+  background: var(--cmp-bg);
+  z-index: 15;
+  pointer-events: none;
+}
+
+.cmp-scroll{
+  overflow-x: auto;
+  overflow-y: hidden;
+
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+
+  padding: 0;
+}
+
+.cmp-scroll::-webkit-scrollbar{ height: 0; }
+
+.cmp-grid{
+  display: grid;
+  grid-template-columns: var(--cmp-name-w) repeat(var(--cmp-cols), var(--cmp-col-w));
+  column-gap: var(--cmp-gap-x);
+  row-gap: var(--cmp-gap-y);
+  align-items: start;
+  min-width: max-content;
+}
+
+.cmp-cell{
+  min-width: 0;
+}
+
+.cmp-cell--corner,
+.cmp-cell--name{
+  position: sticky;
+  left: 0;
+  background: var(--cmp-bg);
+  z-index: 30;
+}
+
+.cmp-cell--corner{
+  z-index: 35;
+}
+
+.cmp-cell--name{
+  padding: 10px 12px;
+  border: 1px solid var(--cmp-line);
+  border-radius: 14px;
+
+  display: flex;
+  align-items: flex-start;
+  min-height: 44px;
+}
+
+.cmp-name{
+  display: block;
+  font-size: var(--fs-sm);
+  line-height: 1.2;
+  font-weight: 500;
+  color: var(--cmp-text);
+
+  white-space: normal;
+  overflow: visible;
+  text-overflow: unset;
+  word-break: break-word;
+}
+
+.cmp-cell--product{
+  padding-bottom: 2px;
+}
+
+.cmp-product{
+  width: 100%;
+}
+
+.cmp-product .p-card{
+  width: 100%;
+}
+
+.cmp-cell--val{
+  padding: 10px 12px;
+  border: 1px solid var(--cmp-line);
+  border-radius: 14px;
+
+  display: flex;
+  align-items: flex-start;
+  min-height: 44px;
+
+  background: var(--cmp-bg);
+}
+
+.cmp-val{
+  display: block;
+  font-size: var(--fs-sm);
+  line-height: 1.2;
+  color: var(--cmp-text);
+
+  white-space: normal;
+  overflow: visible;
+  text-overflow: unset;
+  word-break: break-word;
+}
+
+/* ===== Responsive ===== */
+@media (max-width: 900px){
+  .cmp{
+    --cmp-name-w: 180px;
+    --cmp-col-w: 172px;
+    --cmp-gap-x: 14px;
+  }
+}
+
+@media (max-width: 430px){
+  .cmp{
+    --cmp-name-w: 150px;
+    --cmp-col-w: 168px;
+    --cmp-gap-x: 12px;
+    --cmp-gap-y: 10px;
+    --cmp-btn: 36px;
+    --cmp-btn-gap: 6px;
+
+    padding: var(--space-5) 0 var(--space-7);
+  }
+
+  .cmp-title{
+    font-size: calc(var(--fs-lg) * 1.15);
+  }
+}
+
+@media (max-width: 360px){
+  .cmp{
+    --cmp-name-w: 140px;
+    --cmp-col-w: 160px;
+  }
+}

@@ -1,4 +1,3 @@
-# app/routers/public/compare.py
 from __future__ import annotations
 
 import uuid
@@ -18,12 +17,23 @@ from app.services.compare import (
     get_compare_ids,
     remove_from_compare,
 )
+from app.services.favorites import get_favorite_ids
 from app.utils.database import get_async_session
 from app.utils.templates import templates
 
 router = APIRouter()
 
+def _get_brand_name(p: Product) -> str | None:
+    # 1) если бренд хранится строкой в продукте
+    bn = getattr(p, "brand_name", None) or getattr(p, "brand", None)
+    if isinstance(bn, str) and bn.strip():
+        return bn.strip()
 
+    # 2) если бренд — relationship (p.brand.name)
+    b = getattr(p, "brand", None)
+    name = getattr(b, "name", None) if b else None
+    if isinstance(name, str) and name.strip():
+        return name.strip()
 def _format_value(v: ProductCharacteristicValue) -> str | None:
     ch = getattr(v, "characteristic", None)
     if not ch:
@@ -63,6 +73,8 @@ async def compare_page(
                 "request": request,
                 "products": [],
                 "rows": [],
+                "fav_ids_set": set(),
+                "cmp_ids_set": set(),
             },
         )
 
@@ -77,7 +89,13 @@ async def compare_page(
     if not ids:
         return templates.TemplateResponse(
             "public/compare.html",
-            {"request": request, "products": [], "rows": []},
+            {
+                "request": request,
+                "products": [],
+                "rows": [],
+                "fav_ids_set": set(),
+                "cmp_ids_set": set(),
+            },
         )
 
     # Подгружаем товары + значения характеристик + сами характеристики (без N+1)
@@ -86,6 +104,7 @@ async def compare_page(
         .where(Product.id.in_(ids))
         .options(
             selectinload(Product.images),
+            selectinload(Product.brand),
             selectinload(Product.characteristics_values).selectinload(ProductCharacteristicValue.characteristic),
         )
     )
@@ -142,12 +161,29 @@ async def compare_page(
 
     rows.sort(key=_row_sort_key)
 
+    brand_row = {
+        "characteristic_id": -1,
+        "name": "Бренд",
+        "cells": {str(p.id): (_get_brand_name(p) or "—") for p in ordered_products},
+    }
+
+    rows.sort(key=_row_sort_key)
+    rows.insert(0, brand_row)
+
+    fav_ids = [str(x) for x in (get_favorite_ids(request.session) or [])]
+    cmp_ids = [str(x) for x in (get_compare_ids(request.session) or [])]
+
+    fav_ids_set = set(fav_ids)
+    cmp_ids_set = set(cmp_ids)
+
     return templates.TemplateResponse(
         "public/compare.html",
         {
             "request": request,
             "products": ordered_products,
             "rows": rows,
+            "fav_ids_set": fav_ids_set,
+            "cmp_ids_set": cmp_ids_set,
         },
     )
 

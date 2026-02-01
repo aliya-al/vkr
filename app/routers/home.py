@@ -70,8 +70,9 @@ async def home_index(
     )
     products = res_products.scalars().all()
 
-    fav_ids = get_favorite_ids(request.session) or []
-    cmp_ids = get_compare_ids(request.session) or []
+    fav_ids = [str(x) for x in (get_favorite_ids(request.session) or [])]
+    cmp_ids = [str(x) for x in (get_compare_ids(request.session) or [])]
+
     fav_ids_set = set(fav_ids)
     cmp_ids_set = set(cmp_ids)
 

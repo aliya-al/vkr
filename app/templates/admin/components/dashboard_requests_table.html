@@ -1,0 +1,47 @@
+{# app/templates/admin/components/dashboard_requests_table.html #}
+<section class="card card--table" aria-label="Заявки">
+  <header class="card__head">
+    <div class="card__title">Заявки</div>
+  </header>
+
+  <div class="tableWrap" role="region" aria-label="Таблица заявок">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Имя <span class="thSort" aria-hidden="true">^</span></th>
+          <th>Дата заявки <span class="thSort" aria-hidden="true">^</span></th>
+          <th>Телефон <span class="thSort" aria-hidden="true">^</span></th>
+          <th>Доставка <span class="thSort" aria-hidden="true">^</span></th>
+          <th>Менеджер <span class="thSort" aria-hidden="true">^</span></th>
+          <th>Статус <span class="thSort" aria-hidden="true">^</span></th>
+          <th class="thEdit"></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% if not dash_orders %}
+          <tr>
+            <td colspan="7" class="tdEmpty">Пока нет заявок.</td>
+          </tr>
+        {% else %}
+          {% for o in dash_orders %}
+            <tr>
+              <td class="tdName">{{ o.name or "—" }}</td>
+              <td>{{ o.created_at.strftime("%d.%m.%Y") if o.created_at else "—" }}</td>
+              <td>{{ o.phone or "—" }}</td>
+              <td>{{ delivery_labels.get(o.delivery_method, o.delivery_method or "—") }}</td>
+              <td>{{ (o.manager.login if o.manager else "—") }}</td>
+              <td>
+                <span class="badge badge--{{ o.status.value if o.status else 'new' }}">
+                  {{ status_labels.get(o.status, o.status.value if o.status else "—") }}
+                </span>
+              </td>
+              <td class="tdEdit">
+                <a class="editLink" href="/admin/requests/{{ o.id }}/edit">ред.</a>
+              </td>
+            </tr>
+          {% endfor %}
+        {% endif %}
+      </tbody>
+    </table>
+  </div>
+</section>

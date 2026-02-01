@@ -1,50 +1,228 @@
-<!-- app/templates/public/catalog/compare.html -->
-<!doctype html>
-<html lang="ru">
-<head>
-  <meta charset="utf-8">
-  <title>Сравнение</title>
-</head>
-<body>
-<p><a href="/catalog/">К каталогу</a></p>
-  <h1>Сравнение</h1>
+{% extends "public/base.html" %}
 
-  {% if not products %}
-    <p>Список сравнения пуст.</p>
-  {% else %}
-    <form method="post" action="/compare/clear">
-      <button type="submit">Очистить</button>
+{% block title %}Сравнение{% endblock %}
+
+{% block head %}
+  <link rel="stylesheet" href="/static/css/public/components/icon_toggle.css">
+  <link rel="stylesheet" href="/static/css/public/components/product_cards.css">
+  <link rel="stylesheet" href="/static/css/public/components/cart_btn.css">
+  <link rel="stylesheet" href="/static/css/public/compare.css">
+{% endblock %}
+
+{% block content %}
+<div class="cmp">
+  <div class="container">
+
+<header class="cmp-head">
+  <span class="cmp-head__ghost" aria-hidden="true"></span>
+
+  <h1 class="cmp-title">Сравнение</h1>
+
+  {% if products and products|length %}
+    <form class="cmp-head__clear" method="post" action="/compare/clear">
+      <button class="cart-btn cart-btn--ghost" type="submit">Очистить</button>
     </form>
-
-    <table border="1" cellpadding="6" cellspacing="0">
-      <thead>
-        <tr>
-          <th>Характеристика</th>
-          {% for p in products %}
-            <th>
-              <div>{{ p.name }}</div>
-              <div>Цена: {{ p.price }}</div>
-
-              <form method="post" action="/compare/remove/{{ p.id }}">
-                <button type="submit">Убрать</button>
-              </form>
-            </th>
-          {% endfor %}
-        </tr>
-      </thead>
-
-      <tbody>
-        {% for row in rows %}
-          <tr>
-            <td>{{ row.name }}</td>
-            {% for p in products %}
-              <td>{{ row.cells.get(p.id|string, "—") }}</td>
-
-            {% endfor %}
-          </tr>
-        {% endfor %}
-      </tbody>
-    </table>
+  {% else %}
+    <span class="cmp-head__ghost" aria-hidden="true"></span>
   {% endif %}
-</body>
-</html>
+</header>
+
+
+{% if not products or (products|length == 0) %}
+  <div class="cmp-empty" role="status" aria-live="polite">
+    <div class="cmp-empty__card">
+      <div class="cmp-empty__title">Пока ничего нет</div>
+      <div class="cmp-empty__text">Добавляйте товары в сравнение, чтобы видеть отличия по характеристикам.</div>
+      <div class="cmp-empty__actions">
+        <a class="cmp-btn cmp-btn--primary" href="/catalog/">Перейти в каталог</a>
+        <a class="cmp-btn" href="/">На главную</a>
+      </div>
+    </div>
+  </div>
+{% else %}
+
+
+      <section class="cmp-board" aria-label="Сравнение товаров">
+        <div class="cmp-frame">
+          <button class="cmp-nav cmp-nav--prev" type="button" aria-label="Прокрутить влево">
+            <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+              <path d="M15 18l-6-6 6-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </button>
+
+          <button class="cmp-nav cmp-nav--next" type="button" aria-label="Прокрутить вправо">
+            <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+              <path d="M9 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </button>
+
+          <div class="cmp-viewport">
+            <div class="cmp-mask" aria-hidden="true"></div>
+
+            <div class="cmp-scroll" tabindex="0">
+              <div class="cmp-grid" style="--cmp-cols: {{ products|length }}">
+
+                <div class="cmp-cell cmp-cell--corner" aria-hidden="true"></div>
+
+                {% for p in products %}
+                  <div class="cmp-cell cmp-cell--product">
+                    <div class="cmp-product">
+                      {% include "public/components/product_card.html" %}
+                    </div>
+                  </div>
+                {% endfor %}
+
+                {% for row in rows %}
+                  <div class="cmp-cell cmp-cell--name">
+                    <span class="cmp-name">{{ row.name }}</span>
+                  </div>
+
+                  {% for p in products %}
+                    {% set pid = p.id|string %}
+                    <div class="cmp-cell cmp-cell--val">
+                      <span class="cmp-val">{{ row.cells[pid] }}</span>
+                    </div>
+                  {% endfor %}
+                {% endfor %}
+
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+    {% endif %}
+
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+(() => {
+  const board = document.querySelector('.cmp-board');
+  if (!board) return;
+
+  const frame = board.querySelector('.cmp-frame');
+  const scroller = board.querySelector('.cmp-scroll');
+  const grid = board.querySelector('.cmp-grid');
+  const prevBtn = board.querySelector('.cmp-nav--prev');
+  const nextBtn = board.querySelector('.cmp-nav--next');
+  if (!frame || !scroller || !grid || !prevBtn || !nextBtn) return;
+
+  const maxLeft = () => Math.max(0, scroller.scrollWidth - scroller.clientWidth);
+  const clamp = (x) => Math.min(maxLeft(), Math.max(0, x));
+
+  const sync = () => {
+    const x = scroller.scrollLeft;
+    const max = maxLeft();
+    prevBtn.disabled = x <= 1;
+    nextBtn.disabled = x >= (max - 1);
+  };
+
+  const setNavY = () => {
+    const firstCardCell = board.querySelector('.cmp-cell--product');
+    if (!firstCardCell) return;
+
+    const fr = frame.getBoundingClientRect();
+    const pr = firstCardCell.getBoundingClientRect();
+    const y = (pr.top + pr.height / 2) - fr.top;
+    frame.style.setProperty('--cmp-nav-y', `${Math.round(y)}px`);
+  };
+
+  const step = () => {
+    const cards = Array.from(grid.querySelectorAll('.cmp-cell--product'));
+    if (cards.length >= 2) {
+      const a = cards[0].getBoundingClientRect();
+      const b = cards[1].getBoundingClientRect();
+      const d = Math.round(Math.abs(b.left - a.left));
+      return Math.max(1, d);
+    }
+    if (cards.length === 1) {
+      const w = Math.round(cards[0].getBoundingClientRect().width);
+      return Math.max(1, w);
+    }
+    return Math.max(1, Math.round(scroller.clientWidth));
+  };
+
+  const snapToStep = (behavior) => {
+    const s = step();
+    const target = clamp(Math.round(scroller.scrollLeft / s) * s);
+    scroller.scrollTo({ left: target, behavior: behavior || 'smooth' });
+  };
+
+  const scrollByStep = (dir) => {
+    const s = step() * 3;
+    const target = clamp(scroller.scrollLeft + dir * s);
+    scroller.scrollTo({ left: target, behavior: 'smooth' });
+  };
+
+  prevBtn.addEventListener('click', () => scrollByStep(-1));
+  nextBtn.addEventListener('click', () => scrollByStep(1));
+
+  let t = null;
+  scroller.addEventListener('scroll', () => {
+    sync();
+    if (t) clearTimeout(t);
+    t = setTimeout(() => snapToStep('smooth'), 120);
+  }, { passive: true });
+
+  // ===== выравнивание высоты по строкам характеристик =====
+  const equalizeRows = () => {
+    const cols = Number(getComputedStyle(grid).getPropertyValue('--cmp-cols')) || 0;
+    if (!cols) return;
+
+    const corner = grid.querySelector('.cmp-cell--corner');
+    if (!corner) return;
+
+    const cells = Array.from(grid.children);
+
+    // сначала сбрасываем (чтобы корректно пересчитать после resize)
+    for (const el of cells) {
+      if (el.classList && (el.classList.contains('cmp-cell--name') || el.classList.contains('cmp-cell--val'))) {
+        el.style.minHeight = '';
+      }
+    }
+
+    // индекс начала rows: 1 (corner) + cols (product cells)
+    const start = 1 + cols;
+    const rowSize = 1 + cols;
+
+    for (let i = start; i < cells.length; i += rowSize) {
+      const row = cells.slice(i, i + rowSize);
+      if (row.length < rowSize) break;
+
+      let maxH = 0;
+      for (const el of row) {
+        const h = Math.ceil(el.getBoundingClientRect().height);
+        if (h > maxH) maxH = h;
+      }
+
+      for (const el of row) {
+        el.style.minHeight = `${maxH}px`;
+      }
+    }
+  };
+
+  // шрифты/картинки могут влиять на высоту — делаем несколько безопасных прогонов
+  const scheduleEqualize = () => {
+    equalizeRows();
+    requestAnimationFrame(equalizeRows);
+    setTimeout(equalizeRows, 80);
+  };
+
+  window.addEventListener('resize', () => {
+    snapToStep('auto');
+    sync();
+    setNavY();
+    scheduleEqualize();
+  });
+
+  sync();
+  setNavY();
+  scheduleEqualize();
+})();
+
+</script>
+
+{% endblock %}

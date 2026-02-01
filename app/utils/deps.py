@@ -2,10 +2,11 @@
 
 from fastapi import Request, HTTPException, status
 
+
 def require_admin_or_404(request: Request) -> dict:
     admin_user_id = request.session.get("admin_user_id")
     if not admin_user_id:
-        # цель: не показывать существвование админки клиентам. будто маршрута нет.
+        # не светим существование админки
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
 
     return {
@@ -13,11 +14,12 @@ def require_admin_or_404(request: Request) -> dict:
         "role": request.session.get("admin_user_role"),
     }
 
-def require_superadmin_or_404(request: Request):
+
+def require_superadmin_or_404(request: Request) -> dict:
     """
-    Проверка админа. Менеджер получит 404.
+    Только админ (role=admin). Менеджер и неавторизованный получат 404.
     """
-    role = request.session.get("admin_user_role")
-    if role != "admin":
-        # 404 чтобы не светить существование раздела
-        raise HTTPException(status_code=404)
+    admin = require_admin_or_404(request)
+    if admin.get("role") != "admin":
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
+    return admin

@@ -58,8 +58,9 @@ async def favorites_page(
     by_id = {p.id: p for p in products}
     ordered_products = [by_id[i] for i in ids if i in by_id]
 
-    fav_ids = get_favorite_ids(request.session) or []
-    cmp_ids = get_compare_ids(request.session) or []
+    fav_ids = [str(x) for x in (get_favorite_ids(request.session) or [])]
+    cmp_ids = [str(x) for x in (get_compare_ids(request.session) or [])]
+
     fav_ids_set = set(fav_ids)
     cmp_ids_set = set(cmp_ids)
 

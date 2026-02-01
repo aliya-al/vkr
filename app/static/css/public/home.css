@@ -65,6 +65,14 @@
 
   cursor: pointer;
   z-index: 10;
+
+  color: color-mix(in oklab, var(--home-text), var(--home-bg) 55%);
+
+  transition:
+    color 160ms ease,
+    border-color 160ms ease,
+    background-color 160ms ease,
+    transform 120ms ease;
 }
 
 .home-news__nav svg { width: 18px; height: 18px; }
@@ -75,6 +83,18 @@
   opacity: 0.35;
   cursor: default;
 }
+
+@media (hover: hover){
+  .home-news__nav:hover{
+    background: color-mix(in oklab, var(--home-bg), var(--home-surface) 28%);
+    color: color-mix(in oklab, var(--home-text), var(--home-bg) 35%);
+  }
+}
+
+.home-news__nav:active{
+  transform: translateY(-50%) scale(0.96);
+}
+
 
 .home-news__viewport {
   height: 100%;
@@ -187,6 +207,15 @@
 
   cursor: pointer;
   z-index: 10;
+
+  color: color-mix(in oklab, var(--home-text), var(--home-bg) 55%);
+
+  transition:
+    color 160ms ease,
+    border-color 160ms ease,
+    background-color 160ms ease,
+    transform 120ms ease;
+
 }
 
 .home-cats__nav svg { width: 18px; height: 18px; }
@@ -197,6 +226,18 @@
   opacity: 0.35;
   cursor: default;
 }
+
+@media (hover: hover){
+  .home-cats__nav:hover{
+    background: color-mix(in oklab, var(--home-bg), var(--home-surface) 28%);
+    color: color-mix(in oklab, var(--home-text), var(--home-bg) 35%);
+  }
+}
+
+.home-cats__nav:active{
+  transform: translateY(-50%) scale(0.96);
+}
+
 
 /* скроллит viewport (важно для iPhone) */
 .home-cats__viewport {

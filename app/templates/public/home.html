@@ -133,106 +133,7 @@
 
         <div class="p-grid">
           {% for p in promo_products %}
-            {% set pslug = (p.slug if p.slug is defined else p.id) %}
-            {% set href = "/product/" ~ pslug %}
-
-            {% set main_img = None %}
-            {% if p.images and p.images|length %}
-              {% set main_img = p.images[0].file_path %}
-              {% if main_img and not main_img.startswith('/') %}
-                {% set main_img = '/' ~ main_img %}
-              {% endif %}
-            {% endif %}
-
-            {% set new_price = (p.price * (100 - p.discount_percent) // 100) %}
-
-            {% set cart_qty = 0 %}
-            {% if cart_map is mapping %}
-              {% set cart_qty = (cart_map.get(p.id|string, 0) | int) %}
-            {% endif %}
-
-            <article class="p-card">
-              <div class="p-card__media-wrap">
-                <a class="p-card__media" href="{{ href }}" aria-label="{{ p.name }}">
-                  {% if main_img %}
-                    <img class="p-card__img" src="{{ main_img }}" alt="{{ p.name }}" loading="lazy">
-                  {% else %}
-                    <div class="p-card__img p-card__img--ph" aria-hidden="true"></div>
-                  {% endif %}
-                </a>
-
-                <div class="p-card__icons">
-                  <form method="post" action="/favorites/toggle" class="js-icon-toggle">
-                    <input type="hidden" name="product_id" value="{{ p.id }}">
-                    <button class="icon-btn {{ 'is-active' if ((p.id|string) in fav_ids_set) else '' }}" type="submit" aria-label="В избранное">
-                      <svg class="icon-btn__svg icon-heart" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-                        <path class="i-fill" d="M12 21s-7.2-4.4-9.6-8.6C.6 9.1 2.2 5.8 5.6 5.2c1.7-.3 3.4.3 4.5 1.6L12 8.9l1.9-2.1c1.1-1.3 2.8-1.9 4.5-1.6 3.4.6 5 3.9 3.2 7.2C19.2 16.6 12 21 12 21z"/>
-                        <path class="i-stroke" d="M12 21s-7.2-4.4-9.6-8.6C.6 9.1 2.2 5.8 5.6 5.2c1.7-.3 3.4.3 4.5 1.6L12 8.9l1.9-2.1c1.1-1.3 2.8-1.9 4.5-1.6 3.4.6 5 3.9 3.2 7.2C19.2 16.6 12 21 12 21z"/>
-                      </svg>
-                    </button>
-                  </form>
-
-                  <form method="post" action="/compare/toggle" class="js-icon-toggle">
-                    <input type="hidden" name="product_id" value="{{ p.id }}">
-                    <button class="icon-btn {{ 'is-active' if ((p.id|string) in cmp_ids_set) else '' }}" type="submit" aria-label="Сравнить">
-                      <svg class="icon-btn__svg icon-compare" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-                        <path class="i-stroke" d="M5 19.5h14M7.5 18V10.5M12 18V6.5M16.5 18V13"/>
-                        <rect class="i-fill" x="6.6" y="10.5" width="1.8" height="7.5" rx="0.9"/>
-                        <rect class="i-fill" x="11.1" y="6.5" width="1.8" height="11.5" rx="0.9"/>
-                        <rect class="i-fill" x="15.6" y="13" width="1.8" height="5" rx="0.9"/>
-                      </svg>
-                    </button>
-                  </form>
-                </div>
-              </div>
-
-              <div class="p-card__body">
-                <a class="p-card__name" href="{{ href }}">{{ p.name }}</a>
-
-                <div class="p-card__price" aria-label="Цена со скидкой">
-                  <span class="p-card__price-old">{{ p.price }}р/шт.</span>
-                  <span class="p-card__price-new">{{ new_price }}р/шт.</span>
-                </div>
-
-                <div class="p-card__actions">
-                  <div class="cartw"
-                       data-cart-widget
-                       data-product-id="{{ p.id }}"
-                       data-initial-qty="{{ cart_qty }}">
-
-                    <form method="post" action="/cart/add"
-                          class="js-cart-add"
-                          {% if cart_qty|int > 0 %}hidden{% endif %}>
-                      <input type="hidden" name="product_id" value="{{ p.id }}">
-                      <input type="hidden" name="qty" value="1">
-                      <button class="cartw__btn" type="submit">
-                        <img class="p-card__btn-icon"
-                             src="/static/img/icons/public/cart.png"
-                             alt=""
-                             aria-hidden="true"
-                             loading="lazy">
-                        <span>в корзину</span>
-                      </button>
-                    </form>
-
-                    <div class="cartw__step js-cart-step"
-                         {% if cart_qty|int <= 0 %}hidden{% endif %}
-                         aria-label="Количество товара">
-                      <button class="cartw__step-btn js-step-minus" type="button" aria-label="Уменьшить">−</button>
-                      <input class="cartw__qty js-step-qty"
-                             type="number"
-                             inputmode="numeric"
-                             min="0"
-                             step="1"
-                             value="{{ cart_qty if cart_qty|int > 0 else 1 }}"
-                             aria-label="Количество">
-                      <button class="cartw__step-btn js-step-plus" type="button" aria-label="Увеличить">+</button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </article>
-
+            {% include "public/components/product_card.html" %}
           {% endfor %}
         </div>
       </section>
@@ -244,109 +145,7 @@
       <div class="p-grid">
         {% if products and products|length %}
           {% for p in products %}
-            {% set pslug = (p.slug if p.slug is defined else p.id) %}
-            {% set href = "/product/" ~ pslug %}
-
-            {% set main_img = None %}
-            {% if p.images and p.images|length %}
-              {% set main_img = p.images[0].file_path %}
-              {% if main_img and not main_img.startswith('/') %}
-                {% set main_img = '/' ~ main_img %}
-              {% endif %}
-            {% endif %}
-
-            {% set cart_qty = 0 %}
-            {% if cart_map is mapping %}
-              {% set cart_qty = (cart_map.get(p.id|string, 0) | int) %}
-            {% endif %}
-
-            <article class="p-card">
-              <div class="p-card__media-wrap">
-                <a class="p-card__media" href="{{ href }}" aria-label="{{ p.name }}">
-                  {% if main_img %}
-                    <img class="p-card__img" src="{{ main_img }}" alt="{{ p.name }}" loading="lazy">
-                  {% else %}
-                    <div class="p-card__img p-card__img--ph" aria-hidden="true"></div>
-                  {% endif %}
-                </a>
-
-                <div class="p-card__icons">
-                  <form method="post" action="/favorites/toggle" class="js-icon-toggle">
-                    <input type="hidden" name="product_id" value="{{ p.id }}">
-                    <button class="icon-btn {{ 'is-active' if ((p.id|string) in fav_ids_set) else '' }}" type="submit" aria-label="В избранное">
-                      <svg class="icon-btn__svg icon-heart" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-                        <path class="i-fill" d="M12 21s-7.2-4.4-9.6-8.6C.6 9.1 2.2 5.8 5.6 5.2c1.7-.3 3.4.3 4.5 1.6L12 8.9l1.9-2.1c1.1-1.3 2.8-1.9 4.5-1.6 3.4.6 5 3.9 3.2 7.2C19.2 16.6 12 21 12 21z"/>
-                        <path class="i-stroke" d="M12 21s-7.2-4.4-9.6-8.6C.6 9.1 2.2 5.8 5.6 5.2c1.7-.3 3.4.3 4.5 1.6L12 8.9l1.9-2.1c1.1-1.3 2.8-1.9 4.5-1.6 3.4.6 5 3.9 3.2 7.2C19.2 16.6 12 21 12 21z"/>
-                      </svg>
-                    </button>
-                  </form>
-
-                  <form method="post" action="/compare/toggle" class="js-icon-toggle">
-                    <input type="hidden" name="product_id" value="{{ p.id }}">
-                    <button class="icon-btn {{ 'is-active' if ((p.id|string) in cmp_ids_set) else '' }}" type="submit" aria-label="Сравнить">
-                      <svg class="icon-btn__svg icon-compare" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-                        <path class="i-stroke" d="M5 19.5h14M7.5 18V10.5M12 18V6.5M16.5 18V13"/>
-                        <rect class="i-fill" x="6.6" y="10.5" width="1.8" height="7.5" rx="0.9"/>
-                        <rect class="i-fill" x="11.1" y="6.5" width="1.8" height="11.5" rx="0.9"/>
-                        <rect class="i-fill" x="15.6" y="13" width="1.8" height="5" rx="0.9"/>
-                      </svg>
-                    </button>
-                  </form>
-                </div>
-              </div>
-
-              <div class="p-card__body">
-                <a class="p-card__name" href="{{ href }}">{{ p.name }}</a>
-
-                <div class="p-card__price">
-                  {% if p.discount_percent %}
-                    {% set new_price = (p.price * (100 - p.discount_percent) // 100) %}
-                    <span class="p-card__price-old">{{ p.price }}р/шт.</span>
-                    <span class="p-card__price-new">{{ new_price }}р/шт.</span>
-                  {% else %}
-                    <span>{{ p.price }}р/шт.</span>
-                  {% endif %}
-                </div>
-
-                <div class="p-card__actions">
-                  <div class="cartw"
-                       data-cart-widget
-                       data-product-id="{{ p.id }}"
-                       data-initial-qty="{{ cart_qty }}">
-
-                    <form method="post" action="/cart/add"
-                          class="js-cart-add"
-                          {% if cart_qty|int > 0 %}hidden{% endif %}>
-                      <input type="hidden" name="product_id" value="{{ p.id }}">
-                      <input type="hidden" name="qty" value="1">
-                      <button class="cartw__btn" type="submit">
-                        <img class="p-card__btn-icon"
-                             src="/static/img/icons/public/cart.png"
-                             alt=""
-                             aria-hidden="true"
-                             loading="lazy">
-                        <span>в корзину</span>
-                      </button>
-                    </form>
-
-                    <div class="cartw__step js-cart-step"
-                         {% if cart_qty|int <= 0 %}hidden{% endif %}
-                         aria-label="Количество товара">
-                      <button class="cartw__step-btn js-step-minus" type="button" aria-label="Уменьшить">−</button>
-                      <input class="cartw__qty js-step-qty"
-                             type="number"
-                             inputmode="numeric"
-                             min="0"
-                             step="1"
-                             value="{{ cart_qty if cart_qty|int > 0 else 1 }}"
-                             aria-label="Количество">
-                      <button class="cartw__step-btn js-step-plus" type="button" aria-label="Увеличить">+</button>
-                    </div>
-                  </div>
-                </div>
-
-              </div>
-            </article>
+            {% include "public/components/product_card.html" %}
           {% endfor %}
         {% endif %}
       </div>
@@ -420,52 +219,82 @@
   if (!root) return;
 
   const viewport = root.querySelector('.home-cats__viewport');
+  const track = root.querySelector('.home-cats__track');
   const prevBtn = root.querySelector('.home-cats__nav--prev');
   const nextBtn = root.querySelector('.home-cats__nav--next');
+  if (!viewport || !track || !prevBtn || !nextBtn) return;
 
-  if (!viewport || !prevBtn || !nextBtn) return;
+  const cards = Array.from(track.querySelectorAll('.cat-card'));
+  const count = cards.length;
 
-  const page = () => Math.max(1, Math.round(viewport.getBoundingClientRect().width));
-  const maxLeft = () => Math.max(0, viewport.scrollWidth - viewport.clientWidth);
+  const scroller = (viewport.scrollWidth > viewport.clientWidth + 1) ? viewport : track;
 
-  const clamp = (x) => Math.min(maxLeft(), Math.max(0, x));
+  const getStepPx = () => {
+    const a = cards[0];
+    if (!a) return Math.max(1, Math.round(scroller.getBoundingClientRect().width));
+    const b = cards[1];
+    if (b) {
+      const d = Math.round(b.offsetLeft - a.offsetLeft);
+      return Math.max(1, d);
+    }
+    return Math.max(1, Math.round(a.getBoundingClientRect().width));
+  };
 
-  const snapToPage = () => {
-    const p = page();
-    const target = clamp(Math.round(viewport.scrollLeft / p) * p);
-    viewport.scrollTo({ left: target, behavior: 'smooth' });
+  const getPerPage = () => {
+    const step = getStepPx();
+    const w = Math.max(1, Math.round(scroller.getBoundingClientRect().width));
+    return Math.max(1, Math.floor(w / step));
+  };
+
+  const getIndex = () => {
+    const step = getStepPx();
+    return Math.round(scroller.scrollLeft / step);
+  };
+
+  const scrollToIndex = (i) => {
+    const step = getStepPx();
+    const perPage = getPerPage();
+    const maxStart = Math.max(0, count - perPage);
+    const idx = Math.min(maxStart, Math.max(0, i));
+    scroller.scrollTo({ left: idx * step, behavior: 'smooth' });
   };
 
   const sync = () => {
-    const x = viewport.scrollLeft;
-    const max = maxLeft();
-    prevBtn.disabled = x <= 1;
-    nextBtn.disabled = x >= (max - 1);
+    const idx = getIndex();
+    const perPage = getPerPage();
+    const maxStart = Math.max(0, count - perPage);
+
+    prevBtn.disabled = (count <= perPage) || (idx <= 0);
+    nextBtn.disabled = (count <= perPage) || (idx >= maxStart);
   };
 
-  const scrollByPage = (dir) => {
-    const target = clamp(viewport.scrollLeft + dir * page());
-    viewport.scrollTo({ left: target, behavior: 'smooth' });
-  };
+  prevBtn.addEventListener('click', () => {
+    const perPage = getPerPage();
+    scrollToIndex(getIndex() - perPage);
+  });
 
-  prevBtn.addEventListener('click', () => scrollByPage(-1));
-  nextBtn.addEventListener('click', () => scrollByPage(1));
+  nextBtn.addEventListener('click', () => {
+    const perPage = getPerPage();
+    scrollToIndex(getIndex() + perPage);
+  });
 
-  let t = null;
-  viewport.addEventListener('scroll', () => {
-    sync();
-    if (t) clearTimeout(t);
-    t = setTimeout(() => snapToPage(), 120);
+  scroller.addEventListener('scroll', () => {
+    if (scroller._raf) return;
+    scroller._raf = requestAnimationFrame(() => {
+      scroller._raf = null;
+      sync();
+    });
   }, { passive: true });
 
   window.addEventListener('resize', () => {
-    snapToPage();
+    scrollToIndex(getIndex());
     sync();
   });
 
   sync();
 })();
 </script>
+
 
 <script>
 (() => {
