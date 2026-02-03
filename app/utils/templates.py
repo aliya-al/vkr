@@ -5,7 +5,7 @@ from zoneinfo import ZoneInfo
 templates = Jinja2Templates(directory="app/templates")
 
 
-def moscow_dt(value: datetime | None, fmt: str = "%d.%m.%Y %H:%M:%S") -> str:
+def moscow_dt(value: datetime | None, fmt: str = "%d.%m.%Y") -> str:
     """
     Форматирование даты/времени в московском часовом поясе.
     """

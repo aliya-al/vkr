@@ -4,7 +4,7 @@ from __future__ import annotations
 import uuid
 
 from fastapi import APIRouter, Depends, Form, HTTPException, Request
-from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse
 from sqlalchemy import or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
@@ -12,6 +12,7 @@ from sqlalchemy.orm import selectinload
 from app.models.order import Order, OrderStatus
 from app.models.order_item import OrderItem
 from app.models.user import AdminUser
+from app.models.product_image import ProductImage
 from app.utils.database import get_async_session
 from app.utils.deps import require_admin_or_404
 from app.utils.templates import templates
@@ -138,18 +139,133 @@ async def request_edit_page(
     if _is_admin(admin):
         managers = await _load_active_managers(session)
 
+    # текущие main-фото товаров для позиций заявки
+    product_ids = [it.product_id for it in order.items if it.product_id]
+    main_images: dict[uuid.UUID, str] = {}
+
+    if product_ids:
+        rows = (
+            await session.execute(
+                select(ProductImage.product_id, ProductImage.file_path)
+                .where(ProductImage.product_id.in_(product_ids))
+                .where(ProductImage.is_main.is_(True))
+            )
+        ).all()
+        main_images = {pid: path for pid, path in rows}
+
+
     return templates.TemplateResponse(
         "admin/requests/edit.html",
         {
             "request": request,
             "admin": admin,
             "order": order,
+            "main_images": main_images,
             "managers": managers,
             "statuses": [s.value for s in OrderStatus],
             "error": None,
         },
     )
 
+@router.post("/admin/requests/{order_id}/inline")
+async def request_inline_update(
+    order_id: uuid.UUID,
+    request: Request,
+    admin: dict = Depends(require_admin_or_404),
+    session: AsyncSession = Depends(get_async_session),
+):
+    # читаем JSON
+    try:
+        payload = await request.json()
+    except Exception:
+        payload = {}
+
+    status: str | None = payload.get("status")
+    manager_id: str | None = payload.get("manager_id")
+
+    # загрузка заявки
+    res = await session.execute(
+        select(Order)
+        .where(Order.id == order_id)
+        .options(selectinload(Order.manager))
+    )
+    order = res.scalar_one_or_none()
+    if not order:
+        return JSONResponse({"ok": False, "error": "Заявка не найдена."}, status_code=404)
+
+    # права
+    if not _is_admin(admin) and not _can_manager_access_order(admin, order):
+        return JSONResponse({"ok": False, "error": "Нет доступа."}, status_code=404)
+
+    # 1) статус
+    if status:
+        try:
+            order.status = OrderStatus(status)
+        except Exception:
+            return JSONResponse({"ok": False, "error": "Некорректный статус."}, status_code=400)
+
+    # 2) менеджер
+    if manager_id is not None:
+        manager_id = str(manager_id).strip()
+
+        if _is_admin(admin):
+            # админ: любой активный или снять
+            if manager_id == "":
+                order.manager_id = None
+            else:
+                try:
+                    mid = uuid.UUID(manager_id)
+                except Exception:
+                    return JSONResponse({"ok": False, "error": "Некорректный manager_id."}, status_code=400)
+
+                m_res = await session.execute(
+                    select(AdminUser).where(
+                        AdminUser.id == mid,
+                        AdminUser.role == "manager",
+                        AdminUser.is_active.is_(True),
+                    )
+                )
+                m = m_res.scalar_one_or_none()
+                if not m:
+                    return JSONResponse({"ok": False, "error": "Менеджер не найден."}, status_code=400)
+
+                order.manager_id = m.id
+
+        else:
+            # менеджер: только снять себя или назначить себя
+            me = _admin_id_uuid(admin)
+
+            if manager_id == "":
+                if order.manager_id == me:
+                    order.manager_id = None
+                elif order.manager_id is None:
+                    pass
+                else:
+                    return JSONResponse({"ok": False, "error": "Нет доступа."}, status_code=404)
+            else:
+                if manager_id != str(me):
+                    return JSONResponse({"ok": False, "error": "Можно назначить только себя."}, status_code=403)
+                order.manager_id = me
+
+    await session.commit()
+
+    # отдаём актуальные данные для фронта
+    status_value = order.status.value if order.status else "new"
+    status_label = STATUS_LABELS.get(order.status, status_value)
+
+    manager_login: str | None = None
+    if order.manager_id:
+        u = await session.get(AdminUser, order.manager_id)
+        manager_login = u.login if u else None
+
+    return JSONResponse(
+        {
+            "ok": True,
+            "status": status_value,
+            "status_label": status_label,
+            "manager_login": manager_login,
+        }
+    )
 
 @router.post("/admin/requests/{order_id}/edit", response_class=HTMLResponse)
 async def request_edit(

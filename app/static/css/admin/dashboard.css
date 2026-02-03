@@ -53,22 +53,68 @@
 /* KPI */
 .dash__kpis{
   display:grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: var(--space-5);
+}
+
+.kpi--manage{
+
+}
+
+.kpi__manageSelect{
+  width: 100%;
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+
+  background: var(--color-card, #fff);
+  border: 0;
+  border-radius: 14px;
+  padding: 10px 34px 10px 12px;
+
+  box-shadow: 0 0 0 1px var(--color-line);
+  font-size: var(--fs-xs);
+  line-height: 1.2;
+  color: var(--color-text);
+
+  outline: none;
+}
+.kpi__manageSelect:focus{
+  box-shadow: 0 0 0 2px var(--color-accent, #bdbdbd); /* аккуратный фокус */
+}
+
+.kpi__manageWrap{
+  position: relative;
+  width: 100%;
+}
+.kpi__manageWrap::after{
+  content: "";
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  width: 8px;
+  height: 8px;
+  border-right: 2px solid var(--color-muted);
+  border-bottom: 2px solid var(--color-muted);
+  transform: translateY(-60%) rotate(45deg);
+  pointer-events: none;
+}
+.kpi__manageSelect{
+  padding-right: 28px; /* место под стрелку */
 }
 
 .kpi{
   background: var(--color-surface);
   border-radius: var(--radius-md);
-  padding: 14px 14px;
+  padding: 10px 12px;
   display:flex;
-  gap: var(--space-4);
+  gap: var(--space-3);
   align-items:center;
 }
 
 .kpi__icon{
-  width: 40px;
-  height: 40px;
+  width: 34px;
+  height: 34px;
   border-radius: var(--radius-md);
   display:flex;
   align-items:center;
@@ -80,14 +126,15 @@
 .kpi__icon svg{ width: 22px; height: 22px; color: var(--color-text); }
 
 .kpi__value{
-  font-size: calc(var(--fs-base) * 1.5);
+  font-size: calc(var(--fs-base) * 1.2);
   font-weight: 700;
   line-height: 1.1;
 }
 .kpi__label{
-  margin-top: 4px;
+  margin-top: 2px;
   font-size: var(--fs-xs);
   color: var(--color-muted);
+  margin-left: var(--space-1)
 }
 
 /* Cards */
@@ -206,8 +253,8 @@
   font-weight: 700;
 }
 
-.thEdit{ width: 54px; }
-.tdEdit{ text-align:right; }
+.tdEdit{ text-align: right; }
+.tdEdit .editLink{ margin-right: 10px; }
 
 .editLink{
   font-size: var(--fs-xs);
@@ -232,14 +279,132 @@
 .badge--done{}
 .badge--canceled{}
 
+/* ВАЖНО: перебиваем .selectPill select (он специфичнее .badge--*) */
+.selectPill select.badge--new{
+  background: var(--color-danger-soft);
+  border-color: var(--color-line);
+  color: var(--color-danger);
+}
+.selectPill select.badge--in_progress{
+  background: var(--color-warning-soft);
+  border-color: var(--color-line);
+  color: var(--color-warning);
+}
+.selectPill select.badge--done{
+  background: var(--color-success-soft);
+  border-color: var(--color-line);
+  color: var(--color-success);
+}
+.selectPill select.badge--canceled{
+  background: var(--color-neutral-soft);
+  border-color: var(--color-line);
+  color: var(--color-neutral);
+}
+
+
+
+/* =========================
+   Inline edit selects (Requests table)
+   ========================= */
+
+.tdInlineSelect{
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.selectPill{
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+/* общий стиль select в таблице */
+.selectPill select{
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+
+  font-size: var(--fs-xs);
+  line-height: 1.2;
+  color: var(--color-text);
+
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-xl);
+
+  padding: 6px 26px 6px 10px; /* место под стрелку */
+  background: var(--color-surface);
+  cursor: pointer;
+  outline: none;
+}
+
+.selectPill select option{
+  background: var(--color-bg);
+  color: var(--color-text);
+}
+
+.selectPill::after{
+  content: "";
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  width: 7px;
+  height: 7px;
+  border-right: 2px solid var(--color-muted);
+  border-bottom: 2px solid var(--color-muted);
+  transform: translateY(-60%) rotate(45deg);
+  pointer-events: none;
+}
+
+.selectPill select:disabled{
+  opacity: .6;
+  cursor: default;
+}
+
+/* делаем "статус" визуально как бейдж */
+.badgeSelect{
+  background: var(--color-surface);
+}
+
+/* Цвета статусов (то, что ты описала) */
+.badge--new{
+  background: var(--color-primary-soft);
+  border-color: var(--color-primary);
+  color: var(--color-primary-strong);
+}
+
+.badge--in_progress{
+  background: var(--color-warning-soft);
+  border-color: var(--color-warning);
+  color: var(--color-warning);
+}
+
+.badge--done{
+  background: var(--color-success-soft);
+  border-color: var(--color-success);
+  color: var(--color-success);
+}
+
+.badge--canceled{
+  background: var(--color-neutral-soft);
+  border-color: var(--color-neutral);
+  color: var(--color-neutral);
+}
+
+
 /* Top products list */
 .toplist{ display:flex; flex-direction:column; gap: var(--space-4); }
 
 .topitem{
-  display:grid;
+  display:flex;
   grid-template-columns: 54px 1fr;
   gap: var(--space-4);
-  align-items:start;
+  align-items: flex-start;
+}
+
+.topitem > div:last-child{
+  min-width: 0;
+  flex: 1;
 }
 
 .topitem__img{
@@ -247,13 +412,31 @@
   height: 54px;
   border-radius: var(--radius-md);
   background: var(--color-line);
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+.topitem__imgLink{
+  display: block;
+}
+
+.topitem__img{
+  margin-top: 4px;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
 }
 
 .topitem__name{
-  font-size: var(--fs-xs);
+font-size: var(--fs-xs);
   font-weight: 700;
-  margin: 2px 0 6px;
+  margin: 2px 0 3px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
 }
+
 
 .topitem__meta{
   font-size: var(--fs-xs);
@@ -294,3 +477,108 @@
   .dash__kpis{ grid-template-columns: 1fr; }
 }
 
+/* =========================================================
+   DESKTOP: фиксированные высоты блоков + выравнивание по сетке
+   Делается только на широком экране, на мобиле всё остается авто.
+   ========================================================= */
+@media (min-width: 1001px){
+
+  /* Настраиваем "высоты строк" дашборда (можете подогнать под макет) */
+  .dash{
+    --dash-row-kpi: 70px;     /* строка KPI */
+    --dash-row-charts: 240px;  /* строка графиков */
+    --dash-row-bottom: 435px;  /* строка "Заявки" + "Популярные товары" */
+  }
+
+  /* Главная сетка: 2 колонки, 3 строки, с областями */
+  .dash__grid{
+    display: grid;
+    grid-template-columns: 1fr 320px;
+    grid-template-rows: var(--dash-row-kpi) var(--dash-row-charts) var(--dash-row-bottom);
+    grid-template-areas:
+      "kpis      categories"
+      "charts    categories"
+      "requests  top";
+    gap: var(--space-6);
+    align-items: stretch; /* чтобы элементы тянулись на высоту строки */
+  }
+
+  /* Важно: превращаем обёртки колонок в "прозрачные", чтобы их дети стали grid-item */
+  .dash__main,
+  .dash__side{
+    display: contents;
+  }
+
+  /* Назначаем области */
+  .dash__kpis{ grid-area: kpis; height: 100%; }
+  .dash__charts{ grid-area: charts; height: 100%; }
+  .dash__requests{ grid-area: requests; height: 100%; }
+  .dash__categories{ grid-area: categories; height: 100%; }
+  .dash__topProducts{ grid-area: top; height: 100%; }
+
+  /* KPI: карточки равной высоты */
+  .dash__kpis{
+    align-content: stretch;
+  }
+  .kpi{
+    height: 100%;
+  }
+
+  /* Графики: карточки растягиваем, чтобы высота строки работала */
+  .dash__charts{
+    align-items: stretch;
+  }
+  .dash__charts .card{
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+  }
+  .dash__charts .chart{
+    flex: 1;
+    height: auto; /* перебиваем фикс 190px */
+    min-height: 0;
+  }
+
+  /* Продаваемые категории: карточка на 2 строки, внутри донат растягивается */
+  .dash__categories{
+    display: flex;
+    flex-direction: column;
+  }
+  .dash__categories .chart--donut{
+    flex: 1;
+    height: auto;  /* перебиваем 240px */
+    min-height: 0;
+  }
+
+  /* Нижний ряд: делаем прокрутку контента внутри, чтобы высоты не "ехали" */
+  .dash__topProducts{
+    display: flex;
+    flex-direction: column;
+  }
+  #topProductsList{
+    flex: 1;
+    min-height: 0;
+    overflow: auto;
+    padding-right: 4px; /* чтобы скролл не лип к тексту */
+  }
+
+  /* "Заявки": контейнер-обёртка растягивается, а внутри карточка занимает 100% */
+  .dash__requests{
+    display: flex;
+    min-height: 0;
+  }
+  .dash__requests > .card{
+    height: 100%;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+  }
+  .dash__requests .tableWrap{
+  border: 0;
+}
+}
+
+.dash__requests .table thead th{
+  background: var(--color-line);
+}

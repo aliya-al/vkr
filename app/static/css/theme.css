@@ -32,6 +32,18 @@
   --color-line: #dedede;
   --color-surface: #f2f2f2;
 
+  --color-success: #1f7a3a;
+  --color-success-soft: #e6f4ea;
+
+  --color-warning: #a86a00;
+  --color-warning-soft: #fff1d6;
+
+  --color-neutral: #6b6b6b;
+  --color-neutral-soft: #ededed;
+
+  --color-danger: #c62828;
+  --color-danger-soft: #fde7e7;
+
   /* =========================
      TYPOGRAPHY (всё от одной базы)
      ========================= */
@@ -140,3 +152,6 @@ button:focus-visible {
     --container-pad: 16px;
   }
 }
+
+
+

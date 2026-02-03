@@ -36,15 +36,36 @@
             </div>
           </div>
 
-          <div class="kpi">
-            <div class="kpi__icon" aria-hidden="true">
-              <svg viewBox="0 0 24 24"><path d="M4 7l8-4 8 4-8 4-8-4Z" fill="none" stroke="currentColor" stroke-width="2"/><path d="M4 7v10l8 4 8-4V7" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 11v10" fill="none" stroke="currentColor" stroke-width="2"/></svg>
-            </div>
-            <div class="kpi__meta">
-              <div class="kpi__value" id="kpiDone">0</div>
-              <div class="kpi__label">Выполненные заказы</div>
-            </div>
-          </div>
+<div class="kpi">
+  <div class="kpi__icon" aria-hidden="true">
+    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path d="M20 6L9 17l-5-5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+  </div>
+  <div class="kpi__meta">
+    <div class="kpi__value" id="kpiDone">0</div>
+    <div class="kpi__label">Выполненные заказы</div>
+  </div>
+</div>
+
+
+          <div class="kpi kpi--manage">
+  <div class="kpi__meta" style="width:100%">
+    <div class="kpi__manageWrap">
+      <select class="kpi__manageSelect" id="manageSiteSelect" aria-label="Управление сайтом">
+        <option value="" selected disabled>Выберите раздел</option>
+        <option value="/admin/requests">Заявки</option>
+        <option value="/admin/products">Товары</option>
+        <option value="/admin/categories">Категории</option>
+        <option value="/admin/attributes">Характеристики</option>
+        <option value="/admin/news">Новости</option>
+        <option value="/admin/managers">Менеджер</option>
+      </select>
+    </div>
+    <div class="kpi__label">Управление сайтом</div>
+  </div>
+</div>
+
         </div>
 
         <!-- Charts row -->
@@ -77,13 +98,16 @@
         </div>
 
         <!-- Requests -->
-        {% include "admin/components/dashboard_requests_table.html" %}
+        <div class="dash__requests">
+          {% include "admin/components/dashboard_requests_table.html" %}
+        </div>
+
 
       </section>
 
       <!-- RIGHT SIDEBAR -->
       <aside class="dash__side">
-        <section class="card" aria-label="Продаваемые категории">
+        <section class="card dash__categories" aria-label="Продаваемые категории">
           <header class="card__head">
             <div class="card__title">Продаваемые<br>категории</div>
             <select class="card__select card__select--small" id="scopeCategories" aria-label="Период категорий">
@@ -92,10 +116,10 @@
             </select>
           </header>
           <div class="chart chart--donut" id="chartCategories"></div>
-          <div class="legend" id="categoriesLegend" aria-label="Легенда категорий"></div>
+          <!-- <div class="legend" id="categoriesLegend" aria-label="Легенда категорий"></div>-->
         </section>
 
-        <section class="card" aria-label="Популярные товары">
+        <section class="card dash__topProducts" aria-label="Популярные товары">
           <header class="card__head">
             <div class="card__title">Популярные товары</div>
             <select class="card__select card__select--small" id="scopeTop" aria-label="Период популярных товаров">

@@ -64,7 +64,10 @@
                 {% set unit_old = base_unit %}
                 {% set line_old = unit_old * qty %}
 
-                {% set img = it["image_url"] if ("image_url" in it) else None %}
+                {% set img = main_images.get(item.product_id) %}
+                {% if img %}
+                  <img src="{{ img if img.startswith('/') else '/' ~ img }}" alt="">
+                {% endif %}
 
                 <article class="co-item">
                   <a class="co-item__media" href="/product/{{ p.id }}" aria-label="Открыть товар">

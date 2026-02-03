@@ -8,12 +8,12 @@
     <table class="table">
       <thead>
         <tr>
-          <th>Имя <span class="thSort" aria-hidden="true">^</span></th>
-          <th>Дата заявки <span class="thSort" aria-hidden="true">^</span></th>
-          <th>Телефон <span class="thSort" aria-hidden="true">^</span></th>
-          <th>Доставка <span class="thSort" aria-hidden="true">^</span></th>
-          <th>Менеджер <span class="thSort" aria-hidden="true">^</span></th>
-          <th>Статус <span class="thSort" aria-hidden="true">^</span></th>
+          <th>Имя <span class="thSort" aria-hidden="true"></span></th>
+          <th>Дата заявки <span class="thSort" aria-hidden="true"></span></th>
+          <th>Телефон <span class="thSort" aria-hidden="true"></span></th>
+          <th>Доставка <span class="thSort" aria-hidden="true"></span></th>
+          <th>Менеджер <span class="thSort" aria-hidden="true"></span></th>
+          <th>Статус <span class="thSort" aria-hidden="true"></span></th>
           <th class="thEdit"></th>
         </tr>
       </thead>
@@ -25,16 +25,51 @@
         {% else %}
           {% for o in dash_orders %}
             <tr>
-              <td class="tdName">{{ o.name or "—" }}</td>
-              <td>{{ o.created_at.strftime("%d.%m.%Y") if o.created_at else "—" }}</td>
-              <td>{{ o.phone or "—" }}</td>
-              <td>{{ delivery_labels.get(o.delivery_method, o.delivery_method or "—") }}</td>
-              <td>{{ (o.manager.login if o.manager else "—") }}</td>
-              <td>
-                <span class="badge badge--{{ o.status.value if o.status else 'new' }}">
-                  {{ status_labels.get(o.status, o.status.value if o.status else "—") }}
-                </span>
-              </td>
+              <td class="tdName">{{ o.customer_name or "—" }}</td>
+
+              <td>{{ o.created_at|moscow_dt("%d.%m.%Y %H:%M") if o.created_at else "—" }}</td>
+              <td>{{ o.customer_phone or "—" }}</td>
+
+              {% set dm = (o.delivery_type.value if o.delivery_type else None) %}
+<td>{{ delivery_labels.get(dm, dm or "—") }}</td>
+
+<td>
+  {% if dash_managers is defined %}
+    <div class="tdInlineSelect">
+      <div class="selectPill">
+        <select class="js-inline-manager" data-order-id="{{ o.id }}" aria-label="Менеджер">
+          <option value="" {% if not o.manager_id %}selected{% endif %}>Не прикреплен</option>
+          {% for m in dash_managers %}
+            <option value="{{ m.id }}" {% if o.manager_id == m.id %}selected{% endif %}>
+              {{ m.login }}
+            </option>
+          {% endfor %}
+        </select>
+      </div>
+    </div>
+  {% else %}
+    {{ (o.manager.login if o.manager else "Не прикреплен") }}
+  {% endif %}
+</td>
+
+<td>
+  {% set cur = (o.status.value if o.status else "new") %}
+  <div class="tdInlineSelect">
+    <div class="selectPill">
+      <select
+        class="badge badgeSelect badge--{{ cur }} js-inline-status"
+        data-order-id="{{ o.id }}"
+        aria-label="Статус"
+      >
+        <option value="new" {% if cur == "new" %}selected{% endif %}>новый</option>
+        <option value="in_progress" {% if cur == "in_progress" %}selected{% endif %}>в работе</option>
+        <option value="done" {% if cur == "done" %}selected{% endif %}>выполнен</option>
+        <option value="canceled" {% if cur == "canceled" %}selected{% endif %}>отменён</option>
+      </select>
+    </div>
+  </div>
+</td>
+
               <td class="tdEdit">
                 <a class="editLink" href="/admin/requests/{{ o.id }}/edit">ред.</a>
               </td>

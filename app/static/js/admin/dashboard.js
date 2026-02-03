@@ -26,17 +26,69 @@
     return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
   }
 
-  function normalizeSeries(arr) {
-    const x = [];
-    const y = [];
-    (arr || []).forEach((it) => {
-      const label = it.label ?? it.period ?? it.x ?? it.name ?? "";
-      const val = it.value ?? it.amount ?? it.total ?? it.sum ?? it.revenue ?? it.qty ?? 0;
-      x.push(String(label));
-      y.push(Number(val) || 0);
-    });
-    return { x, y };
+  function pad2(n) {
+  return String(n).padStart(2, "0");
+}
+
+  const moneyFmt = new Intl.NumberFormat("ru-RU");
+
+  function fmtMoney(v) {
+    const n = Number(v);
+    if (!Number.isFinite(n)) return "0";
+    return moneyFmt.format(Math.round(n));
   }
+
+
+// Принимает label из API (iso, YYYY-MM-DD, YYYY-MM, YYYY, YYYY-Www) и делает человеко-понятную строку
+function formatPeriodLabel(raw) {
+  if (raw == null) return "";
+  const s = String(raw).trim();
+  if (!s) return "";
+
+  // ISO / datetime (2026-01-31T00:00:00+03:00)
+  // и просто YYYY-MM-DD
+  const isoOrDate = s.match(/^(\d{4})-(\d{2})-(\d{2})(?:[T\s].*)?$/);
+  if (isoOrDate) {
+    const [, y, m, d] = isoOrDate;
+    return `${d}.${m}.${y}`;
+  }
+
+  // YYYY-MM
+  const ym = s.match(/^(\d{4})-(\d{2})$/);
+  if (ym) {
+    const [, y, m] = ym;
+    // чтобы было в "день.месяц.год" стиле — оставим месяц.год
+    return `${m}.${y}`;
+  }
+
+  // ISO week: 2026-W05 или 2026-W5
+  const yw = s.match(/^(\d{4})-W(\d{1,2})$/i);
+  if (yw) {
+    const [, y, w] = yw;
+    return `нед ${pad2(w)}, ${y}`;
+  }
+
+  // Year
+  const yOnly = s.match(/^\d{4}$/);
+  if (yOnly) return s;
+
+  // Если уже “красиво” или это названия месяцев — не трогаем
+  return s;
+}
+
+function normalizeSeries(arr) {
+  const x = [];
+  const y = [];
+  (arr || []).forEach((it) => {
+    const label = it.label ?? it.period ?? it.x ?? it.name ?? "";
+    const val = it.value ?? it.amount ?? it.total ?? it.sum ?? it.revenue ?? it.qty ?? 0;
+
+    x.push(formatPeriodLabel(label));
+    y.push(Number(val) || 0);
+  });
+  return { x, y };
+}
+
 
   function normalizePie(arr) {
     return (arr || []).map((it) => {
@@ -61,7 +113,15 @@
     const { x, y } = normalizeSeries(series);
 
     salesChart.setOption({
-      grid: { left: 38, right: 16, top: 14, bottom: 30 },
+      grid: { left: 56, right: 16, top: 14, bottom: 30 },
+      tooltip: {
+        trigger: "axis",
+        formatter: (params) => {
+          const p = (params && params[0]) ? params[0] : null;
+          if (!p) return "";
+          return `${p.axisValue}<br/>${fmtMoney(p.data)} ₽`;
+        },
+      },
       xAxis: {
         type: "category",
         data: x,
@@ -74,7 +134,11 @@
         axisLine: { show: false },
         axisTick: { show: false },
         splitLine: { lineStyle: { color: cssVar("--color-line") } },
-        axisLabel: { color: cssVar("--color-muted"), fontSize: 11 },
+        axisLabel: {
+          color: cssVar("--color-muted"),
+          fontSize: 11,
+          formatter: (value) => fmtMoney(value),
+        },
       },
       series: [
         { type: "bar", data: y, barWidth: 18, itemStyle: { borderRadius: [6, 6, 0, 0] } },
@@ -88,7 +152,15 @@
     const { x, y } = normalizeSeries(series);
 
     cumChart.setOption({
-      grid: { left: 38, right: 16, top: 14, bottom: 30 },
+      grid: { left: 56, right: 16, top: 14, bottom: 30 },
+      tooltip: {
+        trigger: "axis",
+        formatter: (params) => {
+          const p = (params && params[0]) ? params[0] : null;
+          if (!p) return "";
+          return `${p.axisValue}<br/>${fmtMoney(p.data)} ₽`;
+        },
+      },
       xAxis: {
         type: "category",
         data: x,
@@ -101,7 +173,11 @@
         axisLine: { show: false },
         axisTick: { show: false },
         splitLine: { lineStyle: { color: cssVar("--color-line") } },
-        axisLabel: { color: cssVar("--color-muted"), fontSize: 11 },
+        axisLabel: {
+          color: cssVar("--color-muted"),
+          fontSize: 11,
+          formatter: (value) => fmtMoney(value),
+        },
       },
       series: [
         { type: "line", data: y, smooth: true, symbol: "none", areaStyle: {}, lineStyle: { width: 2 } },
@@ -119,7 +195,7 @@
       series: [{
         type: "pie",
         radius: ["62%", "82%"],
-        center: ["50%", "42%"],
+        center: ["50%", "46%"],
         label: { show: false },
         labelLine: { show: false },
         data: pie,
@@ -147,7 +223,7 @@
     if (!topListEl) return;
     topListEl.innerHTML = "";
 
-    (arr || []).slice(0, 4).forEach((it) => {
+    (arr || []).slice(0, 5).forEach((it) => {
       const name = it.name ?? it.product_name ?? it.title ?? "—";
       const uniq = it.unique_orders ?? it.unique ?? it.orders_unique ?? it.uniqueCount ?? 0;
       const total = it.total_qty ?? it.qty ?? it.total ?? it.orders_total ?? 0;
@@ -155,9 +231,40 @@
       const wrap = document.createElement("div");
       wrap.className = "topitem";
 
+      const pid  = it.product_id ?? it.id ?? "";
+      const slug = it.product_slug ?? it.slug ?? "";
+
+      let productUrl = "";
+      if (pid) productUrl = `/product/${slug}/`;
+
       const img = document.createElement("div");
       img.className = "topitem__img";
-      wrap.appendChild(img);
+
+      let imgUrl = it.product_image ?? it.image ?? it.image_url ?? it.image_path ?? "";
+
+      if (imgUrl) {
+        if (imgUrl.startsWith("static/")) imgUrl = "/" + imgUrl;
+        if (imgUrl.startsWith("uploads/")) imgUrl = "/static/" + imgUrl;
+        if (!imgUrl.startsWith("/") && !imgUrl.startsWith("http")) imgUrl = "/" + imgUrl;
+
+        img.style.backgroundImage = `url("${imgUrl}")`;
+        img.style.backgroundSize = "cover";
+        img.style.backgroundPosition = "center";
+        img.style.backgroundRepeat = "no-repeat";
+      }
+
+      if (productUrl) {
+        const link = document.createElement("a");
+        link.className = "topitem__imgLink";
+        link.href = productUrl;
+        link.title = name;
+        link.appendChild(img);
+        wrap.appendChild(link);
+      } else {
+        wrap.appendChild(img);
+      }
+
+
 
       const body = document.createElement("div");
 
@@ -188,11 +295,14 @@
   }
 
   async function loadKpis() {
-    try {
-      const data = await getJSON("/admin/api/analytics/kpis");
-      setKpis(data);
-    } catch (_) {}
+  try {
+    const data = await getJSON("/admin/api/analytics/kpis");
+    setKpis(data);
+  } catch (e) {
+    console.error("KPI load failed:", e);
   }
+}
+
 
   async function loadSales() {
     if (!salesChart) return;
@@ -241,7 +351,7 @@
     const url = new URL("/admin/api/analytics/top-products", window.location.origin);
     url.searchParams.set("group", g);
     url.searchParams.set("scope", scope);
-    url.searchParams.set("limit", "4");
+    url.searchParams.set("limit", "5");
 
     try {
       const data = await getJSON(url.toString());
@@ -272,4 +382,78 @@
   loadCumulative();
   loadCategories();
   loadTopProducts();
+})();
+
+document.addEventListener("DOMContentLoaded", () => {
+  const sel = document.getElementById("manageSiteSelect");
+  if (!sel) return;
+
+  sel.addEventListener("change", () => {
+    const url = sel.value;
+    if (url) window.location.href = url;
+  });
+});
+
+
+(function () {
+  function postInline(orderId, payload) {
+    return fetch(`/admin/requests/${orderId}/inline`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "same-origin",
+      body: JSON.stringify(payload),
+    }).then(async (r) => {
+      const data = await r.json().catch(() => ({}));
+      if (!r.ok || !data.ok) {
+        const msg = data && data.error ? data.error : "Не удалось сохранить.";
+        throw new Error(msg);
+      }
+      return data;
+    });
+  }
+
+  function setStatusClass(selectEl, statusValue) {
+    selectEl.classList.remove("badge--new", "badge--in_progress", "badge--done", "badge--canceled");
+    selectEl.classList.add(`badge--${statusValue}`);
+  }
+
+  document.addEventListener("DOMContentLoaded", () => {
+    // запоминаем предыдущее значение для отката при ошибке
+    document.querySelectorAll(".js-inline-status, .js-inline-manager").forEach((s) => {
+      s.dataset.prevValue = s.value;
+    });
+  });
+
+  document.addEventListener("change", async (e) => {
+    const statusSel = e.target.closest(".js-inline-status");
+    const managerSel = e.target.closest(".js-inline-manager");
+    const sel = statusSel || managerSel;
+    if (!sel) return;
+
+    const orderId = sel.dataset.orderId;
+    if (!orderId) return;
+
+    const prev = sel.dataset.prevValue ?? "";
+    const next = sel.value;
+
+    sel.disabled = true;
+    try {
+      if (statusSel) {
+        const data = await postInline(orderId, { status: next });
+        setStatusClass(statusSel, data.status || next);
+        sel.dataset.prevValue = next;
+      } else {
+        await postInline(orderId, { manager_id: next }); // "" = снять менеджера
+        sel.dataset.prevValue = next;
+      }
+    } catch (err) {
+      // откат
+      sel.value = prev;
+      sel.dataset.prevValue = prev;
+      if (statusSel) setStatusClass(statusSel, prev || "new");
+      alert(err.message || "Ошибка сохранения");
+    } finally {
+      sel.disabled = false;
+    }
+  });
 })();

@@ -401,6 +401,17 @@ async def product_create(
 
     return RedirectResponse("/admin/products", status_code=303)
 
+@router.get("/admin/products/{product_id}/view")
+async def product_view_redirect(
+    product_id: uuid.UUID,
+    session: AsyncSession = Depends(get_async_session),
+):
+    res = await session.execute(select(Product.slug).where(Product.id == product_id))
+    slug = res.scalar_one_or_none()
+    if not slug:
+        raise HTTPException(status_code=404, detail="Товар не найден.")
+
+    return RedirectResponse(f"/catalog/product/{slug}", status_code=302)
 
 @router.get("/admin/products/{product_id}/edit", response_class=HTMLResponse)
 async def product_edit_page(
