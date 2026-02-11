@@ -1,6 +1,6 @@
 {% extends "admin/base.html" %}
 
-{% block title %}Редактировать заявку{% endblock %}
+{% block title %}Создать заявку{% endblock %}
 
 {% block head %}
   <link rel="stylesheet" href="/static/css/admin/requests.css">
@@ -11,14 +11,10 @@
   <div class="container">
 
     <div class="reqn-head">
-      <h1 class="reqn-title">Редактировать заявку</h1>
+      <h1 class="reqn-title">Создать заявку</h1>
       <div class="reqn-actions">
         <a class="reqn-btn" href="/admin/dashboard">На главную</a>
         <a class="reqn-btn reqn-btn--ghost" href="/admin/requests">К заявкам</a>
-
-        <form method="post" action="/admin/requests/{{ order_id }}/delete" style="display:inline" onsubmit="return confirm('Удалить заявку?');">
-          <button class="reqn-btn reqn-btn--ghost" type="submit">Удалить заявку</button>
-        </form>
       </div>
     </div>
 
@@ -29,14 +25,13 @@
     <div class="reqn-grid">
 
       <section class="reqn-card" aria-label="Данные заявки">
-        <form
-          class="reqn-form"
-          method="post"
-          action="/admin/requests/{{ order_id }}/edit"
-          id="reqNewForm"
-          data-cart-prefix="/admin/requests/{{ order_id }}"
-          novalidate
-        >
+        <form class="reqn-form"
+      method="post"
+      action="/admin/requests/new"
+      id="reqNewForm"
+      data-cart-prefix="/admin/requests/new"
+      novalidate>
+
 
           <div class="reqn-block">
             <div class="reqn-blockTitle">Данные клиента</div>
@@ -74,34 +69,26 @@
 
             {% set fe = field_errors or {} %}
 
-<div class="reqn-pane" id="panePickup">
-  <label class="reqn-field">
-    <span class="reqn-label">Пункт самовывоза <b class="reqn-req">*</b></span>
+            <div class="reqn-pane" id="panePickup">
+              <label class="reqn-field">
+                <span class="reqn-label">Пункт самовывоза <b class="reqn-req">*</b></span>
 
-    {% set fe = field_errors or {} %}
-    {% set pick_val = (form_data.get('pickup_address','') or '') %}
-    {% set has_pick_val = pick_val|length > 0 %}
-    {% set in_list = (pick_val in (pickup_points or [])) %}
+{% set pick_val = form_data.get('pickup_address','') %}
+<select class="reqn-input {% if fe.get('pickup_address') %}is-error{% endif %}"
+        name="pickup_address"
+        id="pickupAddress"
+        required>
+  {% for addr in (pickup_points or []) %}
+    <option value="{{ addr }}" {% if addr == pick_val %}selected{% endif %}>{{ addr }}</option>
+  {% endfor %}
+</select>
 
-    <select class="reqn-input {% if fe.get('pickup_address') %}is-error{% endif %}"
-            name="pickup_address"
-            id="pickupAddress"
-            required>
 
-      {% if has_pick_val and (not in_list) %}
-        <option value="{{ pick_val }}" selected>{{ pick_val }} (ранее)</option>
-      {% endif %}
-
-      {% for addr in (pickup_points or []) %}
-        <option value="{{ addr }}" {% if addr == pick_val %}selected{% endif %}>{{ addr }}</option>
-      {% endfor %}
-    </select>
-
-    {% if fe.get('pickup_address') %}
-      <div class="reqn-fieldHint" role="alert">{{ fe.get('pickup_address') }}</div>
-    {% endif %}
-  </label>
-</div>
+                {% if fe.get('pickup_address') %}
+                  <div class="reqn-fieldHint" role="alert">{{ fe.get('pickup_address') }}</div>
+                {% endif %}
+              </label>
+            </div>
 
             <div class="reqn-pane is-hidden" id="paneDelivery">
               <label class="reqn-field">
@@ -148,11 +135,8 @@
                   {% set cur_m = form_data.get('manager_id','') %}
                   <option value="" {% if not cur_m %}selected{% endif %}>Не прикреплен</option>
                   {% for m in (managers or []) %}
-                    <option value="{{ m.id }}"
-                      {% if cur_m == (m.id|string) %}selected{% endif %}
-                      {% if (not m.is_active) and (cur_m != (m.id|string)) %}disabled{% endif %}
-                    >
-                      {{ m.login }}{% if not m.is_active %} (неактивен){% endif %}
+                    <option value="{{ m.id }}" {% if cur_m == (m.id|string) %}selected{% endif %}>
+                      {{ m.login }}
                     </option>
                   {% endfor %}
                 </select>
@@ -164,17 +148,19 @@
                   <div class="reqn-totalRow">
                     <span class="reqn-muted">Сумма</span>
                     <span class="reqn-strong">
-                      <span class="reqn-old" data-total-base {% if not (total_base is defined and total_base > total_price) %}hidden{% endif %}>{{ total_base }} ₽</span>
-                      <span data-total-price>{{ total_price }} ₽</span>
+                      {% if total_base is defined and total_base > total_price %}
+                        <span class="reqn-old">{{ total_base }} ₽</span>
+                      {% endif %}
+                      <span>{{ total_price }} ₽</span>
                     </span>
                   </div>
                   <div class="reqn-totalRow">
                     <span class="reqn-muted">Вес</span>
-                    <span class="reqn-strong" data-total-weight>{{ "%.1f"|format(total_weight or 0) }} кг</span>
+                    <span class="reqn-strong">{{ "%.1f"|format(total_weight or 0) }} кг</span>
                   </div>
                   <div class="reqn-totalRow">
                     <span class="reqn-muted">Кубатура</span>
-                    <span class="reqn-strong" data-total-volume>{{ "%.3f"|format(total_volume or 0) }} м³</span>
+                    <span class="reqn-strong">{{ "%.3f"|format(total_volume or 0) }} м³</span>
                   </div>
                 </div>
               </div>
@@ -196,7 +182,7 @@
 
           <div class="reqn-submitRow">
             <button class="reqn-btn reqn-btn--primary reqn-btn--block" type="submit">
-              Изменить заявку
+              Создать заявку
             </button>
           </div>
 
@@ -219,13 +205,14 @@
                 <article
                   class="reqn-prod"
                   data-name="{{ pr.name|lower }}"
-                  data-product-id="{{ pr.id }}"
+                  data-product-id="{{ pr.id|string }}"
                   data-unit="{{ pr.unit_price }}"
                   data-base="{{ pr.base_unit_price }}"
                   data-weight="{{ pr.weight_kg or 0 }}"
                   data-volume="{{ pr.volume_m3 or 0 }}"
                   data-img="{{ pr.image_url or '' }}"
                 >
+
                   <div class="reqn-pMedia">
                     {% if pr.image_url %}
                       <img class="reqn-pImg" src="{{ pr.image_url }}" alt="{{ pr.name }}">
@@ -249,7 +236,7 @@
                       class="reqn-btn reqn-btn--sm reqn-btn--primary"
                       type="button"
                       data-add
-                      data-product-id="{{ pr.id }}"
+                      data-product-id="{{ pr.id|string }}"
                     >
                       Добавить
                     </button>
@@ -267,7 +254,7 @@
           <div class="reqn-cardHead">
             <div class="reqn-cardTitle">Товары в заявке</div>
 
-            <form method="post" action="/admin/requests/{{ order_id }}/cart/clear" class="reqn-clearForm">
+            <form method="post" action="/admin/requests/new/cart/clear" class="reqn-clearForm">
               <button class="reqn-btn reqn-btn--ghost reqn-btn--sm" type="submit" {% if not items %}disabled{% endif %}>
                 Очистить
               </button>
@@ -331,7 +318,6 @@
               {% endfor %}
             {% endif %}
           </div>
-
         </div>
 
       </section>

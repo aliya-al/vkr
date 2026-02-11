@@ -1,37 +1,60 @@
-<!doctype html>
-<html lang="ru">
-<head>
-  <meta charset="utf-8">
-  <title>Создать новость</title>
-</head>
-<body>
-  <h1>Создать новость</h1>
+{% extends "admin/base.html" %}
 
-  {% if error %}
-    <p style="color:red;">{{ error }}</p>
-  {% endif %}
+{% block title %}Создать новость{% endblock %}
 
-  <form method="post" action="/admin/news/new" enctype="multipart/form-data">
-    <div>
-      <label>Название
-        <input type="text" name="title" required>
-      </label>
+{% block head %}{% endblock %}
+
+
+{% block content %}
+<div class="admin-newsForm">
+  <div class="container">
+    <div class="pc-narrow">
+
+      <div class="pc-top">
+        <div class="pc-title">Создать новость</div>
+        <div class="pc-actions">
+          <a class="pc-btn pc-btn--ghost" href="/admin/news">Назад</a>
+          <a class="pc-btn pc-btn--ghost" href="/admin/dashboard">На главную</a>
+        </div>
+      </div>
+
+      {% if error %}
+        <div class="pc-alert" role="alert">
+          <strong class="pc-alert__label">Ошибка:</strong>
+          <span class="pc-alert__text">{{ error }}</span>
+        </div>
+      {% endif %}
+
+      <section class="pc-card" aria-label="Форма новости">
+
+        <form method="post" action="/admin/news/new" enctype="multipart/form-data" class="pc-form">
+
+          <div class="pc-section">
+            <div class="pc-fields pc-fields--2">
+
+              <div class="pc-field nf-fieldWide">
+                <label class="pc-label" for="newsTitle">Название</label>
+                <input id="newsTitle" class="pc-input" type="text" name="title" required maxlength="30" value="{{ form_data.title if form_data else '' }}">
+              </div>
+
+              <div class="pc-field nf-fieldWide">
+                <label class="pc-label" for="newsImg">Фото</label>
+                <input id="newsImg" class="pc-input" type="file" name="image" accept="image/*" required>
+              </div>
+
+            </div>
+          </div>
+
+          <div class="pc-actions pc-actions--form">
+
+            <button class="pc-btn pc-btn--primary" type="submit">Сохранить</button>
+            <a class="pc-btn pc-btn--ghost" href="/admin/news">Отмена</a>
+          </div>
+
+        </form>
+      </section>
+
     </div>
-
-    <div>
-      <label>Описание</label><br>
-      <textarea name="description" rows="5" cols="50" required></textarea>
-    </div>
-
-    <div>
-      <label>Фото
-        <input type="file" name="image" accept="image/*">
-      </label>
-    </div>
-
-    <button type="submit">Сохранить</button>
-  </form>
-
-  <p><a href="/admin/news">Назад</a></p>
-</body>
-</html>
+  </div>
+</div>
+{% endblock %}

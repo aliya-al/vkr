@@ -1,0 +1,291 @@
+/* static/css/admin/products.css */
+
+.admin-products {
+  padding: var(--space-7) 0;
+}
+
+.ap-grid{
+  display: grid;
+  grid-template-columns: 320px 1fr;
+  gap: var(--space-6);
+  align-items: start;
+}
+
+/* Card (как в админке) */
+.ap-card{
+  background: var(--color-surface);
+  border-radius: var(--radius-md);
+  padding: 14px;
+}
+
+.ap-card__head{
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap: var(--space-4);
+  margin-bottom: 10px;
+}
+
+.ap-card__title{
+  font-weight: 700;
+  font-size: var(--fs-sm);
+  line-height: 1.2;
+}
+
+/* Filter */
+.ap-filter{
+  position: sticky;
+  top: calc(var(--space-6) + 52px); /* чуть ниже хедера; если надо — подгони */
+}
+
+.ap-filter__hint{
+  margin: 0;
+  font-size: var(--fs-xs);
+  color: var(--color-muted);
+}
+
+.ap-checks{
+  margin-top: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 70vh;
+  overflow: auto;
+  padding-right: 4px;
+}
+
+/* Checkbox component (в стиле твоей системы) */
+.ap-cbox{
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: var(--fs-xs);
+  user-select: none;
+}
+
+.ap-cbox__input{
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.ap-cbox__box{
+  width: 18px;
+  height: 18px;
+  border-radius: 6px;
+  border: 1px solid var(--color-line);
+  background: var(--color-bg);
+  display: inline-grid;
+  place-items: center;
+  flex: 0 0 auto;
+}
+
+.ap-cbox__box::after{
+  content: "";
+  width: 9px;
+  height: 5px;
+  border-left: 2px solid transparent;
+  border-bottom: 2px solid transparent;
+  transform: rotate(-45deg) translateY(-1px);
+}
+
+.ap-cbox__input:checked + .ap-cbox__box{
+  background: color-mix(in oklab, var(--color-primary-soft), var(--color-bg) 30%);
+  border-color: var(--color-line);
+}
+.ap-cbox__input:checked + .ap-cbox__box::after{
+  border-left-color: var(--color-primary);
+  border-bottom-color: var(--color-primary);
+}
+
+.ap-cbox__label{
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Product list */
+.ap-list{
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.ap-row{
+  background: var(--color-bg);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-md);
+  padding: 10px;
+  display: grid;
+  grid-template-columns: 64px 1fr auto;
+  gap: var(--space-4);
+  align-items: center;
+}
+
+.ap-thumb{
+  width: 64px;
+  height: 64px;
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  border: 1px solid var(--color-line);
+  overflow: hidden;
+  display: grid;
+  place-items: center;
+}
+.ap-thumb img{
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.ap-thumb--ph{
+  background: var(--color-surface);
+}
+
+/* left meta */
+.ap-meta{ min-width: 0; }
+.ap-name{
+  margin: 0 0 4px;
+  font-size: var(--fs-sm);
+  font-weight: 700;
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.ap-sub{
+  margin: 0;
+  font-size: var(--fs-xs);
+  color: var(--color-muted);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+}
+.ap-sub__sep{
+  color: var(--color-line);
+}
+
+/* right actions */
+.ap-actions{
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  white-space: nowrap;
+}
+
+.ap-price{
+  font-size: var(--fs-xs);
+  font-weight: 700;
+}
+
+.ap-badge{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  padding: 6px 10px;
+  border-radius: var(--radius-xl);
+  background: var(--color-surface);
+  border: 1px solid var(--color-line);
+  font-size: var(--fs-xs);
+}
+.ap-badge--on{
+  background: var(--color-success-soft);
+  color: var(--color-success);
+}
+.ap-badge--off{
+  background: var(--color-neutral-soft);
+  color: var(--color-neutral);
+}
+
+.ap-link{
+  font-size: var(--fs-xs);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.ap-del{
+  font-size: var(--fs-xs);
+  border: 1px solid var(--color-line);
+  background: var(--color-bg);
+  border-radius: var(--radius-xl);
+  padding: 6px 10px;
+  cursor: pointer;
+}
+.ap-del:hover{
+  background: color-mix(in oklab, var(--color-bg), var(--color-surface) 35%);
+}
+
+.ap-empty{
+  padding: 18px 12px;
+  color: var(--color-muted);
+  font-size: var(--fs-sm);
+  text-align: center;
+}
+
+/* Responsive */
+@media (max-width: 1000px){
+  .ap-grid{ grid-template-columns: 1fr; }
+  .ap-filter{ position: static; }
+  .ap-checks{ max-height: none; }
+  .ap-row{ grid-template-columns: 56px 1fr; }
+  .ap-actions{
+    grid-column: 1 / -1;
+    justify-content: flex-start;
+    flex-wrap: wrap;
+  }
+}
+
+/* ===== Inline select как в дашборде (selectPill) ===== */
+/* (копия паттерна из dashboard.css) */
+.selectPill{
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+.selectPill select{
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+
+  font-size: var(--fs-xs);
+  line-height: 1.2;
+
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-xl);
+
+  padding: 6px 26px 6px 10px;
+  background: var(--color-surface);
+  cursor: pointer;
+  outline: none;
+}
+.selectPill select option{
+  background: var(--color-bg);
+  color: var(--color-text);
+}
+.selectPill::after{
+  content: "";
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  width: 7px;
+  height: 7px;
+  border-right: 2px solid var(--color-muted);
+  border-bottom: 2px solid var(--color-muted);
+  transform: translateY(-60%) rotate(45deg);
+  pointer-events: none;
+}
+
+/* Цвета для активен/неактивен */
+.selectPill select.badge--active{
+  background: var(--color-success-soft);
+  border-color: var(--color-line);
+  color: var(--color-success);
+}
+.selectPill select.badge--inactive{
+  background: var(--color-danger-soft);
+  border-color: var(--color-line);
+  color: var(--color-danger);
+}

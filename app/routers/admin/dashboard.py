@@ -7,7 +7,7 @@ from zoneinfo import ZoneInfo
 
 from dateutil.relativedelta import relativedelta
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
-from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from sqlalchemy import func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
@@ -25,6 +25,8 @@ from app.services.analytics import (
     fetch_category_breakdown,
     fetch_top_products_total_qty,
 )
+from app.services.order_totals import fetch_orders_weight_volume
+
 
 router = APIRouter()
 
@@ -108,13 +110,13 @@ async def _rolling_range_scoped(
 
     return start_dt, end_dt
 
-async def _load_active_managers(session: AsyncSession) -> list[AdminUser]:
+async def _load_managers_for_admin(session: AsyncSession, keep_ids: set[uuid.UUID]) -> list[AdminUser]:
+    cond = (AdminUser.role == "manager") & (
+        AdminUser.is_active.is_(True) | AdminUser.id.in_(keep_ids)
+    )
     res = await session.execute(
         select(AdminUser)
-        .where(
-            AdminUser.role == "manager",
-            AdminUser.is_active.is_(True),
-        )
+        .where(cond)
         .order_by(AdminUser.login.asc())
     )
     return res.scalars().all()
@@ -125,45 +127,63 @@ async def admin_dashboard_page(
     admin: dict = Depends(require_admin_or_404),
     session: AsyncSession = Depends(get_async_session),
 ):
-    # последние 6 заявок на дашборде
+    if _is_admin(admin):
+        stmt = (
+            select(Order)
+            .options(selectinload(Order.manager))
+            .order_by(Order.created_at.desc())
+            .limit(7)
+        )
+
+        res = await session.execute(stmt)
+        dash_orders = res.scalars().all()
+
+        keep_ids = {o.manager_id for o in dash_orders if o.manager_id}
+        dash_managers = await _load_managers_for_admin(session, keep_ids)
+
+        return templates.TemplateResponse(
+            "admin/dashboard_admin.html",
+            {
+                "request": request,
+                "admin": admin,
+                "dash_managers": dash_managers,
+                "dash_orders": dash_orders,
+                "status_labels": STATUS_LABELS,
+                "delivery_labels": DELIVERY_LABELS,
+                "me_login": None,
+            },
+        )
+
+    me = _admin_id_uuid(admin)
+
     stmt = (
         select(Order)
         .options(selectinload(Order.manager))
+        .where(or_(Order.manager_id.is_(None), Order.manager_id == me))
         .order_by(Order.created_at.desc())
-        .limit(7)
     )
 
-    me_login: str | None = None
-    if not _is_admin(admin):
-        me = _admin_id_uuid(admin)
-        stmt = stmt.where(or_(Order.manager_id.is_(None), Order.manager_id == me))
-
-        me_res = await session.execute(select(AdminUser).where(AdminUser.id == me))
-        me_user = me_res.scalar_one_or_none()
-        me_login = me_user.login if me_user else None
-
     res = await session.execute(stmt)
-    dash_orders = res.scalars().all()
+    orders = res.scalars().all()
 
-    tpl = "admin/dashboard_admin.html" if _is_admin(admin) else "admin/dashboard_manager.html"
+    me_res = await session.execute(select(AdminUser).where(AdminUser.id == me))
+    me_user = me_res.scalar_one_or_none()
+    me_login = me_user.login if me_user else None
 
-    dash_managers: list[AdminUser] | None = None
-    if _is_admin(admin):
-        dash_managers = await _load_active_managers(session)
+    order_totals = await fetch_orders_weight_volume(session, [o.id for o in orders])
 
     return templates.TemplateResponse(
-        tpl,
+        "admin/dashboard_manager.html",
         {
             "request": request,
             "admin": admin,
-            "dash_managers": dash_managers,
-            "dash_orders": dash_orders,
-            "status_labels": STATUS_LABELS,
+            "orders": orders,
+            "order_totals": order_totals,
             "delivery_labels": DELIVERY_LABELS,
+            "managers": [],
             "me_login": me_login,
         },
     )
-
 
 @router.post("/admin/requests/{order_id}/inline")
 async def request_inline_update(
@@ -204,8 +224,7 @@ async def request_inline_update(
             return JSONResponse({"ok": False, "error": "Некорректный статус."}, status_code=400)
 
     if manager_id is not None:
-        if not _is_admin(admin):
-            return JSONResponse({"ok": False, "error": "Только админ может менять менеджера."}, status_code=403)
+
 
         s = str(manager_id).strip()
         if s == "":

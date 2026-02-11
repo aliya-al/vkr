@@ -1,28 +1,52 @@
-<!doctype html>
-<html lang="ru">
-<head>
-  <meta charset="utf-8">
-  <title>Admin login</title>
-</head>
-<body>
-  <h1>Вход в админку</h1>
+{# app/templates/admin/auth/login.html #}
+{% extends "admin/base.html" %}
 
-  {% if error %}
-    <p style="color:red;">{{ error }}</p>
-  {% endif %}
+{% block title %}Вход{% endblock %}
 
-  <form method="post" action="/admin/login">
-    <div>
-      <label>Логин</label><br>
-      <input name="login" autocomplete="username" required>
+{% block head %}
+  <link rel="stylesheet" href="/static/css/admin/login.css">
+{% endblock %}
+
+{% block content %}
+<div class="admin-login admin-loginPage">
+
+  <div class="container">
+<div class="loginWrap">
+
+  <section class="loginShell" aria-label="Вход в админку">
+
+    <div class="loginTop">
+      <div class="loginTitle">Вход в админку</div>
     </div>
-    <div style="margin-top:8px;">
-      <label>Пароль</label><br>
-      <input type="password" name="password" autocomplete="current-password" required>
-    </div>
-    <div style="margin-top:12px;">
-      <button type="submit">Войти</button>
-    </div>
-  </form>
-</body>
-</html>
+
+    {% if error %}
+      <div class="loginAlert" role="alert">
+        <strong class="loginAlert__label">Ошибка:</strong>
+        <span class="loginAlert__text">{{ error }}</span>
+      </div>
+    {% endif %}
+
+    <form class="loginForm" method="post" action="/admin/login">
+      <div class="loginField">
+        <label class="loginLabel" for="loginInput">Логин</label>
+        <input id="loginInput" class="loginInput" name="login" autocomplete="username" required>
+      </div>
+
+      <div class="loginField">
+        <label class="loginLabel" for="passInput">Пароль</label>
+        <input id="passInput" class="loginInput" type="password" name="password" autocomplete="current-password" required>
+      </div>
+
+<div class="loginActions">
+  <button class="loginBtn loginBtn--primary" type="submit">Войти</button>
+</div>
+
+    </form>
+
+  </section>
+
+</div>
+
+  </div>
+</div>
+{% endblock %}

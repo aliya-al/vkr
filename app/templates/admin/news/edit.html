@@ -1,50 +1,83 @@
-<!doctype html>
-<html lang="ru">
-<head>
-  <meta charset="utf-8">
-  <title>Редактировать новость</title>
-</head>
-<body>
-  <h1>Редактировать новость</h1>
+{% extends "admin/base.html" %}
 
-  {% if error %}
-    <p style="color:red;">{{ error }}</p>
-  {% endif %}
+{% block title %}Редактировать новость{% endblock %}
 
-  <form method="post" action="/admin/news/{{ news.id }}/edit" enctype="multipart/form-data">
-    <div>
-      <label>Название
-        <input type="text" name="title" value="{{ news.title }}" required>
-      </label>
-    </div>
+{% block head %}{% endblock %}
 
-    <div>
-      <label>Описание</label><br>
-      <textarea name="description" rows="8" cols="80" required>{{ news.description }}</textarea>
-    </div>
 
-    <div>
-      <p>Текущее фото:</p>
-      {% if news.image_path %}
-        <img src="{{ news.image_path }}" alt="news image" width="180"><br>
-        <label>
-          <input type="checkbox" name="remove_image" value="true">
-          Удалить фото
-        </label>
-      {% else %}
-        —
+{% block content %}
+<div class="admin-newsForm">
+  <div class="container">
+    <div class="pc-narrow">
+
+      <div class="pc-top">
+        <div class="pc-title">Редактировать новость</div>
+        <div class="pc-actions">
+          <a class="pc-btn pc-btn--ghost" href="/admin/news">Назад</a>
+          <a class="pc-btn pc-btn--ghost" href="/admin/dashboard">На главную</a>
+        </div>
+      </div>
+
+      {% if error %}
+        <div class="pc-alert" role="alert">
+          <strong class="pc-alert__label">Ошибка:</strong>
+          <span class="pc-alert__text">{{ error }}</span>
+        </div>
       {% endif %}
+
+<section class="pc-card" aria-label="Форма новости">
+
+        <form method="post" action="/admin/news/{{ news.id }}/edit" enctype="multipart/form-data" class="pc-form">
+
+          <div class="pc-section">
+            <div class="pc-fields pc-fields--2">
+
+              <div class="pc-field nf-fieldWide">
+                <label class="pc-label" for="newsTitle">Название</label>
+                <input id="newsTitle" class="pc-input" type="text" name="title" required maxlength="30" value="{{ news.title }}">
+              </div>
+
+              <div class="pc-field nf-fieldWide">
+                <div class="pc-label">Текущее фото</div>
+
+                {% if news.image_path %}
+                  <div class="nf-current">
+                    <div class="nf-currentLeft">
+                      <img class="nf-currentImg" src="{{ news.image_path }}" alt="news image">
+                      <div class="nf-currentMeta">
+                        <div class="nf-currentLabel">Файл</div>
+                        <div class="nf-currentName">{{ news.image_path }}</div>
+                      </div>
+                    </div>
+
+                    <label class="pc-check">
+                      <input type="checkbox" name="remove_image" value="true">
+                      <span>Удалить фото</span>
+                    </label>
+                  </div>
+                {% else %}
+                  <div class="nf-dash">Фото не загружено</div>
+                {% endif %}
+              </div>
+
+              <div class="pc-field nf-fieldWide">
+                <label class="pc-label" for="newsImg">Загрузить новое фото</label>
+                <input id="newsImg" class="pc-input" type="file" name="image" accept="image/*">
+              </div>
+
+            </div>
+          </div>
+
+<div class="pc-actions pc-actions--form">
+
+            <button class="pc-btn pc-btn--primary" type="submit">Сохранить</button>
+            <a class="pc-btn pc-btn--ghost" href="/admin/news">Отмена</a>
+          </div>
+
+        </form>
+      </section>
+
     </div>
-
-    <div>
-      <label>Загрузить новое фото (опционально)
-        <input type="file" name="image" accept="image/*">
-      </label>
-    </div>
-
-    <button type="submit">Сохранить</button>
-  </form>
-
-  <p><a href="/admin/news">Назад</a></p>
-</body>
-</html>
+  </div>
+</div>
+{% endblock %}

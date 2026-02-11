@@ -1,39 +1,92 @@
-<!doctype html>
-<html lang="ru">
-<head>
-  <meta charset="utf-8">
-  <title>Редактировать менеджера</title>
-</head>
-<body>
-  <h1>Редактировать менеджера</h1>
+{% extends "admin/base.html" %}
 
-  {% if error %}
-    <p style="color:red;">{{ error }}</p>
-  {% endif %}
+{% block title %}Редактировать менеджера{% endblock %}
 
-  <form method="post" action="/admin/managers/{{ manager.id }}/edit">
-    <div>
-      <label>Логин
-        <input type="text" name="login" value="{{ manager.login }}" required>
-      </label>
+{% block head %}
+  <link rel="stylesheet" href="/static/css/admin/entity_pages.css">
+{% endblock %}
+
+{% block content %}
+<div class="admin-managerForm">
+  <div class="container">
+    <div class="pc-narrow">
+
+      <div class="pc-top">
+        <h1 class="pc-title">Редактировать менеджера</h1>
+        <div class="pc-actions">
+          <a class="pc-btn pc-btn--ghost" href="/admin/managers">Назад</a>
+        </div>
+      </div>
+
+      {% if error %}
+        <div class="pc-alert" role="alert">
+          <strong class="pc-alert__label">Ошибка:</strong>
+          <span class="pc-alert__text">{{ error }}</span>
+        </div>
+      {% endif %}
+
+      <section class="pc-card" aria-label="Форма редактирования менеджера">
+        <form class="pc-form" method="post" action="/admin/managers/{{ manager.id }}/edit" autocomplete="off">
+          <div class="pc-section">
+            <div class="pc-fields pc-fields--2">
+              <div class="pc-field">
+                <label class="pc-label" for="mgLogin">Менеджер</label>
+                <input id="mgLogin" class="pc-input" type="text" name="login" value="{{ manager.login }}" required maxlength="15">
+              </div>
+
+<div class="pc-field">
+  <label class="pc-label" for="mgPassword">Новый пароль</label>
+
+  <div class="pc-pass">
+    <input
+      id="mgPassword"
+      class="pc-input pc-pass__input"
+      type="password"
+      name="password" placeholder="новый пароль" autocomplete="new-password">
+    <button class="pc-btn pc-btn--sm pc-pass__toggle" type="button" data-pass-toggle="mgPassword">
+      Показать
+    </button>
+  </div>
+</div>
+
+
+              <div class="pc-field nf-fieldWide">
+                <label class="pc-check">
+                  <input type="checkbox" name="is_active" value="true" {% if manager.is_active %}checked{% endif %}>
+                  Активен
+                </label>
+              </div>
+            </div>
+
+            <div class="pc-actions pc-actions--form">
+              <a class="pc-btn pc-btn--ghost" href="/admin/managers">Отмена</a>
+              <button class="pc-btn pc-btn--primary" type="submit">Сохранить</button>
+            </div>
+          </div>
+        </form>
+      </section>
+
     </div>
+  </div>
+</div>
+{% endblock %}
 
-    <div>
-      <label>Новый пароль (если нужно сменить)
-        <input type="password" name="password" placeholder="новый пароль">
-      </label>
-    </div>
+{% block scripts %}
+<script>
+(function(){
+  document.addEventListener("click", function(e){
+    const btn = e.target.closest("[data-pass-toggle]");
+    if(!btn) return;
 
-    <div>
-      <label>
-        <input type="checkbox" name="is_active" value="true" {% if manager.is_active %}checked{% endif %}>
-        Активен
-      </label>
-    </div>
+    const id = btn.getAttribute("data-pass-toggle");
+    const input = document.getElementById(id);
+    if(!input) return;
 
-    <button type="submit">Сохранить</button>
-  </form>
-
-  <p><a href="/admin/managers">Назад</a></p>
-</body>
-</html>
+    const isPass = input.type === "password";
+    input.type = isPass ? "text" : "password";
+    btn.textContent = isPass ? "Скрыть" : "Показать";
+    input.focus();
+  });
+})();
+</script>
+{% endblock %}

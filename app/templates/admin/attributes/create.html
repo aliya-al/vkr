@@ -1,41 +1,63 @@
-<!doctype html>
-<html lang="ru">
-<head>
-  <meta charset="utf-8">
-  <title>Создать характеристику</title>
-</head>
-<body>
-  <h1>Создать характеристику</h1>
+{% extends "admin/base.html" %}
 
-  <form method="post" action="/admin/attributes/new">
-    <div>
-      <label>Название
-        <input type="text" name="name" required>
-      </label>
+{% block title %}Создать характеристику{% endblock %}
+
+{% block head %}{% endblock %}
+
+{% block content %}
+<div class="admin-attributeForm">
+  <div class="container">
+    <div class="pc-narrow">
+
+      <div class="pc-top">
+        <div class="pc-title">Создать характеристику</div>
+        <div class="pc-actions">
+          <a class="pc-btn pc-btn--ghost" href="/admin/attributes">Назад</a>
+          <a class="pc-btn pc-btn--ghost" href="/admin/dashboard">На главную</a>
+        </div>
+      </div>
+
+      {% if error %}
+        <div class="pc-alert" role="alert">
+          <strong class="pc-alert__label">Ошибка:</strong>
+          <span class="pc-alert__text">{{ error }}</span>
+        </div>
+      {% endif %}
+
+      <section class="pc-card" aria-label="Форма характеристики">
+        <form method="post" action="/admin/attributes/new" class="pc-form">
+          <div class="pc-section">
+            <div class="pc-fields pc-fields--2">
+
+              <div class="pc-field at-fieldWide">
+                <label class="pc-label" for="attrName">Название</label>
+                <input id="attrName" class="pc-input" type="text" name="name" required value="{{ form_data.name if form_data else '' }}">
+              </div>
+
+              <div class="pc-field">
+                <label class="pc-label" for="attrType">Тип значения</label>
+                <select id="attrType" class="pc-input" name="value_type">
+                  <option value="string" selected>строка</option>
+                  <option value="number">число</option>
+                </select>
+              </div>
+
+              <div class="pc-field">
+                <label class="pc-label" for="attrUnit">Единица измерения (опционально)</label>
+                <input id="attrUnit" class="pc-input" type="text" name="unit" value="{{ form_data.unit if form_data else '' }}" placeholder="кг, мм, м² ...">
+              </div>
+
+            </div>
+          </div>
+
+          <div class="pc-actions pc-actions--sticky">
+            <button type="submit" class="pc-btn pc-btn--primary">Сохранить</button>
+            <a class="pc-btn pc-btn--ghost" href="/admin/attributes">Отмена</a>
+          </div>
+        </form>
+      </section>
+
     </div>
-
-    <div>
-      <label>Тип значения
-        <select name="value_type">
-          <option value="string" selected>строка</option>
-          <option value="number">число</option>
-        </select>
-      </label>
-    </div>
-
-    <div>
-      <label>Единица измерения (опционально)
-        <input type="text" name="unit" placeholder="кг, мм, м² ...">
-      </label>
-    </div>
-
-    {% if error %}
-      <p style="color: #b00020; margin: 8px 0;">{{ error }}</p>
-    {% endif %}
-
-    <button type="submit">Сохранить</button>
-  </form>
-
-  <p><a href="/admin/attributes">Назад</a></p>
-</body>
-</html>
+  </div>
+</div>
+{% endblock %}

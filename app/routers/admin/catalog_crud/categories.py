@@ -20,6 +20,7 @@ from app.utils.category_image import find_category_image_url, save_category_imag
 
 router = APIRouter()
 
+CAT_NAME_MAX = 30
 
 def _truthy(v: str | None) -> bool:
     if not v:
@@ -171,6 +172,7 @@ async def _get_categories_for_index(session: AsyncSession) -> list[dict]:
             Category.name.label("name"),
             Category.slug.label("slug"),
             Category.parent_id.label("parent_id"),
+            Category.image_path.label("image_path"),
             Parent.name.label("parent_name"),
             has_children_expr.label("has_children"),
             has_products_expr.label("has_products"),
@@ -205,11 +207,40 @@ async def categories_list(request: Request, session: AsyncSession = Depends(get_
     categories = await _get_categories_for_index(session)
     moved_count, moved_to_name = await _parse_moved_message(request, session)
 
+    by_id: dict = {}
+    for c in categories:
+        c["children"] = []
+        img_path = c.get("image_path")
+        img_path = c.get("image_path")
+
+        if img_path:
+            c["image_url"] = img_path
+        else:
+            c["image_url"] = find_category_image_url(c["id"])
+
+        by_id[c["id"]] = c
+
+    roots: list[dict] = []
+    for c in by_id.values():
+        pid = c.get("parent_id")
+        if pid and pid in by_id:
+            by_id[pid]["children"].append(c)
+        else:
+            roots.append(c)
+
+    def sort_branch(nodes: list[dict]) -> None:
+        nodes.sort(key=lambda x: (x.get("name") or "").lower())
+        for n in nodes:
+            sort_branch(n["children"])
+
+    sort_branch(roots)
+
     return templates.TemplateResponse(
         "admin/categories/index.html",
         {
             "request": request,
-            "categories": categories,
+            "roots": roots,
+            "cat_name_max": CAT_NAME_MAX,
             "moved_count": moved_count,
             "moved_to_name": moved_to_name,
         },
@@ -221,15 +252,7 @@ async def category_create_page(request: Request, session: AsyncSession = Depends
     categories = await _get_category_options(session)
     characteristics = await _get_all_characteristics(session)
 
-    # стартовый набор: если пришли на страницу с ?parent_id=..., отметим как у родителя
     selected_ids: set[int] = set()
-    parent_id_raw = request.query_params.get("parent_id")
-    if parent_id_raw:
-        try:
-            parent_uuid = uuid.UUID(parent_id_raw)
-            selected_ids = await _get_selected_characteristic_ids(session, parent_uuid)
-        except Exception:
-            selected_ids = set()
 
     return templates.TemplateResponse(
         "admin/categories/create.html",
@@ -246,6 +269,8 @@ async def category_create_page(request: Request, session: AsyncSession = Depends
             "is_leaf": True,
             "characteristics": characteristics,
             "selected_characteristic_ids": selected_ids,
+            "parent_set": request.query_params.get("parent_set", ""),
+
         },
     )
 
@@ -264,14 +289,33 @@ async def category_create(
     name = name.strip()
     parent_uuid = uuid.UUID(parent_id) if parent_id else None
 
+    name_value = (name_value or "").strip()
+    if len(name_value) > CAT_NAME_MAX:
+        categories = await _get_category_options(session)
+        characteristics = await _get_all_characteristics(session)
+        return templates.TemplateResponse(
+            "admin/categories/edit.html",
+            {
+                "request": request,
+                "category": category,  # было category_dict (его тоже нет)
+                "categories": categories,
+                "cat_name_max": CAT_NAME_MAX,
+                "characteristics": characteristics,
+                "selected_characteristic_ids": selected_ids,  # или set(), см. ниже
+                "error": f"Название категории не должно превышать {CAT_NAME_MAX} символов.",
+                "parent_id_value": selected_parent_id,
+                "name_value": name_value,
+                "pending_change": False,
+                "pending_parent": None,
+            },
+            status_code=400,
+        )
+
     # КЛЮЧЕВОЕ ИСПРАВЛЕНИЕ:
     # если создаём дочернюю категорию и чекбоксы не прислались (из-за отсутствия перерендеринга),
     # берём стартовый набор характеристик из родителя.
     final_characteristic_ids: list[int]
-    if parent_uuid and characteristic_ids is None:
-        final_characteristic_ids = list(await _get_selected_characteristic_ids(session, parent_uuid))
-    else:
-        final_characteristic_ids = _clean_int_list(characteristic_ids)
+    final_characteristic_ids = _clean_int_list(characteristic_ids)
 
     move_needed = False
     parent_name: str | None = None
@@ -283,13 +327,14 @@ async def category_create(
         categories = await _get_category_options(session)
         characteristics = await _get_all_characteristics(session)
 
-        cancel_url = "/admin/categories/new?" + urlencode({"name": name, "parent_id": parent_id or ""})
+        cancel_url = "/admin/categories/new?" + urlencode({"name": name, "parent_id": parent_id or "", "parent_set": "1"})
 
         return templates.TemplateResponse(
             "admin/categories/create.html",
             {
                 "request": request,
                 "categories": categories,
+                "parent_set": "1",
                 "name_value": name,
                 "parent_id_value": parent_id or "",
                 "confirm_required": True,
@@ -361,7 +406,6 @@ async def category_create(
 
     return RedirectResponse("/admin/categories", status_code=303)
 
-
 @router.get("/admin/categories/{category_id}/edit", response_class=HTMLResponse)
 async def category_edit_page(
     category_id: uuid.UUID,
@@ -375,23 +419,80 @@ async def category_edit_page(
     descendants = await _get_subtree_category_ids(session, category_id)
     categories = await _get_category_options(session, exclude_ids=descendants)
 
-    name_value = request.query_params.get("name", category_obj.name)
-    parent_id_value = request.query_params.get("parent_id", str(category_obj.parent_id) if category_obj.parent_id else "")
-
     category = {
         "id": str(category_obj.id),
         "name": category_obj.name,
         "parent_id": str(category_obj.parent_id) if category_obj.parent_id else "",
     }
 
+    name_value = request.query_params.get("name", category_obj.name)
+
+    name_value = (name_value or "").strip()
+    if len(name_value) > CAT_NAME_MAX:
+        categories = await _get_category_options(session)
+        characteristics = await _get_all_characteristics(session)
+        return templates.TemplateResponse(
+            "admin/categories/edit.html",
+            {
+                "request": request,
+                "category": category,
+                "categories": categories,
+                "cat_name_max": CAT_NAME_MAX,
+                "characteristics": characteristics,
+                "selected_characteristic_ids": selected_ids,
+                "error": f"Название категории не должно превышать {CAT_NAME_MAX} символов.",
+                "parent_id_value": selected_parent_id,
+                "name_value": name_value,
+                "pending_change": False,
+                "pending_parent": None,
+            },
+            status_code=400,
+        )
+
+    current_parent_str = str(category_obj.parent_id) if category_obj.parent_id else ""
+    selected_parent_id = request.query_params.get("parent_id", current_parent_str) or ""
+    confirm_parent_change = request.query_params.get("confirm_parent_change") == "1"
+
     is_leaf = not await _has_children(session, category_id)
     can_edit_characteristics = is_leaf
 
+    pending_change = False
+    pending_parent = None
+
     characteristics: list[dict] = []
     selected_ids: set[int] = set()
+
+    effective_parent_id_value = current_parent_str
+
     if can_edit_characteristics:
         characteristics = await _get_all_characteristics(session)
-        selected_ids = await _get_selected_characteristic_ids(session, category_id)
+
+        if selected_parent_id != current_parent_str:
+            if not confirm_parent_change:
+                pending_change = True
+
+                if selected_parent_id:
+                    try:
+                        pp_uuid = uuid.UUID(selected_parent_id)
+                        pp = await session.get(Category, pp_uuid)
+                        pending_parent = {"id": selected_parent_id, "name": pp.name if pp else "—"}
+                    except Exception:
+                        pending_parent = {"id": selected_parent_id, "name": "—"}
+                else:
+                    pending_parent = {"id": "", "name": "(нет)"}
+
+                selected_ids = await _get_selected_characteristic_ids(session, category_id)
+                effective_parent_id_value = current_parent_str
+            else:
+                if selected_parent_id:
+                    selected_ids = await _get_selected_characteristic_ids(session, uuid.UUID(selected_parent_id))
+                    effective_parent_id_value = selected_parent_id
+                else:
+                    selected_ids = set()
+                    effective_parent_id_value = ""
+        else:
+            selected_ids = await _get_selected_characteristic_ids(session, category_id)
+            effective_parent_id_value = current_parent_str
 
     image_url = category_obj.image_path
 
@@ -403,17 +504,21 @@ async def category_edit_page(
             "category": category,
             "categories": categories,
             "name_value": name_value,
-            "parent_id_value": parent_id_value,
+            "parent_id_value": selected_parent_id,
+            "selected_parent_id": selected_parent_id,
+            "current_parent_id": current_parent_str,
+            "effective_parent_id_value": effective_parent_id_value,
+            "pending_change": pending_change,
+            "pending_parent": pending_parent,
             "confirm_required": False,
-            "can_edit_characteristics": can_edit_characteristics,
             "confirm_text": "",
             "cancel_url": "",
             "is_leaf": is_leaf,
+            "can_edit_characteristics": can_edit_characteristics,
             "characteristics": characteristics,
             "selected_characteristic_ids": selected_ids,
         },
     )
-
 
 @router.post("/admin/categories/{category_id}/edit", response_class=HTMLResponse)
 async def category_edit(
@@ -440,6 +545,21 @@ async def category_edit(
 
     parent_changed = (new_parent_id != category_obj.parent_id)
 
+    final_characteristic_ids: list[int]
+
+    if can_edit_characteristics:
+        if parent_changed and new_parent_id and characteristic_ids is None:
+            final_characteristic_ids = list(await _get_selected_characteristic_ids(session, new_parent_id))
+        elif parent_changed and (not new_parent_id) and characteristic_ids is None:
+            final_characteristic_ids = []
+        elif characteristic_ids is None:
+            final_characteristic_ids = list(await _get_selected_characteristic_ids(session, category_id))
+        else:
+            final_characteristic_ids = _clean_int_list(characteristic_ids)
+    else:
+        final_characteristic_ids = []
+
+
     move_needed = False
     parent_name: str | None = None
     if parent_changed and new_parent_id:
@@ -457,7 +577,7 @@ async def category_edit(
             "parent_id": str(category_obj.parent_id) if category_obj.parent_id else "",
         }
 
-        selected_ids = set(_clean_int_list(characteristic_ids))
+        selected_ids = set(final_characteristic_ids)
         characteristics: list[dict] = []
 
         if can_edit_characteristics:
@@ -473,6 +593,11 @@ async def category_edit(
                 "categories": categories,
                 "name_value": name,
                 "parent_id_value": parent_id or "",
+                "selected_parent_id": parent_id or "",
+                "current_parent_id": str(category_obj.parent_id) if category_obj.parent_id else "",
+                "effective_parent_id_value": parent_id or "",
+                "pending_change": False,
+                "pending_parent": None,
                 "confirm_required": True,
                 "confirm_text": (
                     f"Категория «{parent_name or 'Родительская'}» уже содержит товары. "
@@ -482,6 +607,7 @@ async def category_edit(
                 "is_leaf": is_leaf,
                 "characteristics": characteristics,
                 "selected_characteristic_ids": selected_ids,
+                "image_url": category_obj.image_path,
             },
             status_code=200,
         )
@@ -502,7 +628,7 @@ async def category_edit(
             )
 
         if can_edit_characteristics:
-            await _replace_category_characteristics(session, category_id, _clean_int_list(characteristic_ids))
+            await _replace_category_characteristics(session, category_id, final_characteristic_ids)
 
         # фото категории: удалить по чекбоксу
         if _truthy(delete_image):
@@ -523,12 +649,6 @@ async def category_edit(
                 is_leaf = not await _has_children(session, category_id)
                 can_edit_characteristics = is_leaf
 
-                characteristics: list[dict] = []
-                selected_ids: set[int] = set()
-                if can_edit_characteristics:
-                    characteristics = await _get_all_characteristics(session)
-                    selected_ids = await _get_selected_characteristic_ids(session, category_id)
-
                 image_url = category_obj.image_path
 
                 category = {
@@ -536,6 +656,12 @@ async def category_edit(
                     "name": name,
                     "parent_id": str(new_parent_id) if new_parent_id else "",
                 }
+                characteristics = []
+                selected_ids = set()
+
+                if can_edit_characteristics:
+                    characteristics = await _get_all_characteristics(session)
+                    selected_ids = set(final_characteristic_ids)
 
                 return templates.TemplateResponse(
                     "admin/categories/edit.html",
@@ -545,6 +671,11 @@ async def category_edit(
                         "categories": categories,
                         "name_value": name,
                         "parent_id_value": parent_id or "",
+                        "selected_parent_id": parent_id or "",
+                        "current_parent_id": str(category_obj.parent_id) if category_obj.parent_id else "",
+                        "effective_parent_id_value": parent_id or "",
+                        "pending_change": False,
+                        "pending_parent": None,
                         "confirm_required": False,
                         "confirm_text": "",
                         "cancel_url": "",

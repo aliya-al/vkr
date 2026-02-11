@@ -1,102 +1,168 @@
-<!doctype html>
-<html lang="ru">
-<head>
-  <meta charset="utf-8">
-  <title>Заявки</title>
-</head>
-<body>
-  <h1>Заявки</h1>
+{% extends "admin/base.html" %}
 
-  <p><a href="/admin/dashboard">← Дашборд</a></p>
-  <p>Роль: {{ admin.role }}</p>
+{% block title %}Заявки{% endblock %}
 
-  {% if not orders %}
-    <p>Заявок нет.</p>
-  {% else %}
-    <table border="1" cellpadding="6">
-      <thead>
-        <tr>
-          <th>Дата</th>
-          <th>Клиент</th>
-          <th>Телефон</th>
-          <th>Получение</th>
-          <th>Статус / Менеджер</th>
-          <th></th>
-          <th></th>
-        </tr>
-      </thead>
-      <tbody>
-  {% for o in orders %}
-    <tr>
-      <td>{{ o.created_at | moscow_dt if o.created_at else "" }}</td>
-      <td>{{ o.customer_name }}</td>
-      <td>{{ o.customer_phone }}</td>
-      <td>{{ delivery_labels.get(o.delivery_type.value if o.delivery_type else "", "") }}</td>
+{% block head %}
+  <link rel="stylesheet" href="/static/css/admin/dashboard.css">
+  <link rel="stylesheet" href="/static/css/admin/requests_extended.css">
+{% endblock %}
 
-      <td>
-        <form method="post" action="/admin/requests/{{ o.id }}/edit">
-          <select name="status">
-            {% for val, label in status_choices %}
-              <option value="{{ val }}" {% if o.status and o.status.value == val %}selected{% endif %}>
-                {{ label }}
-              </option>
-            {% endfor %}
-          </select>
+{% block content %}
 
-          {% if admin.role == "admin" %}
-            <select name="manager_id">
-              <option value="">нет</option>
-              {% for m in managers %}
-                <option value="{{ m.id }}" {% if o.manager_id == m.id %}selected{% endif %}>
-                  {{ m.login }}
-                </option>
-              {% endfor %}
-            </select>
+<section class="reqx">
+
+<div class="container">
+  {% block reqx_top %}
+  <div class="pc-top">
+    <h1 class="pc-title">Все заявки</h1>
+    <div class="pc-actions">
+      <a class="pc-btn" href="/admin/requests/new">Добавить заявку</a>
+    </div>
+  </div>
+  {% endblock %}
+</div>
+
+
+  <section class="card card--table reqx__card" aria-label="Заявки (расширенно)">
+    <div class="tableWrap reqx__wrap" role="region" aria-label="Таблица заявок (расширенная)">
+      <table class="table reqx__table">
+        <thead>
+          <tr>
+            <th>Имя</th>
+            <th>Дата заявки</th>
+            <th>Телефон</th>
+            <th>Способ</th>
+            <th class="reqx__thAddr">Адрес</th>
+            <th class="reqx__thComment">Комментарий</th>
+            <th class="reqx__thNum">Кубатура, м³</th>
+            <th class="reqx__thNum">Вес, кг</th>
+            <th>Менеджер</th>
+            <th>Статус</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          {% if not orders %}
+            <tr>
+              <td colspan="10" class="tdEmpty">Пока нет заявок.</td>
+            </tr>
           {% else %}
-            <select name="manager_id">
-              <option value="" {% if not o.manager_id %}selected{% endif %}>нет</option>
-              <option value="{{ admin.id }}" {% if o.manager_id and (o.manager_id|string == admin.id|string) %}selected{% endif %}>
-                {{ me_login or "я" }}
-              </option>
-            </select>
+            {% for o in orders %}
+              {% set dm = (o.delivery_type.value if o.delivery_type else None) %}
+              {% set totals = order_totals.get(o.id) if order_totals else None %}
+              {% set vol = (totals.volume_m3 if totals else 0) %}
+              {% set wgt = (totals.weight_kg if totals else 0) %}
+
+              {% set addr_parts = [] %}
+
+              {% if o.delivery_type and o.delivery_type.value == 'pickup' %}
+                {% if o.pickup_address is defined and o.pickup_address %}
+                  {% set _ = addr_parts.append(o.pickup_address) %}
+                {% endif %}
+              {% endif %}
+
+              {% if o.delivery_address is defined and o.delivery_address %}{% set _ = addr_parts.append(o.delivery_address) %}{% endif %}
+              {% if o.address is defined and o.address %}{% set _ = addr_parts.append(o.address) %}{% endif %}
+              {% if o.delivery_city is defined and o.delivery_city %}{% set _ = addr_parts.append(o.delivery_city) %}{% endif %}
+              {% if o.delivery_street is defined and o.delivery_street %}{% set _ = addr_parts.append(o.delivery_street) %}{% endif %}
+              {% if o.delivery_house is defined and o.delivery_house %}{% set _ = addr_parts.append("д. " ~ o.delivery_house) %}{% endif %}
+              {% if o.delivery_flat is defined and o.delivery_flat %}{% set _ = addr_parts.append("кв. " ~ o.delivery_flat) %}{% endif %}
+
+              {% set address_text = addr_parts|reject("equalto", None)|map("string")|join(", ") %}
+              {% if not address_text %}{% set address_text = "—" %}{% endif %}
+
+              {% set comment_text = (o.comment or "")|trim %}
+              {% if not comment_text %}{% set comment_text = "—" %}{% endif %}
+
+              <tr>
+                <td class="tdName">
+                  <a class="tdLink" href="/admin/requests/{{ o.id }}/edit">{{ o.customer_name or "—" }}</a>
+                </td>
+
+                <td>{{ o.created_at|moscow_dt("%d.%m.%Y %H:%M") if o.created_at else "—" }}</td>
+                <td>{{ o.customer_phone or "—" }}</td>
+                <td>{{ delivery_labels.get(dm, dm or "—") }}</td>
+
+                <td class="reqx__tdAddr" title="{{ address_text }}">{{ address_text }}</td>
+                <td class="reqx__tdComment" title="{{ comment_text }}">{{ comment_text }}</td>
+
+                <td class="reqx__tdNum">
+                  {% if vol %}{{ "%.3f"|format(vol) }}{% else %}—{% endif %}
+                </td>
+
+                <td class="reqx__tdNum">
+                  {% if wgt %}{{ "%.1f"|format(wgt) }}{% else %}—{% endif %}
+                </td>
+
+                <td>
+                  {% if managers is defined and managers %}
+                    {# Админ: полный список менеджеров #}
+                    <div class="tdInlineSelect">
+                      <div class="selectPill">
+                        <select class="js-inline-manager" data-order-id="{{ o.id }}" aria-label="Менеджер">
+                          <option value="" {% if not o.manager_id %}selected{% endif %}>Нет</option>
+
+                          {% for m in managers %}
+                            {% set is_sel = (o.manager_id == m.id) %}
+                            <option
+                              value="{{ m.id }}"
+                              {% if is_sel %}selected{% endif %}
+                              {% if (not m.is_active) and (not is_sel) %}disabled{% endif %}
+                            >
+                              {{ m.login }}{% if not m.is_active %} (неактивен){% endif %}
+                            </option>
+                          {% endfor %}
+                        </select>
+                      </div>
+                    </div>
+                  {% else %}
+                    {# Менеджер: только "Нет" или "я" #}
+                    {% set me_id = admin.get("id") %}
+                    <div class="tdInlineSelect">
+                      <div class="selectPill">
+                        <select class="js-inline-manager" data-order-id="{{ o.id }}" aria-label="Менеджер">
+                          <option value="" {% if not o.manager_id %}selected{% endif %}>Нет</option>
+                          <option
+                            value="{{ me_id }}"
+                            {% if o.manager_id and (o.manager_id|string) == (me_id|string) %}selected{% endif %}
+                          >
+                            {{ me_login or "Я" }}
+                          </option>
+                        </select>
+                      </div>
+                    </div>
+                  {% endif %}
+                </td>
+
+                <td>
+                  {% set cur = (o.status.value if o.status else "new") %}
+                  <div class="tdInlineSelect">
+                    <div class="selectPill">
+                      <select
+                        class="badge badgeSelect badge--{{ cur }} js-inline-status"
+                        data-order-id="{{ o.id }}"
+                        aria-label="Статус"
+                      >
+                        <option value="new" {% if cur == "new" %}selected{% endif %}>новый</option>
+                        <option value="in_progress" {% if cur == "in_progress" %}selected{% endif %}>в работе</option>
+                        <option value="done" {% if cur == "done" %}selected{% endif %}>выполнен</option>
+                        <option value="canceled" {% if cur == "canceled" %}selected{% endif %}>отменён</option>
+                      </select>
+                    </div>
+                  </div>
+                </td>
+
+              </tr>
+            {% endfor %}
           {% endif %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+</section>
 
-          <button type="submit">Сохранить</button>
-        </form>
-      </td>
+{% endblock %}
 
-      <td><a href="/admin/requests/{{ o.id }}/edit">Открыть</a></td>
-
-      <td>
-        {% if admin.role == "admin" %}
-          <form method="post" action="/admin/requests/{{ o.id }}/delete" onsubmit="return confirm('Удалить заявку?');">
-            <button type="submit">Удалить</button>
-          </form>
-        {% else %}
-          -
-        {% endif %}
-      </td>
-    </tr>
-
-    {# строка веса #}
-    <tr>
-      <td colspan="7">
-        {% set t = order_totals.get(o.id) %}
-        Вес заказа: {{ "%.3f"|format((t.weight_kg if t else 0.0)) }} кг
-      </td>
-    </tr>
-
-    {# строка кубатуры #}
-    <tr>
-      <td colspan="7">
-        {% set t = order_totals.get(o.id) %}
-        Кубатура заказа: {{ "%.6f"|format((t.volume_m3 if t else 0.0)) }} м³
-      </td>
-    </tr>
-  {% endfor %}
-</tbody>
-
-    </table>
-  {% endif %}
-</body>
-</html>
+{% block scripts %}
+  <script src="/static/js/admin/requests_inline.js"></script>
+{% endblock %}

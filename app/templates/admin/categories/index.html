@@ -1,49 +1,111 @@
-<!doctype html>
-<html lang="ru">
-<head>
-  <meta charset="utf-8">
-  <title>Категории</title>
-</head>
-<body>
-  <h1>Категории</h1>
-  <p><a href="/admin/dashboard">На главную</a> | <a href="/admin/categories/new">Создать категорию</a></p>
+{% extends "admin/base.html" %}
 
-  <table border="1" cellpadding="6">
-    <thead>
-      <tr>
-        <th>Название</th>
-        <th>Slug</th>
-        <th>Родитель</th>
-        <th>Действия</th>
-      </tr>
-    </thead>
+{% block title %}Категории{% endblock %}
 
-    <tbody>
-      {% for category in categories %}
-        <tr>
-          <td>{{ category["name"] }}</td>
-          <td>{{ category["slug"] }}</td>
-          <td>{{ category["parent_name"] if category["parent_name"] else "-" }}</td>
+{% block head %}
+  <link rel="stylesheet" href="/static/css/admin/categories.css">
+{% endblock %}
 
-          <td>
-            <a href="/admin/categories/{{ category['id'] }}/edit">Редактировать</a>
+{% macro row(cat, level=0) %}
+  <tr>
+    <td class="catTdName">
+      <div class="catName" style="--lvl: {{ level }};">
+        {% if cat["children"]|length %}
+          <span class="catTreeDot" aria-hidden="true"></span>
+        {% else %}
+          <span class="catTreeDot catTreeDot--leaf" aria-hidden="true"></span>
+        {% endif %}
 
-            {% set need_confirm = category["has_children"] or category["has_products"] %}
+        {% set nm = cat["name"] %}
+<span class="catName__text">
+  {{ (nm[:(cat_name_max-1)] ~ '…') if (cat_name_max and (nm|length > cat_name_max)) else nm }}
+</span>
 
-            <form method="post"
-                  action="/admin/categories/{{ category['id'] }}/delete"
-                  style="display:inline;"
-                  {% if need_confirm %}
-                  onsubmit="return confirm('Категория содержит данные, которые будут удалены. Продолжить?');"
-                  {% endif %}>
-              <button type="submit">Удалить</button>
-            </form>
-          </td>
-        </tr>
+
+        {% if cat["children"]|length %}
+          <span class="catName__meta">{{ cat["children"]|length }}</span>
+        {% endif %}
+      </div>
+    </td>
+
+    <td class="catTdImg">
+      {% if cat["image_url"] %}
+        <img class="catImg" src="{{ cat['image_url'] }}" alt="">
       {% else %}
-        <tr><td colspan="4">Категорий пока нет.</td></tr>
-      {% endfor %}
-    </tbody>
-  </table>
-</body>
-</html>
+        <span class="catDash">—</span>
+      {% endif %}
+    </td>
+
+    <td class="catTdSlug catMono">{{ cat["slug"] }}</td>
+
+    <td class="catTdActions">
+      <a class="catLink" href="/admin/categories/{{ cat['id'] }}/edit">Редактировать</a>
+
+      {% set need_confirm = cat["has_children"] or cat["has_products"] %}
+      <form method="post"
+            action="/admin/categories/{{ cat['id'] }}/delete"
+            class="catInlineForm"
+            {% if need_confirm %}
+            onsubmit="return confirm('Категория содержит данные, которые будут удалены. Продолжить?');"
+            {% endif %}>
+        <button class="catBtn catBtn--danger" type="submit">Удалить</button>
+      </form>
+    </td>
+  </tr>
+
+  {% for ch in cat["children"] %}
+    {{ row(ch, level + 1) }}
+  {% endfor %}
+{% endmacro %}
+
+{% block content %}
+<div class="catPage">
+  <div class="container">
+
+    <div class="catTop">
+      <div class="catTitle">Категории</div>
+
+      <div class="catTopActions">
+        <a class="catBtn catBtn--ghost" href="/admin/dashboard">На главную</a>
+        <a class="catBtn catBtn--primary" href="/admin/categories/new">Создать категорию</a>
+      </div>
+    </div>
+
+    {% if moved_count and moved_to_name %}
+      <div class="catNotice" role="status">
+        Перенесено товаров: <strong>{{ moved_count }}</strong> → <strong>{{ moved_to_name }}</strong>
+      </div>
+    {% endif %}
+
+    <section class="catCard card" aria-label="Категории">
+      <header class="card__head">
+        <div class="card__title">Список категорий</div>
+      </header>
+
+      <div class="tableWrap" role="region" aria-label="Таблица категорий">
+        <table class="table catTable">
+          <thead>
+            <tr>
+              <th>Название</th>
+              <th class="catThImg">Фото</th>
+              <th>Slug</th>
+              <th class="catThActions">Действия</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            {% for c in roots %}
+              {{ row(c, 0) }}
+            {% else %}
+              <tr>
+                <td class="catTdEmpty" colspan="4">Категорий пока нет.</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+  </div>
+</div>
+{% endblock %}

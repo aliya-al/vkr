@@ -1,20 +1,48 @@
-<!doctype html>
-<html lang="ru">
-<head>
-  <meta charset="utf-8">
-  <title>Создать бренд</title>
-</head>
-<body>
-  <h1>Создать бренд</h1>
-  <form method="post" action="/admin/brands/new">
-    <div>
-      <label>Название
-        <input type="text" name="name" required>
-      </label>
+{% extends "admin/base.html" %}
+
+{% block title %}Создать бренд{% endblock %}
+
+{% block head %}{% endblock %}
+
+{% block content %}
+<div class="admin-brandForm">
+  <div class="container">
+    <div class="pc-narrow">
+
+      <div class="pc-top">
+        <div class="pc-title">Создать бренд</div>
+        <div class="pc-actions">
+          <a class="pc-btn pc-btn--ghost" href="/admin/brands">Назад</a>
+          <a class="pc-btn pc-btn--ghost" href="/admin/dashboard">На главную</a>
+        </div>
+      </div>
+
+      {% if error %}
+        <div class="pc-alert" role="alert">
+          <strong class="pc-alert__label">Ошибка:</strong>
+          <span class="pc-alert__text">{{ error }}</span>
+        </div>
+      {% endif %}
+
+      <section class="pc-card" aria-label="Форма бренда">
+        <form method="post" action="/admin/brands/new" class="pc-form">
+          <div class="pc-section">
+            <div class="pc-fields pc-fields--2">
+              <div class="pc-field nf-fieldWide">
+                <label class="pc-label" for="brName">Название</label>
+                <input id="brName" class="pc-input" type="text" name="name" required value="{{ form_data.name if form_data else '' }}">
+              </div>
+            </div>
+          </div>
+
+          <div class="pc-actions pc-actions--sticky">
+            <button type="submit" class="pc-btn pc-btn--primary">Сохранить</button>
+            <a class="pc-btn pc-btn--ghost" href="/admin/brands">Отмена</a>
+          </div>
+        </form>
+      </section>
+
     </div>
-    {% if error %}<p style="color:red;">{{ error }}</p>{% endif %}
-    <button type="submit">Сохранить</button>
-  </form>
-  <p><a href="/admin/brands">Назад</a></p>
-</body>
-</html>
+  </div>
+</div>
+{% endblock %}

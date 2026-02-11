@@ -1,0 +1,106 @@
+.reqx{
+  padding: var(--space-7) 0;
+}
+
+.reqx__card{
+  max-width: var(--container-max);
+  margin: 0 auto;
+  padding-left: var(--container-pad);
+  padding-right: var(--container-pad);
+  background: transparent;
+  box-shadow: none;
+  border: 0;
+}
+.reqx .pc-actions .pc-btn{
+  position: relative;
+  top: 4px;
+}
+
+
+.reqx .pc-top{
+  margin-bottom: var(--space-2);
+  align-items: center;
+}
+.reqx__wrap{
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-md);
+  background: transparent;
+  overflow: auto;
+}
+
+
+.reqx__table{
+  min-width: 0;
+  width: 100%;
+}
+.reqx__thNum{
+  text-align: right;
+}
+
+.reqx__tdNum{
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.reqx__thAddr{
+  min-width: 220px;
+}
+
+.reqx__tdAddr{
+  max-width: 180px;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.reqx__wrap{ overflow: hidden; }
+
+.reqx__table th,
+.reqx__table td{
+  min-width: 0;
+}
+
+
+@media (max-width: 520px){
+  .reqx__tdAddr{
+    max-width: 220px;
+  }
+}
+
+.reqx__thComment{
+  width: 150px;
+}
+
+.reqx__tdComment{
+  max-width: 150px;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.reqx__table td .selectPill{
+  max-width: 180px;
+}
+
+.reqx__table td .selectPill select{
+  width: 100%;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.reqx__dashTop{
+  margin-bottom: var(--space-6);
+}
+
+.reqx__dashNav{
+  display:flex;
+  align-items:center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.reqx__dashTop .pc-actions .pc-btn{
+  top: 0;
+}

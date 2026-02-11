@@ -16,6 +16,7 @@ router = APIRouter(dependencies=[Depends(require_admin_or_404)])
 _UPLOAD_DIR = Path("app/static/img/uploads/news")
 _WEB_PREFIX = "/static/img/uploads/news"
 
+NEWS_TITLE_MAX_LEN = 30
 
 def _safe_ext(filename: str) -> str:
     ext = Path(filename).suffix.lower()
@@ -28,13 +29,19 @@ async def _save_image(file: UploadFile) -> str:
     _UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 
     ext = _safe_ext(file.filename or "")
+    if not ext:
+        raise ValueError("Недопустимый формат изображения. Разрешены: jpg, jpeg, png, webp, gif.")
+
     name = f"{uuid.uuid4().hex}{ext}"
     dst = _UPLOAD_DIR / name
 
     content = await file.read()
+    if not content:
+        raise ValueError("Файл изображения пустой.")
     dst.write_bytes(content)
 
     return f"{_WEB_PREFIX}/{name}"
+
 
 def _delete_image_if_local(web_path: str | None) -> None:
     if not web_path:
@@ -70,28 +77,44 @@ async def news_create_page(request: Request):
 async def news_create(
     request: Request,
     title: str = Form(...),
-    description: str = Form(...),
     image: UploadFile | None = File(None),
     session: AsyncSession = Depends(get_async_session),
 ):
     title = title.strip()
-    description = description.strip()
-
-    if not title or not description:
+    if len(title) > NEWS_TITLE_MAX_LEN:
         return templates.TemplateResponse(
             "admin/news/create.html",
-            {"request": request, "error": "Название и описание обязательны."},
+            {"request": request, "error": f"Название должно быть не длиннее {NEWS_TITLE_MAX_LEN} символов."},
             status_code=400,
         )
 
-    image_path = None
-    if image and image.filename:
-        image_path = await _save_image(image)
+    if not title:
+        return templates.TemplateResponse(
+            "admin/news/create.html",
+            {"request": request, "error": "Название обязательно."},
+            status_code=400,
+        )
 
-    item = News(title=title, description=description, image_path=image_path)
+    # Фото обязательно
+    if not image or not image.filename:
+        return templates.TemplateResponse(
+            "admin/news/create.html",
+            {"request": request, "error": "Фото обязательно. Загрузите изображение."},
+            status_code=400,
+        )
+
+    try:
+        image_path = await _save_image(image)
+    except ValueError as e:
+        return templates.TemplateResponse(
+            "admin/news/create.html",
+            {"request": request, "error": str(e)},
+            status_code=400,
+        )
+
+    item = News(title=title, image_path=image_path)
     session.add(item)
     await session.commit()
-
     return RedirectResponse("/admin/news", status_code=303)
 
 
@@ -117,7 +140,6 @@ async def news_edit(
     news_id: uuid.UUID,
     request: Request,
     title: str = Form(...),
-    description: str = Form(...),
     image: UploadFile | None = File(None),
     remove_image: bool = Form(False),
     session: AsyncSession = Depends(get_async_session),
@@ -128,29 +150,67 @@ async def news_edit(
         raise HTTPException(status_code=404)
 
     title = title.strip()
-    description = description.strip()
-    if not title or not description:
+    if len(title) > NEWS_TITLE_MAX_LEN:
         return templates.TemplateResponse(
             "admin/news/edit.html",
-            {"request": request, "news": item, "error": "Название и описание обязательны."},
+            {"request": request, "news": item,
+             "error": f"Название должно быть не длиннее {NEWS_TITLE_MAX_LEN} символов."},
             status_code=400,
         )
 
+    if not title:
+        return templates.TemplateResponse(
+            "admin/news/edit.html",
+            {"request": request, "news": item, "error": "Название обязательно."},
+            status_code=400,
+        )
+
+    has_new_image = bool(image and image.filename)
+
+    # 1) Нельзя “удалить фото”, если нового не загружают (иначе останемся без фото)
+    if remove_image and not has_new_image:
+        msg = "Фото обязательно. Если удаляете текущее фото — загрузите новое."
+        # отдельно подсветим кейс когда фото и так нет
+        if not item.image_path:
+            msg = "Фото обязательно. Сейчас фото нет — загрузите изображение."
+        return templates.TemplateResponse(
+            "admin/news/edit.html",
+            {"request": request, "news": item, "error": msg},
+            status_code=400,
+        )
+
+    # 2) Если фото нет и не загрузили новое — тоже ошибка (инвариант: фото всегда должно быть)
+    if not item.image_path and not has_new_image:
+        return templates.TemplateResponse(
+            "admin/news/edit.html",
+            {"request": request, "news": item, "error": "Фото обязательно. Загрузите изображение."},
+            status_code=400,
+        )
+
+    # применяем изменения
     item.title = title
-    item.description = description
 
-    # удалить фото по чекбоксу
-    if remove_image and item.image_path:
-        _delete_image_if_local(item.image_path)
-        item.image_path = None
+    # 3) Если загружают новое фото — заменяем (старое удаляем)
+    if has_new_image:
+        try:
+            new_path = await _save_image(image)  # type: ignore[arg-type]
+        except ValueError as e:
+            return templates.TemplateResponse(
+                "admin/news/edit.html",
+                {"request": request, "news": item, "error": str(e)},
+                status_code=400,
+            )
 
-    # заменить фото, если загрузили новое
-    if image and image.filename:
+        # удаляем старое локальное (если было)
         _delete_image_if_local(item.image_path)
-        item.image_path = await _save_image(image)
+        item.image_path = new_path
+
+    # 4) remove_image=true + has_new_image=true мы уже обработали как “замена”.
+    # Ничего отдельно удалять не нужно.
 
     await session.commit()
     return RedirectResponse("/admin/news", status_code=303)
+
 
 
 @router.post("/admin/news/{news_id}/delete")

@@ -1,47 +1,64 @@
-<!doctype html>
-<html lang="ru">
-<head>
-  <meta charset="utf-8">
-  <title>Характеристики</title>
-</head>
-<body>
-  <h1>Характеристики</h1>
+{% extends "admin/base.html" %}
 
-  <p>
-    <a href="/admin/dashboard">На главную</a> |
-    <a href="/admin/attributes/new">Создать характеристику</a>
-  </p>
+{% block title %}Характеристики{% endblock %}
 
-  <table border="1" cellpadding="6">
-    <thead>
-      <tr>
-        <th>ID</th>
-        <th>Название</th>
-        <th>Slug</th>
-        <th>Тип</th>
-        <th>Ед.</th>
-        <th>Действия</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for a in attributes %}
-        <tr>
-          <td>{{ a.id }}</td>
-          <td>{{ a.name }}</td>
-          <td>{{ a.slug }}</td>
-          <td>{{ a.value_type }}</td>
-          <td>{{ a.unit or '-' }}</td>
-          <td>
-            <a href="/admin/attributes/{{ a.id }}/edit">Редактировать</a>
-            <form method="post" action="/admin/attributes/{{ a.id }}/delete" style="display:inline;">
-              <button type="submit">Удалить</button>
-            </form>
-          </td>
-        </tr>
-      {% else %}
-        <tr><td colspan="6">Характеристик пока нет.</td></tr>
-      {% endfor %}
-    </tbody>
-  </table>
-</body>
-</html>
+{% block head %}{% endblock %}
+
+{% block content %}
+<div class="admin-attributes">
+  <div class="container">
+    <div class="pc-narrow">
+
+      <div class="pc-top">
+        <div class="pc-title">Характеристики</div>
+        <div class="pc-actions">
+          <a class="pc-btn pc-btn--ghost" href="/admin/dashboard">На главную</a>
+          <a class="pc-btn pc-btn--primary" href="/admin/attributes/new">Создать характеристику</a>
+        </div>
+      </div>
+
+      <section class="pc-card" aria-label="Таблица характеристик">
+        <div class="tableWrap" role="region" aria-label="Таблица характеристик">
+          <table class="table">
+            <thead>
+              <tr>
+<th>Название</th>
+<th>Тип</th>
+<th>Ед.</th>
+<th class="al-thActions">Действия</th>
+              </tr>
+            </thead>
+
+<tbody>
+  {% for a in attributes %}
+    <tr>
+      <td><strong>{{ a.name }}</strong></td>
+      <td>{{ {'string':'строка','number':'число'}.get(a.value_type, a.value_type) }}</td>
+      <td>{{ a.unit or '—' }}</td>
+<td class="nl-tdActions">
+  <div class="br-actions">
+
+          <a class="pc-btn pc-btn--ghost pc-btn--sm" href="/admin/attributes/{{ a.id }}/edit">Редактировать</a>
+          <form method="post" action="/admin/attributes/{{ a.id }}/delete" class="br-delForm">
+            <button type="submit" class="pc-btn pc-btn--danger pc-btn--sm">Удалить</button>
+          </form>
+        </div>
+      </td>
+    </tr>
+  {% else %}
+    <tr>
+<td class="al-tdEmpty" colspan="4">Характеристик пока нет.</td>
+
+    </tr>
+  {% endfor %}
+</tbody>
+
+
+          </table>
+        </div>
+      </section>
+
+    </div>
+  </div>
+</div>
+{% endblock %}

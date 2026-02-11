@@ -1,65 +1,145 @@
-<!doctype html>
-<html lang="ru">
-<head>
-  <meta charset="utf-8">
-  <title>Товары</title>
-</head>
-<body>
-  <h1>Товары</h1>
-  <p><a href="/admin/dashboard">На главную</a> | <a href="/admin/products/new">Создать товар</a></p>
+{# templates/admin/products/index.html #}
+{% extends "admin/base.html" %}
 
-  <table border="1" cellpadding="6">
-    <thead>
-      <tr>
-        <th>Фото</th>
-        <th>Название</th>
-        <th>Категория</th>
-        <th>Бренд</th>
-        <th>Цена</th>
-        <th>Характеристики</th>
-        <th>Активен</th>
-        <th>Действия</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for product in products %}
-        {% set main_img = None %}
-        {% if product.images %}
-          {% for img in product.images %}
-            {% if img.is_main %}
-              {% set main_img = img %}
-            {% endif %}
-          {% endfor %}
-          {% if main_img is none %}
-            {% set main_img = product.images[0] %}
+{% block title %}Товары{% endblock %}
+
+{% block head %}
+  <link rel="stylesheet" href="/static/css/admin/products.css">
+{% endblock %}
+
+{% block content %}
+<div class="admin-products">
+  <div class="container">
+
+    <div class="ap-grid">
+
+      {# LEFT: фильтр родительских категорий #}
+      <aside class="ap-card ap-filter" aria-label="Фильтр по категориям">
+        <header class="ap-card__head">
+          <div class="ap-card__title">Категории</div>
+        </header>
+
+
+        {# cat — мультиселект через query params: ?cat=<uuid>&cat=<uuid> #}
+        {% set q = request.query_params %}
+        {% set selected = selected_parent_category_ids if selected_parent_category_ids is defined else q.getlist('cat') %}
+
+<form method="get" id="apFilterForm">
+  {# нужно для режима "ничего не выбрано" #}
+  <input type="hidden" name="none" id="apNone" value="{{ q.get('none','') }}">
+
+  <div style="display:flex; gap:10px; margin: 10px 0 12px;">
+    <button type="button" class="ap-del" id="apReset">Сбросить</button>
+    <button type="button" class="ap-del" id="apSelectAll">Найти всё</button>
+  </div>
+
+  <div class="ap-checks">
+
+            {% for c in parent_categories %}
+              {# если selected пустой — считаем “выбраны все” #}
+              {% set is_none = (q.get('none') == '1') %}
+{% set is_checked = (not is_none) and ((selected|length == 0) or ((c.id|string) in selected)) %}
+
+              <label class="ap-cbox" title="{{ c.name }}">
+                <input class="ap-cbox__input" type="checkbox" name="cat" value="{{ c.id }}" {% if is_checked %}checked{% endif %}>
+                <span class="ap-cbox__box" aria-hidden="true"></span>
+                <span class="ap-cbox__label">{{ c.name }}</span>
+              </label>
+            {% endfor %}
+          </div>
+
+          {# если у тебя есть поиск/сортировка — можно сохранить их как hidden (пример):
+          <input type="hidden" name="q" value="{{ q.get('q','') }}">
+          #}
+        </form>
+      </aside>
+
+      {# RIGHT: список товаров #}
+      <section class="ap-card" aria-label="Список товаров">
+        <header class="ap-card__head">
+          <div class="ap-card__title">Товары</div>
+
+          {# опционально: кнопка создать #}
+          <a class="ap-link" href="/admin/products/new">+ Добавить</a>
+        </header>
+
+<div class="ap-list" id="apProductsList">
+
+          {% if products and products|length %}
+            {% for p in products %}
+              {# --- main image from p.images --- #}
+{% set img = None %}
+{% if p.images %}
+  {# 1) пробуем найти главное #}
+  {% for im in p.images %}
+    {% if im.is_main %}
+      {% set img = im.file_path %}
+    {% endif %}
+  {% endfor %}
+
+  {# 2) если главного нет — берём первое #}
+  {% if not img %}
+    {% set img = p.images[0].file_path %}
+  {% endif %}
+{% endif %}
+
+<article class="ap-row">
+  <div class="ap-thumb {% if not img %}ap-thumb--ph{% endif %}">
+    {% if img %}
+      <img src="{{ img }}" alt="{{ p.name }}" loading="lazy">
+    {% endif %}
+  </div>
+
+
+                <div class="ap-meta">
+                  <h3 class="ap-name" title="{{ p.name }}">{{ p.name }}</h3>
+
+                  <p class="ap-sub">
+                    <span>{{ p.category_name if p.category_name is defined else (p.category.name if p.category is defined else '—') }}</span>
+                    <span class="ap-sub__sep" aria-hidden="true">•</span>
+
+                    <span class="ap-price">
+                      {{ p.price_fmt if p.price_fmt is defined else p.price }} р
+                    </span>
+
+                    <span class="ap-sub__sep" aria-hidden="true">•</span>
+
+<span class="selectPill">
+  <select class="js-inline-active {% if p.is_active %}badge--active{% else %}badge--inactive{% endif %}"
+          data-product-id="{{ p.id }}"
+          aria-label="Активность товара">
+    <option value="1" {% if p.is_active %}selected{% endif %}>Активен</option>
+    <option value="0" {% if not p.is_active %}selected{% endif %}>Не активен</option>
+  </select>
+</span>
+
+                  </p>
+                </div>
+
+                <div class="ap-actions">
+                  <a class="ap-link" href="/admin/products/{{ p.id }}/edit">Редактировать</a>
+
+                  <form method="post"
+                        action="/admin/products/{{ p.id }}/delete"
+                        onsubmit="return confirm('Удалить товар «{{ p.name }}»?');"
+                        style="display:inline">
+                    <button class="ap-del" type="submit">Удалить</button>
+                  </form>
+                </div>
+              </article>
+            {% endfor %}
+          {% else %}
+            <div class="ap-empty">Нет товаров по выбранным категориям.</div>
           {% endif %}
-        {% endif %}
+        </div>
+      </section>
 
-        <tr>
-          <td>
-            {% if main_img %}
-              <img src="{{ main_img.file_path }}" alt="photo" style="max-width:80px; height:auto;">
-            {% else %}
-              -
-            {% endif %}
-          </td>
-          <td>{{ product.name }}</td>
-          <td>{{ product.category.name if product.category else '-' }}</td>
-          <td>{{ product.brand.name if product.brand else '-' }}</td>
-          <td>{{ product.price }}</td>
-          <td>{{ characteristics_text.get(product.id) or '-' }}</td>
-          <td>{{ 'Да' if product.is_active else 'Нет' }}</td>
-          <td>
-            <a href="/admin/products/{{ product.id }}/edit">Редактировать</a>
-            <form method="post" action="/admin/products/{{ product.id }}/delete" style="display:inline;">
-              <button type="submit">Удалить</button>
-            </form>
-          </td>
-        </tr>
-      {% else %}
-        <tr><td colspan="8">Товаров пока нет.</td></tr>
-      {% endfor %}
-    </tbody>
-  </table>
-</body>
-</html>
+    </div>
+
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="/static/js/admin/products.js"></script>
+{% endblock %}

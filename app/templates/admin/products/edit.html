@@ -1,184 +1,298 @@
-<!doctype html>
-<html lang="ru">
-<head>
-  <meta charset="utf-8">
-  <title>Редактировать товар</title>
-</head>
-<body>
-  <h1>Редактировать товар</h1>
+{# app/templates/admin/products/edit.html #}
+{% extends "admin/base.html" %}
 
-  {% if error %}
-    <p><strong>Ошибка:</strong> {{ error }}</p>
-  {% endif %}
+{% block title %}Редактировать товар{% endblock %}
 
-  <h3>Смена категории (через GET, без JS)</h3>
-  <form method="get" action="/admin/products/{{ product.id }}/edit">
-    <label>Категория
-      <select name="category_id" required>
-        {% for category in categories %}
-          <option value="{{ category.id }}"
-            {% if selected_category_id == (category.id|string) %}selected{% endif %}>
-            {{ category.name }}
-          </option>
-        {% endfor %}
-      </select>
-    </label>
-    <button type="submit">Далее (заполнить характеристики)</button>
-  </form>
+{% block head %}
+  <link rel="stylesheet" href="/static/css/admin/products.css">
+  <link rel="stylesheet" href="/static/css/admin/products_create.css">
+{% endblock %}
 
-  {% if pending_change %}
-    <hr>
-    <p><strong>Набор характеристик изменится.</strong></p>
-    <p>
-      Новая категория:
-      <strong>{{ pending_category.name if pending_category else selected_category_id }}</strong>
-    </p>
-    <p>
-      <a href="/admin/products/{{ product.id }}/edit?category_id={{ selected_category_id }}&confirm_change=1">
-        Подтвердить смену категории
-      </a>
-      |
-      <a href="/admin/products/{{ product.id }}/edit">Отмена</a>
-    </p>
-    <hr>
-  {% endif %}
+{% block content %}
+<div class="admin-productCreate">
+  <div class="container">
+    <div class="pc-narrow">
 
-  <form method="post" action="/admin/products/{{ product.id }}/edit" enctype="multipart/form-data">
-    <input type="hidden" name="category_id" value="{{ effective_category_id }}">
+      <div class="pc-top">
+        <div class="pc-title">Редактировать товар</div>
+      </div>
 
-    <div>
-      <label>Название
-        <input type="text" name="name" value="{{ product.name }}" required>
-      </label>
-    </div>
+      {% if error %}
+        <div class="pc-alert" role="alert">
+          <strong class="pc-alert__label">Ошибка:</strong>
+          <span class="pc-alert__text">{{ error }}</span>
+        </div>
+      {% endif %}
 
-    <div>
-      <label>Описание
-        <textarea name="description">{{ product.description or '' }}</textarea>
-      </label>
-    </div>
+      <div class="pc-breadcrumb">
+        <span class="pc-breadcrumb__label">Товар:</span>
+        <span class="pc-pill">{{ product.name }}</span>
+        <span class="pc-breadcrumb__label">Категория:</span>
+        <span class="pc-pill">{{ product.category.name if product.category else '—' }}</span>
+        <a class="ap-link" href="/admin/products">к списку</a>
+      </div>
+{# Шаг 1 — смена категории (GET) #}
+<section class="ap-card" aria-label="Шаг 1: выбор категории" style="margin-bottom:16px;">
+  <header class="ap-card__head">
+    <div class="ap-card__title">Шаг 1 — выбери категорию</div>
+  </header>
 
-    <div>
-      <label>Бренд
-        <select name="brand_id">
-          <option value="">(нет)</option>
-          {% for brand in brands %}
-            <option value="{{ brand.id }}" {% if product.brand_id == brand.id %}selected{% endif %}>{{ brand.name }}</option>
+  <form method="get" action="/admin/products/{{ product.id }}/edit" class="pc-form">
+    <div class="pc-field">
+      <label class="pc-label" for="pcCategoryEdit">Категория</label>
+
+      <div class="pc-selectPill">
+        <select id="pcCategoryEdit" class="pc-select" name="category_id" required>
+          {% for category in categories %}
+            <option value="{{ category.id }}"
+              {% if selected_category_id == (category.id|string) %}selected{% endif %}>
+              {{ category.name }}
+            </option>
           {% endfor %}
         </select>
-      </label>
+      </div>
+
+      <div class="pc-help">
+        При смене категории изменится набор характеристик.
+      </div>
     </div>
 
-    <div>
-      <label>Цена
-        <input type="number" name="price" min="0" step="1" value="{{ product.price }}" required>
-      </label>
+    <div class="pc-actions">
+      <button type="submit" class="pc-btn pc-btn--primary">Далее</button>
     </div>
+  </form>
+</section>
 
-    <div>
-      <label>Объем, м³
-        <input type="number" name="volume_m3" min="0" step="0.01" value="{{ product.volume_m3 }}" required>
-      </label>
+{# Если выбрали другую категорию, но ещё не подтвердили — показываем подтверждение #}
+{% if pending_change %}
+  <div class="pc-alert" role="alert" style="margin-bottom:16px;">
+    <strong class="pc-alert__label">Подтверди смену категории:</strong>
+    <span class="pc-alert__text">
+      Сейчас выбрана «{{ pending_category.name if pending_category else '—' }}».
+      Старые значения характеристик, которых нет в новой категории, будут удалены.
+    </span>
+    <div style="margin-top:10px; display:flex; gap:10px; flex-wrap:wrap;">
+      <a class="pc-btn pc-btn--primary"
+         href="/admin/products/{{ product.id }}/edit?category_id={{ selected_category_id }}&confirm_change=1">
+        Подтвердить
+      </a>
+      <a class="pc-btn pc-btn--ghost" href="/admin/products/{{ product.id }}/edit">Отмена</a>
     </div>
+  </div>
+{% endif %}
 
-    <div>
-      <label>Вес, кг
-        <input type="number" name="weight_kg" min="0" step="0.01" value="{{ product.weight_kg }}" required>
-      </label>
-    </div>
+      <div class="pc-grid pc-grid--one">
+        <section class="ap-card pc-main" aria-label="Редактирование товара">
+          <header class="ap-card__head">
+            <div class="ap-card__title">Данные товара</div>
+          </header>
 
-    <div>
-      <label>Скидка, %
-        <input type="number" name="discount_percent" min="0" max="100" step="1"
-               value="{{ product.discount_percent if product.discount_percent is not none else '' }}">
-      </label>
-    </div>
+          {# action подстрой под свой роут (id/slug). Обычно: /admin/products/{{ product.id }}/edit #}
+          <form method="post"
+                action="/admin/products/{{ product.id }}/edit"
+                enctype="multipart/form-data"
+                class="pc-form">
+<input type="hidden" name="category_id" value="{{ effective_category_id }}">
 
-    <div>
-      <label>
-        <input type="checkbox" name="is_active" value="true" {% if product.is_active %}checked{% endif %}> Активен
-      </label>
-    </div>
+            <div class="pc-section">
+              <div class="pc-section__title">Основное</div>
 
-    <hr>
+              <div class="pc-fields pc-fields--2">
+                <div class="pc-field">
+                  <label class="pc-label" for="pcName">Название</label>
+                  <input id="pcName" class="pc-input" type="text" name="name" required
+                         value="{{ (form_data.name if form_data else product.name) or '' }}">
+                </div>
 
-    <h3>Характеристики</h3>
-    {% if not pending_change %}
-      {% if characteristics %}
-        {% for ch in characteristics %}
-          <div>
-            <label>
-              {{ ch.name }}
-              {% if ch.unit %} ({{ ch.unit }}){% endif %}
-              {% if ch.value_type.value == 'number' %}
-                <input type="number" step="0.01" name="ch_{{ ch.id }}" value="{{ ch_values.get(ch.id, '') }}">
+                <div class="pc-field">
+                  <label class="pc-label" for="pcBrand">Бренд</label>
+                  <div class="pc-selectPill">
+                    <select id="pcBrand" class="pc-select" name="brand_id">
+                      <option value="">(нет)</option>
+                      {% for brand in brands %}
+                        {% set cur_brand_id = (form_data.brand_id if form_data else (product.brand_id if product.brand_id else '')) %}
+                        <option value="{{ brand.id }}"
+                          {% if cur_brand_id == (brand.id|string) %}selected{% endif %}>
+                          {{ brand.name }}
+                        </option>
+                      {% endfor %}
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              <div class="pc-field">
+                <label class="pc-label" for="pcDesc">Описание</label>
+                <textarea id="pcDesc" class="pc-textarea" name="description" rows="4">{{ (form_data.description if form_data else product.description) or '' }}</textarea>
+              </div>
+
+              <div class="pc-fields pc-fields--4">
+                <div class="pc-field">
+                  <label class="pc-label" for="pcPrice">Цена</label>
+                  <input id="pcPrice" class="pc-input" type="number" name="price" min="0" step="1" required
+                         value="{{ (form_data.price if form_data else product.price) or '' }}">
+                </div>
+
+                <div class="pc-field">
+                  <label class="pc-label" for="pcVolume">Объём, м³</label>
+                  <input id="pcVolume" class="pc-input" type="number" name="volume_m3" min="0" step="0.01" required
+                         value="{{ (form_data.volume_m3 if form_data else product.volume_m3) or '' }}">
+                </div>
+
+                <div class="pc-field">
+                  <label class="pc-label" for="pcWeight">Вес, кг</label>
+                  <input id="pcWeight" class="pc-input" type="number" name="weight_kg" min="0" step="0.01" required
+                         value="{{ (form_data.weight_kg if form_data else product.weight_kg) or '' }}">
+                </div>
+
+                <div class="pc-field">
+                  <label class="pc-label" for="pcDiscount">Скидка, %</label>
+                  <input id="pcDiscount" class="pc-input" type="number" name="discount_percent" min="0" max="100" step="1"
+                         value="{{ (form_data.discount_percent if form_data else product.discount_percent) or '' }}">
+                </div>
+              </div>
+
+              <label class="pc-check">
+                {% set cur_active = (form_data.is_active if form_data else product.is_active) %}
+                <input class="pc-check__input" type="checkbox" name="is_active" value="true"
+                       {% if cur_active %}checked{% endif %}>
+                <span class="pc-check__box" aria-hidden="true"></span>
+                <span class="pc-check__label">Активен</span>
+              </label>
+            </div>
+
+            <div class="pc-section">
+              <div class="pc-section__title">Характеристики</div>
+
+              {% if characteristics %}
+                <div class="pc-fields pc-fields--2">
+                  {% for ch in characteristics %}
+                    <div class="pc-field">
+                      <label class="pc-label" for="ch_{{ ch.id }}">
+                        {{ ch.name }}{% if ch.unit %} ({{ ch.unit }}){% endif %}
+                      </label>
+
+                      {% set cur_val = ch_values.get(ch.id, '') %}
+                      {% if ch.value_type.value == 'number' %}
+                        <input id="ch_{{ ch.id }}" class="pc-input" type="number" step="0.01"
+                               name="ch_{{ ch.id }}" value="{{ cur_val }}">
+                      {% else %}
+                        <input id="ch_{{ ch.id }}" class="pc-input" type="text"
+                               name="ch_{{ ch.id }}" value="{{ cur_val }}">
+                      {% endif %}
+                    </div>
+                  {% endfor %}
+                </div>
               {% else %}
-                <input type="text" name="ch_{{ ch.id }}" value="{{ ch_values.get(ch.id, '') }}">
+                <div class="pc-empty">У категории нет характеристик.</div>
               {% endif %}
-            </label>
-          </div>
-        {% endfor %}
-      {% else %}
-        <p>У категории нет характеристик.</p>
-      {% endif %}
+            </div>
+
+            <div class="pc-section">
+  <div class="pc-section__title">Фото</div>
+
+  {% set main_img = (product.images | selectattr('is_main') | list | first) if product.images else None %}
+  {% set extras = (product.images | rejectattr('is_main') | list) if product.images else [] %}
+
+  <div class="pc-fields pc-fields--2">
+
+    <div class= "pc-field">
+      <label class="pc-label">Главное фото</label>
+
+<div class="pc-cur">
+  <div class="pc-cur__meta">
+    Текущее: <span class="pc-cur__count">{{ 1 if main_img else 0 }}</span>
+  </div>
+
+  <div class="pc-cur__grid">
+    {% if main_img %}
+      {% set cur_main = main_img.file_path %}
+      {% if cur_main and not cur_main.startswith('/') %}{% set cur_main = '/' ~ cur_main %}{% endif %}
+      <span class="pc-cur__thumb">
+        <img src="{{ cur_main }}" alt="" loading="lazy">
+      </span>
     {% else %}
-      <p>Чтобы увидеть поля, подтвердите смену категории выше.</p>
+      <span class="pc-cur__empty">Нет фото</span>
     {% endif %}
+  </div>
+</div>
 
-    <hr>
 
-    <h3>Фотографии</h3>
+      <label class="pc-file" data-file style="margin-top:10px;">
+        <input class="pc-file__input" type="file" name="main_image" accept="image/*">
+        <span class="pc-file__ui">
+          <span class="pc-file__meta">
+            <span class="pc-file__title" data-title>Заменить главное фото</span>
+            <span class="pc-file__hint" data-hint>Если не выбрать — остаётся текущее</span>
+          </span>
+          <span class="pc-file__previews" data-previews aria-hidden="true"></span>
+          <button type="button" class="pc-file__clear" data-clear aria-label="Очистить выбранный файл">×</button>
+        </span>
+      </label>
+    </div>
 
-    {% set imgs = (product.images or []) %}
-    {% if imgs %}
-      <p>Главное фото выбирается radio-кнопкой. Удалять главное нельзя.</p>
+    <div class="pc-field">
+      <label class="pc-label">Доп. фото (макс. 5)</label>
 
-      {% for img in imgs %}
-        <div style="border:1px solid #ccc; padding:8px; margin:8px 0;">
-          <div>
-            <label>
-              <input type="radio" name="set_main_id" value="{{ img.id }}" {% if img.is_main %}checked{% endif %}>
-              Главное
-            </label>
-          </div>
+<div class="pc-cur">
+  <div class="pc-cur__meta">
+    Текущее: <span class="pc-cur__count">{{ extras|length }}</span>
+  </div>
 
-          <div>
-            <img src="{{ img.file_path }}" alt="photo" style="max-width:200px; height:auto;">
-          </div>
+  <div class="pc-cur__grid">
+    {% if extras and extras|length %}
+      {% for img in extras %}
+        {% set p = img.file_path %}
+        {% if p and not p.startswith('/') %}{% set p = '/' ~ p %}{% endif %}
+<label class="pc-imgPick">
+  <input class="pc-imgPick__chk" type="checkbox" name="delete_image_ids" value="{{ img.id }}">
+  <span class="pc-cur__thumb pc-imgPick__thumb">
+    <img src="{{ p }}" alt="" loading="lazy">
+    <span class="pc-imgPick__cap">удал.</span>
+  </span>
+</label>
 
-          <div>
-            <label>Заменить это фото:
-              <input type="file" name="replace_{{ img.id }}" accept="image/*">
-            </label>
-          </div>
 
-          <div>
-            <label>
-              <input type="checkbox" name="remove_{{ img.id }}" value="true">
-              Удалить
-            </label>
-          </div>
 
-        </div>
       {% endfor %}
     {% else %}
-      <p><strong>У товара нет фото.</strong> Загрузите главное:</p>
-      <div>
-        <label>Главное фото
-          <input type="file" name="main_image_fallback" accept="image/*" required>
-        </label>
-      </div>
+      <span class="pc-cur__empty">Нет фото</span>
     {% endif %}
+  </div>
+</div>
 
-    <div>
-      <label>Добавить новые фото (0..N)
-        <input type="file" name="new_images" accept="image/*" multiple>
+
+      <label class="pc-file" data-file style="margin-top:10px;">
+        <input class="pc-file__input" type="file" name="extra_images" accept="image/*" multiple data-max="5">
+        <span class="pc-file__ui">
+          <span class="pc-file__meta">
+            <span class="pc-file__title" data-title>Добавить доп. фото</span>
+            <span class="pc-file__hint" data-hint>Можно оставить пустым</span>
+          </span>
+          <span class="pc-file__previews" data-previews aria-hidden="true"></span>
+          <button type="button" class="pc-file__clear" data-clear aria-label="Очистить выбранные файлы">×</button>
+        </span>
       </label>
     </div>
 
-    <button type="submit">Сохранить</button>
-  </form>
+  </div>
+</div>
 
-  <p><a href="/admin/products">Назад</a></p>
-</body>
-</html>
+
+            <div class="pc-actions pc-actions--sticky">
+              <button type="submit" class="pc-btn pc-btn--primary">Сохранить</button>
+              <a class="pc-btn pc-btn--ghost" href="/admin/products">Отмена</a>
+            </div>
+
+          </form>
+        </section>
+      </div>
+
+    </div> {# /.pc-narrow #}
+  </div>   {# /.container #}
+</div>     {# /.admin-productCreate #}
+{% endblock %}
+
+{% block scripts %}
+  <script src="/static/js/admin/products_create.js"></script>
+{% endblock %}

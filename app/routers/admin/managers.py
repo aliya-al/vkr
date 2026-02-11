@@ -15,6 +15,7 @@ router = APIRouter(
     dependencies=[Depends(require_superadmin_or_404) ]
 )
 
+LOGIN_MAX_LEN = 15
 
 @router.get("/admin/managers", response_class=HTMLResponse)
 async def managers_list(request: Request, session: AsyncSession = Depends(get_async_session)):
@@ -47,6 +48,14 @@ async def manager_create(
     session: AsyncSession = Depends(get_async_session),
 ):
     login = login.strip()
+
+    if len(login) > LOGIN_MAX_LEN:
+        return templates.TemplateResponse(
+            "admin/managers/create.html",
+            {"request": request, "error": "Логин должен быть не длиннее 15 символов.", "login": login,
+             "is_active": is_active},
+            status_code=status.HTTP_400_BAD_REQUEST,
+        )
 
     if not login:
         return templates.TemplateResponse(
@@ -120,6 +129,14 @@ async def manager_edit(
         raise HTTPException(status_code=404)
 
     login = login.strip()
+
+    if len(login) > LOGIN_MAX_LEN:
+        return templates.TemplateResponse(
+            "admin/managers/edit.html",
+            {"request": request, "manager": manager, "error": "Логин должен быть не длиннее 15 символов."},
+            status_code=status.HTTP_400_BAD_REQUEST,
+        )
+
     if not login:
         return templates.TemplateResponse(
             "admin/managers/edit.html",

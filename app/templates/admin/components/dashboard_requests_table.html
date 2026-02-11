@@ -1,4 +1,3 @@
-{# app/templates/admin/components/dashboard_requests_table.html #}
 <section class="card card--table" aria-label="Заявки">
   <header class="card__head">
     <div class="card__title">Заявки</div>
@@ -25,7 +24,9 @@
         {% else %}
           {% for o in dash_orders %}
             <tr>
-              <td class="tdName">{{ o.customer_name or "—" }}</td>
+              <td class="tdName">
+                <a class="tdLink" href="/admin/requests/{{ o.id }}/edit">{{ o.customer_name or "—" }}</a>
+              </td>
 
               <td>{{ o.created_at|moscow_dt("%d.%m.%Y %H:%M") if o.created_at else "—" }}</td>
               <td>{{ o.customer_phone or "—" }}</td>
@@ -34,16 +35,22 @@
 <td>{{ delivery_labels.get(dm, dm or "—") }}</td>
 
 <td>
-  {% if dash_managers is defined %}
+  {% if dash_managers is not none %}
     <div class="tdInlineSelect">
       <div class="selectPill">
         <select class="js-inline-manager" data-order-id="{{ o.id }}" aria-label="Менеджер">
           <option value="" {% if not o.manager_id %}selected{% endif %}>Не прикреплен</option>
-          {% for m in dash_managers %}
-            <option value="{{ m.id }}" {% if o.manager_id == m.id %}selected{% endif %}>
-              {{ m.login }}
-            </option>
-          {% endfor %}
+{% for m in dash_managers %}
+  {% set is_sel = (o.manager_id == m.id) %}
+  <option
+    value="{{ m.id }}"
+    {% if is_sel %}selected{% endif %}
+    {% if (not m.is_active) and (not is_sel) %}disabled{% endif %}
+  >
+    {{ m.login }}{% if not m.is_active %} (неактивен){% endif %}
+  </option>
+{% endfor %}
+
         </select>
       </div>
     </div>

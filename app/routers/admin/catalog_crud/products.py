@@ -3,9 +3,9 @@ import uuid
 from pathlib import Path
 
 import anyio
-from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, UploadFile
+from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, UploadFile, Body
 from fastapi.responses import HTMLResponse, RedirectResponse
-from sqlalchemy import select
+from sqlalchemy import select, text, update
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -20,6 +20,7 @@ from app.utils.database import get_async_session
 from app.utils.delete_product_image import delete_product_image_if_local
 from app.utils.templates import templates
 from app.utils.strings import slugify, ensure_unique_slug
+from app.utils.deps import require_admin_or_404
 
 
 router = APIRouter()
@@ -34,6 +35,7 @@ _ALLOWED_EXT = {".jpg", ".jpeg", ".png", ".webp", ".gif"}
 # Размер чанка при записи (чтобы не держать весь файл в RAM)
 _CHUNK_SIZE = 1024 * 1024  # 1MB
 
+MAX_EXTRA_IMAGES = 5
 
 def _ext_or_empty(filename: str) -> str:
     """Достаём расширение и проверяем, что оно разрешено."""
@@ -120,6 +122,24 @@ def _pick_next_main_after_delete(remaining: list[ProductImage], deleted_main_id:
 
     return remaining_sorted[0]
 
+async def _get_subtree_category_ids(session: AsyncSession, root_id: uuid.UUID) -> list[uuid.UUID]:
+    """Вернуть id категории root + всех её потомков."""
+    q = text(
+        """
+        WITH RECURSIVE subcats AS (
+            SELECT id
+            FROM categories
+            WHERE id = :root_id
+            UNION
+            SELECT c.id
+            FROM categories c
+            JOIN subcats s ON c.parent_id = s.id
+        )
+        SELECT id FROM subcats;
+        """
+    )
+    rows = (await session.execute(q, {"root_id": root_id})).all()
+    return [r[0] for r in rows]
 
 # ----------------------------
 # Характеристики товара
@@ -209,8 +229,30 @@ def _format_product_characteristics(values: list[ProductCharacteristicValue]) ->
 
 @router.get("/admin/products", response_class=HTMLResponse)
 async def products_list(request: Request, session: AsyncSession = Depends(get_async_session)):
-    # Подгружаем всё нужное для списка, включая характеристики
-    result = await session.execute(
+    # 1) Родительские категории для фильтра слева (ТОЛЬКО parent_id is NULL)
+    cats_res = await session.execute(
+        select(Category).where(Category.parent_id.is_(None)).order_by(Category.name)
+    )
+    parent_categories = cats_res.scalars().all()
+
+    # 2) Какие parent выбраны (cat=<uuid>&cat=<uuid>)
+    selected_raw = request.query_params.getlist("cat")
+    selected_parent_ids: list[uuid.UUID] = []
+    for s in selected_raw:
+        try:
+            selected_parent_ids.append(uuid.UUID(str(s)))
+        except Exception:
+            pass
+
+    # 3) Если выбраны родительские — фильтруем товары по поддереву этих родителей.
+    #    Если фильтр пустой — показываем все товары (и в UI все чекбоксы отмечены).
+    filter_category_ids: set[uuid.UUID] = set()
+    if selected_parent_ids:
+        for pid in selected_parent_ids:
+            for cid in await _get_subtree_category_ids(session, pid):
+                filter_category_ids.add(cid)
+
+    stmt = (
         select(Product)
         .options(
             selectinload(Product.category),
@@ -220,17 +262,46 @@ async def products_list(request: Request, session: AsyncSession = Depends(get_as
         )
         .order_by(Product.name)
     )
+
+    if filter_category_ids:
+        stmt = stmt.where(Product.category_id.in_(filter_category_ids))
+
+    result = await session.execute(stmt)
     products = result.scalars().all()
 
+    # 4) Текст характеристик (как было)
     characteristics_text: dict[uuid.UUID, str] = {}
     for p in products:
         characteristics_text[p.id] = _format_product_characteristics(list(p.characteristics_values or []))
 
     return templates.TemplateResponse(
         "admin/products/index.html",
-        {"request": request, "products": products, "characteristics_text": characteristics_text},
+        {
+            "request": request,
+            "products": products,
+            "characteristics_text": characteristics_text,
+            "parent_categories": parent_categories,
+        },
     )
+@router.post("/admin/products/{product_id}/inline", dependencies=[Depends(require_admin_or_404)])
 
+async def product_inline_update(
+    product_id: uuid.UUID,
+    payload: dict = Body(...),
+    session: AsyncSession = Depends(get_async_session),
+):
+    try:
+        is_active = bool(payload.get("is_active"))
+    except Exception:
+        return {"ok": False, "error": "Неверные данные."}
+
+    await session.execute(
+        update(Product)
+        .where(Product.id == product_id)
+        .values(is_active=is_active)
+    )
+    await session.commit()
+    return {"ok": True, "is_active": is_active}
 
 @router.get("/admin/products/new", response_class=HTMLResponse)
 async def product_create_page(
@@ -265,7 +336,7 @@ async def product_create_page(
             "characteristics": characteristics,
             "ch_values": {},  # для create пусто
             "error": None,
-            "form_data": {},  # чтобы можно было переиспользовать шаблон при ошибках
+            "form_data": {},
         },
     )
 
@@ -301,26 +372,22 @@ async def product_create(
         selected_category = await session.get(Category, cat_uuid)
 
         return templates.TemplateResponse(
-            "admin/products/create.html",
+            "admin/products/edit.html",
             {
                 "request": request,
+                "product": product,
                 "categories": categories,
                 "brands": brands,
-                "selected_category": selected_category,
                 "selected_category_id": str(cat_uuid),
+                "effective_category_id": str(cat_uuid),
+                "pending_change": False,
+                "pending_category": None,
                 "characteristics": characteristics,
                 "ch_values": {cid: (vs if vs is not None else vn) for cid, (vs, vn) in parsed_ch.items()},
+                "form_data": {"name": name, "description": description or "", "brand_id": brand_id or "",
+                              "price": price, "volume_m3": volume_m3, "weight_kg": weight_kg,
+                              "discount_percent": discount_percent or "", "is_active": bool(is_active)},
                 "error": ch_error,
-                "form_data": {
-                    "name": name,
-                    "description": description or "",
-                    "brand_id": brand_id or "",
-                    "price": price,
-                    "volume_m3": volume_m3,
-                    "weight_kg": weight_kg,
-                    "discount_percent": discount_percent or "",
-                    "is_active": bool(is_active),
-                },
             },
             status_code=400,
         )
@@ -503,10 +570,13 @@ async def product_edit(
     category_id: str = Form(...),
     brand_id: str | None = Form(None),
     price: int = Form(...),
+    delete_main: str | None = Form(None),
+    delete_image_ids: list[int] = Form([]),
     volume_m3: float = Form(...),
     weight_kg: float = Form(...),
     is_active: bool = Form(False),
-    new_images: list[UploadFile] | None = File(None),
+    main_image: UploadFile | None = File(None),
+    extra_images: list[UploadFile] | None = File(None),
     discount_percent: str | None = Form(None),
     session: AsyncSession = Depends(get_async_session),
 ):
@@ -597,8 +667,145 @@ async def product_edit(
         product.is_active = is_active
         product.discount_percent = int(discount_percent) if discount_percent else None
 
-        # ---- картинки (твоя логика, без изменений по смыслу) ----
         images_sorted = _sort_images(list(product.images or []))
+        deleted_main_id: int | None = None
+
+        ids_to_delete = set(delete_image_ids or [])
+
+        if delete_main and not (main_image and main_image.filename):
+            cur_main = next((img for img in images_sorted if img.is_main), None)
+            if cur_main:
+                ids_to_delete.add(cur_main.id)
+
+        if ids_to_delete:
+            for img in list(images_sorted):
+                if img.id not in ids_to_delete:
+                    continue
+                if img.is_main:
+                    deleted_main_id = img.id
+                old_files_to_delete.append(img.file_path)
+                await session.delete(img)
+
+            await session.flush()
+
+            # пересчитываем список изображений после удаления
+            result_imgs0 = await session.execute(
+                select(Product).where(Product.id == product_id).options(selectinload(Product.images))
+            )
+            product0 = result_imgs0.scalar_one()
+            images_sorted = _sort_images(list(product0.images or []))
+
+        will_delete_ids: set[int] = set(delete_image_ids or [])
+
+        for img in images_sorted:
+            if form.get(f"remove_{img.id}"):
+                will_delete_ids.add(img.id)
+
+        if delete_main and not (main_image and main_image.filename):
+            cur_main = next((img for img in images_sorted if img.is_main), None)
+            if cur_main:
+                will_delete_ids.add(cur_main.id)
+
+        remaining_imgs = [img for img in images_sorted if img.id not in will_delete_ids]
+
+        set_main_id: int | None = None
+        if set_main_id_raw:
+            try:
+                set_main_id = int(str(set_main_id_raw))
+            except Exception:
+                set_main_id = None
+
+        main_id_after: int | None = None
+        if set_main_id is not None and any(img.id == set_main_id for img in remaining_imgs):
+            main_id_after = set_main_id
+        else:
+            cur_main2 = next((img for img in remaining_imgs if img.is_main), None)
+            if cur_main2:
+                main_id_after = cur_main2.id
+            elif remaining_imgs:
+                main_id_after = remaining_imgs[0].id
+
+        remaining_extras = 0
+        if remaining_imgs:
+            remaining_extras = len(remaining_imgs) - (1 if main_id_after is not None else 0)
+            if remaining_extras < 0:
+                remaining_extras = 0
+
+        incoming_extras = sum(1 for f in (extra_images or []) if f and f.filename)
+
+        if remaining_extras + incoming_extras > MAX_EXTRA_IMAGES:
+            result = await session.execute(
+                select(Product)
+                .where(Product.id == product_id)
+                .options(
+                    selectinload(Product.category),
+                    selectinload(Product.brand),
+                    selectinload(Product.images),
+                    selectinload(Product.characteristics_values).selectinload(ProductCharacteristicValue.characteristic),
+                )
+            )
+            product_view = result.scalar_one_or_none()
+            if not product_view:
+                raise HTTPException(status_code=404)
+
+            categories, brands = await _get_form_choices(session, product_view.category_id)
+
+            from types import SimpleNamespace
+            form_ns = SimpleNamespace(
+                name=name,
+                description=description,
+                brand_id=(brand_id or ""),
+                price=price,
+                volume_m3=volume_m3,
+                weight_kg=weight_kg,
+                discount_percent=(discount_percent or ""),
+                is_active=is_active,
+            )
+
+            msg = f"Максимум дополнительных фото: {MAX_EXTRA_IMAGES}."
+
+            return templates.TemplateResponse(
+                "admin/products/edit.html",
+                {
+                    "request": request,
+                    "product": product_view,
+                    "categories": categories,
+                    "brands": brands,
+                    "selected_category_id": str(cat_uuid),
+                    "effective_category_id": str(cat_uuid),
+                    "pending_change": False,
+                    "pending_category": None,
+                    "characteristics": characteristics,
+                    "ch_values": {cid: (vs if vs is not None else vn) for cid, (vs, vn) in parsed_ch.items()},
+                    "form_data": form_ns,
+                    "error": msg,
+                },
+                status_code=400,
+            )
+
+
+        # Если загрузили новое главное фото — заменяем текущее главное (или создаём, если нет)
+        if main_image and main_image.filename:
+            try:
+                new_main_path = await _save_product_image(main_image)
+            except ValueError as e:
+                raise HTTPException(status_code=400, detail=str(e))
+
+            new_files.append(new_main_path)
+
+            # ищем текущее главное
+            current_main = next((img for img in images_sorted if img.is_main), None)
+
+            if current_main:
+                old_files_to_delete.append(current_main.file_path)
+                current_main.file_path = new_main_path
+                # гарантируем, что оно остаётся главным
+                for img in images_sorted:
+                    img.is_main = False
+                current_main.is_main = True
+            else:
+                # если почему-то главного нет — добавляем как главное
+                session.add(ProductImage(product_id=product.id, file_path=new_main_path, is_main=True))
 
         if not images_sorted:
             main_fallback = form.get("main_image_fallback")
@@ -640,7 +847,6 @@ async def product_edit(
             images_sorted = _sort_images(list(images_sorted))
 
         to_delete: list[ProductImage] = []
-        deleted_main_id: int | None = None
 
         for img in images_sorted:
             replace_file = form.get(f"replace_{img.id}")
@@ -665,7 +871,7 @@ async def product_edit(
         for img in to_delete:
             await session.delete(img)
 
-        for f in (new_images or []):
+        for f in (extra_images or []):
             if not f or not f.filename:
                 continue
             try:

@@ -1,0 +1,554 @@
+/* app/static/css/admin/products_create.css */
+
+.admin-productCreate{
+  padding: var(--space-7) 0;
+}
+
+/* top bar */
+.pc-top{
+  display:flex;
+  align-items:flex-end;
+  justify-content:space-between;
+  gap: var(--space-6);
+  margin-bottom: var(--space-6);
+}
+
+.pc-title{
+  font-family: var(--font-serif);
+  font-size: calc(var(--fs-base) * 1.75);
+  font-weight: 600;
+  line-height: 1.1;
+  margin: 0;
+}
+
+/* alert */
+.pc-alert{
+  background: var(--color-danger-soft);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-md);
+  padding: 10px 12px;
+  margin-bottom: var(--space-6);
+  font-size: var(--fs-xs);
+  color: var(--color-danger);
+}
+.pc-alert__label{ font-weight: 700; }
+.pc-alert__text{ margin-left: 6px; }
+
+/* breadcrumb */
+.pc-breadcrumb{
+  display:flex;
+  align-items:center;
+  gap: 10px;
+  margin-bottom: var(--space-6);
+  font-size: var(--fs-xs);
+  color: var(--color-muted);
+}
+.pc-breadcrumb__label{ color: var(--color-muted); }
+
+.pc-pill{
+  display:inline-flex;
+  align-items:center;
+  padding: 6px 10px;
+  border-radius: var(--radius-xl);
+  border: 1px solid var(--color-line);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-weight: 700;
+}
+
+/* layout */
+.pc-grid{
+  display:grid;
+  grid-template-columns: 1fr 340px;
+  gap: var(--space-6);
+  align-items:start;
+}
+.pc-grid--pick{
+  grid-template-columns: 1fr 1fr;
+}
+
+.pc-main{ min-width: 0; }
+.pc-side{
+  position: sticky;
+  top: calc(var(--space-6) + 52px);
+}
+
+/* form */
+.pc-form{ display:block; }
+.pc-section + .pc-section{ margin-top: var(--space-6); }
+
+.pc-section__title{
+  font-weight: 700;
+  font-size: var(--fs-sm);
+  margin: 0 0 10px;
+}
+
+.pc-fields{
+  display:grid;
+  gap: var(--space-4);
+}
+.pc-fields--2{ grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.pc-fields--4{ grid-template-columns: repeat(4, minmax(0, 1fr)); }
+
+.pc-field{ min-width: 0; }
+
+.pc-label{
+  display:block;
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  margin-bottom: 6px;
+}
+
+.pc-help{
+  margin-top: 6px;
+  font-size: var(--fs-xs);
+  color: var(--color-muted);
+}
+
+.pc-req{ color: var(--color-danger); }
+
+/* inputs */
+.pc-input,
+.pc-textarea,
+.pc-select{
+  width: 100%;
+  background: var(--color-bg);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-md);
+  padding: 10px 12px;
+  font-size: var(--fs-sm);
+  color: var(--color-text);
+  outline: none;
+}
+
+.pc-textarea{
+  resize: vertical;
+  min-height: 96px;
+  line-height: 1.35;
+}
+
+.pc-input:focus,
+.pc-textarea:focus,
+.pc-select:focus{
+  box-shadow: 0 0 0 2px var(--color-accent, #bdbdbd);
+}
+
+/* select with arrow */
+.pc-selectPill{
+  position: relative;
+  display:block;
+}
+.pc-selectPill::after{
+  content: "";
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  width: 7px;
+  height: 7px;
+  border-right: 2px solid var(--color-muted);
+  border-bottom: 2px solid var(--color-muted);
+  transform: translateY(-60%) rotate(45deg);
+  pointer-events: none;
+}
+.pc-select{
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  padding-right: 34px;
+}
+
+/* checkbox (в стиле ap-cbox, но под форму) */
+.pc-check{
+  margin-top: 10px;
+  display:flex;
+  align-items:center;
+  gap: 10px;
+  font-size: var(--fs-xs);
+  user-select: none;
+}
+.pc-check__input{
+  position:absolute;
+  opacity:0;
+  pointer-events:none;
+}
+.pc-check__box{
+  width: 18px;
+  height: 18px;
+  border-radius: 6px;
+  border: 1px solid var(--color-line);
+  background: var(--color-bg);
+  display:inline-grid;
+  place-items:center;
+  flex: 0 0 auto;
+}
+.pc-check__box::after{
+  content:"";
+  width: 9px;
+  height: 5px;
+  border-left: 2px solid transparent;
+  border-bottom: 2px solid transparent;
+  transform: rotate(-45deg) translateY(-1px);
+}
+.pc-check__input:checked + .pc-check__box{
+  background: color-mix(in oklab, var(--color-primary-soft), var(--color-bg) 30%);
+  border-color: var(--color-line);
+}
+.pc-check__input:checked + .pc-check__box::after{
+  border-left-color: var(--color-primary);
+  border-bottom-color: var(--color-primary);
+}
+.pc-check__label{ color: var(--color-text); }
+
+/* file input */
+.pc-file{
+  display:block;
+  border: 1px dashed var(--color-line);
+  background: color-mix(in oklab, var(--color-bg), var(--color-surface) 45%);
+  border-radius: var(--radius-md);
+  padding: 12px;
+  cursor: pointer;
+}
+.pc-file__input{
+  position:absolute;
+  opacity:0;
+  pointer-events:none;
+}
+.pc-file__ui{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap: 12px;
+}
+.pc-file__title{
+  font-size: var(--fs-sm);
+  font-weight: 700;
+  color: var(--color-text);
+}
+.pc-file__hint{
+  font-size: var(--fs-xs);
+  color: var(--color-muted);
+  white-space: nowrap;
+}
+.pc-file:hover{
+  background: color-mix(in oklab, var(--color-bg), var(--color-surface) 35%);
+}
+
+/* buttons */
+.pc-actions{
+  display:flex;
+  align-items:center;
+  gap: 10px;
+  margin-top: var(--space-6);
+}
+.pc-actions--sticky{
+  padding-top: 12px;
+  border-top: 1px solid var(--color-line);
+}
+
+.pc-btn{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  gap: 8px;
+
+  border-radius: var(--radius-xl);
+  padding: 8px 12px;
+
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  text-decoration: none;
+
+  border: 1px solid var(--color-line);
+  background: var(--color-bg);
+  color: var(--color-text);
+  cursor:pointer;
+}
+.pc-btn:hover{
+  background: color-mix(in oklab, var(--color-bg), var(--color-surface) 35%);
+}
+
+.pc-btn--primary{
+  background: color-mix(in oklab, var(--color-primary-soft), var(--color-bg) 25%);
+  border-color: var(--color-line);
+}
+.pc-btn--primary:hover{
+  background: color-mix(in oklab, var(--color-primary-soft), var(--color-bg) 15%);
+}
+
+.pc-btn--ghost{
+  background: transparent;
+}
+
+/* right side summary */
+.pc-summary{
+  display:flex;
+  flex-direction:column;
+  gap: 10px;
+  font-size: var(--fs-xs);
+}
+.pc-summary__row{
+  display:flex;
+  gap: 10px;
+  align-items:flex-start;
+}
+.pc-summary__k{
+  width: 90px;
+  color: var(--color-muted);
+  flex: 0 0 auto;
+}
+.pc-summary__v{
+  min-width: 0;
+  color: var(--color-text);
+  font-weight: 700;
+}
+.pc-summary__hr{
+  height: 1px;
+  background: var(--color-line);
+  margin: 4px 0;
+}
+.pc-summary__muted{
+  color: var(--color-muted);
+  line-height: 1.35;
+}
+
+.pc-empty{
+  padding: 12px;
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-md);
+  background: var(--color-bg);
+  color: var(--color-muted);
+  font-size: var(--fs-xs);
+}
+
+/* responsive */
+@media (max-width: 1000px){
+  .pc-grid,
+  .pc-grid--pick{
+    grid-template-columns: 1fr;
+  }
+  .pc-side{ position: static; }
+  .pc-fields--4{ grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 520px){
+  .pc-fields--2,
+  .pc-fields--4{
+    grid-template-columns: 1fr;
+  }
+  .pc-top{ align-items:flex-start; }
+}
+.pc-grid--one{
+  grid-template-columns: 1fr;
+}
+/* file ui: name + clear button */
+.pc-file__meta{
+  display:flex;
+  flex-direction:column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.pc-file__title,
+.pc-file__hint{
+  overflow:hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pc-file__clear{
+  display:none;               /* показываем только когда выбран файл */
+  width: 28px;
+  height: 28px;
+  border-radius: 999px;
+  border: 1px solid var(--color-line);
+  background: var(--color-bg);
+  color: var(--color-muted);
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+  flex: 0 0 auto;
+}
+
+.pc-file__clear:hover{
+  background: color-mix(in oklab, var(--color-bg), var(--color-surface) 35%);
+  color: var(--color-text);
+}
+
+/* состояние "файл выбран" */
+.pc-file.is-picked{
+  border-style: solid;
+  background: color-mix(in oklab, var(--color-primary-soft), var(--color-bg) 55%);
+}
+
+.pc-file.is-picked .pc-file__clear{
+  display:inline-grid;
+  place-items:center;
+}
+/* previews */
+.pc-file__previews{
+  display:none;
+  align-items:center;
+  gap: 8px;
+  flex: 0 0 auto;
+}
+
+.pc-file.is-picked .pc-file__previews{
+  display:flex;
+}
+
+.pc-preview{
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  border: 1px solid var(--color-line);
+  background: var(--color-bg);
+  overflow:hidden;
+  flex: 0 0 auto;
+  display:grid;
+  place-items:center;
+}
+
+.pc-preview img{
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display:block;
+}
+
+.pc-previewMore{
+  height: 34px;
+  padding: 0 10px;
+  border-radius: 999px;
+  border: 1px solid var(--color-line);
+  background: var(--color-bg);
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  color: var(--color-muted);
+  display:inline-flex;
+  align-items:center;
+}
+.pc-narrow{
+  max-width: 860px;
+  margin: 0 auto;
+}
+
+.pc-top{
+  justify-content: flex-start;
+}
+
+.pc-title{
+  text-align: left;
+}
+/* Единый блок "Текущее фото" — чтобы сетка не прыгала */
+.pc-cur{
+  margin-top: 6px;
+  padding: 10px 12px;
+  border: 1px solid var(--color-line);
+  background: var(--color-card);
+  border-radius: var(--radius-md);
+}
+
+.pc-cur__meta{
+  min-height: 18px;
+  font-size: var(--fs-xs);
+  color: var(--color-muted);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.pc-cur__count{
+  font-weight: 700;
+  color: var(--color-text);
+}
+
+.pc-cur__grid{
+  margin-top: 10px;
+  min-height: 52px;          /* важно: одинаковая высота даже если фото нет */
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: flex-start;
+}
+
+.pc-cur__thumb{
+  width: 44px;
+  height: 44px;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  display: inline-grid;
+  place-items: center;
+  background: var(--color-bg);
+  border: 1px solid var(--color-line);
+}
+
+.pc-cur__thumb img{
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.pc-cur__empty{
+  font-size: var(--fs-xs);
+  color: var(--color-muted);
+  padding: 8px 10px;
+  border-radius: var(--radius-sm);
+  border: 1px dashed var(--color-line);
+  background: var(--color-bg);
+}
+/* выбор/удаление миниатюр (не меняем стили ap-thumb, только обвязка) */
+/* контейнер для выбора */
+.pc-imgPick{
+  display: inline-block; /* не добавляет лишней высоты */
+  cursor: pointer;
+  user-select: none;
+}
+
+/* чекбокс скрыт */
+.pc-imgPick__chk{
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* делаем миниатюру якорем для оверлея */
+.pc-imgPick__thumb{
+  position: relative;
+}
+
+/* подпись "удалить" — поверх, не влияет на высоту */
+.pc-imgPick__cap{
+  position: absolute;
+  left: 4px;
+  right: 4px;
+  bottom: 4px;
+  padding: 2px 6px;
+  font-size: var(--fs-xs);
+  line-height: 1.1;
+  border-radius: var(--radius-sm);
+  background: rgba(0,0,0,.55);
+  color: #fff;
+  text-align: center;
+  opacity: 0;
+  transform: translateY(2px);
+  transition: opacity .15s ease, transform .15s ease;
+}
+
+/* показываем капшен при наведении */
+.pc-imgPick:hover .pc-imgPick__cap{
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* подсветка выбранных */
+.pc-imgPick__chk:checked + .pc-imgPick__thumb{
+  outline: 2px solid var(--color-danger);
+  outline-offset: 2px;
+}
+
+/* и когда выбрано — капшен всегда видим */
+.pc-imgPick__chk:checked + .pc-imgPick__thumb .pc-imgPick__cap{
+  opacity: 1;
+  transform: translateY(0);
+  background: rgba(198,40,40,.75); /* можно убрать если хочешь, но это не влияет на высоту */
+}

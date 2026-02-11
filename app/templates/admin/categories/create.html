@@ -1,91 +1,179 @@
-<!doctype html>
-<html lang="ru">
-<head>
-  <meta charset="utf-8">
-  <title>Создать категорию</title>
-</head>
-<body>
-  <h1>Создать категорию</h1>
+{% extends "admin/base.html" %}
 
-  {% if confirm_required %}
-    <p><strong>{{ confirm_text }}</strong></p>
+{% block title %}Создать категорию{% endblock %}
 
-    <form method="post" action="/admin/categories/new" enctype="multipart/form-data">
-      <div style="margin:10px 0;">
-        <label>Фото категории (1 файл):
-          <input type="file" name="image" accept="image/*">
-          {% if image_error %}
-            <p style="color:red; margin:6px 0;"><strong>{{ image_error }}</strong></p>
-          {% endif %}
+{% block head %}
+  <link rel="stylesheet" href="/static/css/admin/products.css">
+  <link rel="stylesheet" href="/static/css/admin/products_create.css">
+  <link rel="stylesheet" href="/static/css/admin/categories.css">
+{% endblock %}
 
-        </label>
+{% block content %}
+<div class="admin-productCreate">
+  <div class="container">
+    <div class="pc-narrow">
+
+      <div class="pc-top">
+        <div class="pc-title">Создать категорию</div>
       </div>
 
-      <input type="hidden" name="name" value="{{ name_value|default('') }}">
-      <input type="hidden" name="parent_id" value="{{ parent_id_value|default('') }}">
+      {% if error %}
+        <div class="pc-alert" role="alert">
+          <strong class="pc-alert__label">Ошибка:</strong>
+          <span class="pc-alert__text">{{ error }}</span>
+        </div>
+      {% endif %}
+{% set q = request.query_params %}
 
-      {% if is_leaf %}
+
+{% if not parent_set %}
+
+  <div class="pc-grid pc-grid--one">
+    <section class="ap-card" aria-label="Шаг 1: выбор родительской категории">
+      <header class="ap-card__head">
+        <div class="ap-card__title">Шаг 1 — к какой гатегории относится</div>
+      </header>
+
+      <form method="get" action="/admin/categories/new" class="pc-form">
+        <input type="hidden" name="parent_set" value="1">
+
+        <div class="pc-field">
+          <label class="pc-label" for="catParent">Родительская категория</label>
+
+          <div class="pc-selectPill">
+            <select id="catParent" class="pc-select" name="parent_id">
+              <option value="">(нет)</option>
+              {% for c in categories %}
+                <option value="{{ c['id'] }}">{{ c['name'] }}</option>
+              {% endfor %}
+            </select>
+          </div>
+
+        </div>
+
+        <div class="pc-actions">
+          <a class="pc-btn pc-btn--ghost" href="/admin/categories">Отмена</a>
+          <button type="submit" class="pc-btn pc-btn--primary">Далее</button>
+        </div>
+      </form>
+
+    </section>
+  </div>
+
+{% else %}
+        {% set parent_name = '(нет)' %}
+        {% for c in categories %}
+          {% if (c['id']|string) == (selected_parent_id|string) %}
+            {% set parent_name = c['name'] %}
+          {% endif %}
+        {% endfor %}
+
+        <div class="pc-breadcrumb">
+          <span class="pc-breadcrumb__label">Родитель:</span>
+          <span class="pc-pill">{{ parent_name }}</span>
+          <a class="ap-link" href="/admin/categories/new">сменить</a>
+        </div>
+
+        <div class="pc-grid pc-grid--one">
+          <section class="ap-card pc-main" aria-label="Шаг 2: данные категории">
+            <header class="ap-card__head">
+              <div class="ap-card__title">Шаг 2 — заполни категорию</div>
+            </header>
+{% if confirm_required %}
+  <div class="pc-alert" role="alert" style="margin-bottom:16px;">
+    <strong class="pc-alert__label">Подтверди действие:</strong>
+    <span class="pc-alert__text">{{ confirm_text }}</span>
+
+    <div style="margin-top:10px; display:flex; gap:10px; flex-wrap:wrap;">
+      <form method="post" action="/admin/categories/new" enctype="multipart/form-data" style="display:inline;">
+        <input type="hidden" name="name" value="{{ name_value|default('') }}">
+
+        <input type="hidden" name="parent_id" value="{{ selected_parent_id }}">
+
         {% for cid in (selected_characteristic_ids or []) %}
           <input type="hidden" name="characteristic_ids" value="{{ cid }}">
         {% endfor %}
-      {% endif %}
 
-      <button type="submit" name="confirm_move" value="1">ОК</button>
-      <a href="{{ cancel_url }}">Отмена</a>
-    </form>
+        <button type="submit" name="confirm_move" value="1" class="pc-btn pc-btn--primary">ОК</button>
+      </form>
 
-    <p><a href="/admin/categories">Назад</a></p>
-  {% else %}
-
-
-    <form method="post" action="/admin/categories/new" enctype="multipart/form-data">
-    <div style="margin:10px 0;">
-      <label>Фото категории (1 файл):
-        <input type="file" name="image" accept="image/*">
-
-        {% if image_error %}
-          <p style="color:red; margin:6px 0;"><strong>{{ image_error }}</strong></p>
-        {% endif %}
-
-      </label>
+      <a class="pc-btn pc-btn--ghost" href="{{ cancel_url }}">Отмена</a>
     </div>
+  </div>
+{% endif %}
 
-      <div>
-        <label>Название
-          <input type="text" name="name" value="{{ name_value|default('') }}" required>
-        </label>
-      </div>
+<form method="post" action="/admin/categories/new" enctype="multipart/form-data" class="pc-form">
+  <input type="hidden" name="parent_id" value="{{ selected_parent_id }}">
 
-      <div>
-        <label>Родительская категория
-          {% set pid = parent_id_value|default('') %}
-          <select name="parent_id">
-            <option value="" {% if pid == '' %}selected{% endif %}>(нет)</option>
-            {% for category in categories %}
-              <option value="{{ category['id'] }}" {% if pid == (category['id']|string) %}selected{% endif %}>
-                {{ category['name'] }}
-              </option>
-            {% endfor %}
-          </select>
-        </label>
-      </div>
+  <div class="pc-fields pc-fields--2">
+    <div class="pc-field">
+      <label class="pc-label" for="catName">Название</label>
+      <input id="catName" class="pc-input" type="text" name="name" required
+       value="{{ name_value|default('') }}"
+       maxlength="{{ cat_name_max or 30 }}">
 
-      {% if is_leaf %}
-        <hr>
-        <h3>Характеристики (необязательно)</h3>
-        {% for ch in characteristics %}
-          <label style="display:block; margin:4px 0;">
-            <input type="checkbox" name="characteristic_ids" value="{{ ch['id'] }}"
-              {% if ch['id'] in (selected_characteristic_ids or []) %}checked{% endif %}>
-            {{ ch['name'] }}
-          </label>
-        {% endfor %}
+    </div>
+  </div>
+
+  <div class="pc-fields pc-fields--2" style="margin-top: 14px;">
+    <div class="pc-field">
+      <label class="pc-label">Фото категории</label>
+
+      <label class="pc-file" data-file>
+        <input class="pc-file__input" type="file" name="image" accept="image/*">
+        <span class="pc-file__ui">
+          <span class="pc-file__meta">
+            <span class="pc-file__title" data-title>Выбрать файл</span>
+            <span class="pc-file__hint" data-hint>JPG / PNG / WEBP</span>
+          </span>
+          <span class="pc-file__previews" data-previews aria-hidden="true"></span>
+          <button type="button" class="pc-file__clear" data-clear aria-label="Очистить выбранный файл">×</button>
+        </span>
+      </label>
+
+      {% if image_error %}
+        <div class="pc-help" style="color: var(--color-danger); font-weight:700;">{{ image_error }}</div>
+      {% endif %}
+    </div>
+  </div>
+
+  {% if is_leaf %}
+    <div style="margin-top: 14px;">
+      {% if characteristics %}
+        <div class="pc-fields pc-fields--2">
+          {% for ch in characteristics %}
+            <div class="pc-field">
+              <label class="pc-check" style="margin-top:0;">
+                <input class="pc-check__input" type="checkbox" name="characteristic_ids" value="{{ ch['id'] }}"
+                  {% if ch['id'] in (selected_characteristic_ids or []) %}checked{% endif %}>
+                <span class="pc-check__box" aria-hidden="true"></span>
+                <span class="pc-check__label">{{ ch['name'] }}</span>
+              </label>
+            </div>
+          {% endfor %}
+        </div>
+      {% else %}
+        <div class="pc-empty">Характеристик пока нет.</div>
+      {% endif %}
+    </div>
+  {% endif %}
+
+  <div class="pc-actions pc-actions--sticky">
+    <button type="submit" class="pc-btn pc-btn--primary">Сохранить</button>
+    <a class="pc-btn pc-btn--ghost" href="/admin/categories">Отмена</a>
+  </div>
+</form>
+
+          </section>
+        </div>
+
       {% endif %}
 
-      <button type="submit">Сохранить</button>
-    </form>
+    </div>
+  </div>
+</div>
+{% endblock %}
 
-    <p><a href="/admin/categories">Назад</a></p>
-  {% endif %}
-</body>
-</html>
+{% block scripts %}
+  <script src="/static/js/admin/products_create.js"></script>
+{% endblock %}

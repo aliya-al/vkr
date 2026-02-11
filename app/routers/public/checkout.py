@@ -16,6 +16,40 @@ from app.utils.templates import templates
 
 router = APIRouter()
 
+def _normalize_media_path(path: str | None) -> str | None:
+
+    if not path:
+        return None
+
+    p = path.strip()
+    if not p:
+        return None
+
+    # внешние ссылки
+    if p.startswith(("http://", "https://", "//")):
+        return p
+
+    # уже корректный публичный путь
+    if p.startswith("/static/"):
+        return p
+
+    # если кто-то записал "static/..."
+    if p.startswith("static/"):
+        return "/" + p
+
+    # нормализуем слэши
+    p = p.lstrip("/")
+
+    # если в БД уже лежит полный относительный путь от static
+    #    например: "img/uploads/products/abc.jpg"
+    if p.startswith("img/uploads/products/"):
+        return "/static/" + p
+
+    # если в БД лежит только имя файла: "abc.jpg"
+    # или "products/abc.jpg"
+    p = p.removeprefix("products/")
+
+    return "/static/img/uploads/products/" + p
 
 def _get_cart(session_obj: dict) -> dict[str, int]:
     """
@@ -94,12 +128,13 @@ async def _load_cart_products(
         img_url = None
         if getattr(p, "images", None):
             img0 = p.images[0]
-            img_url = (
+            raw = (
                     getattr(img0, "url", None)
                     or getattr(img0, "image_url", None)
                     or getattr(img0, "path", None)
                     or getattr(img0, "file_path", None)
             )
+            img_url = _normalize_media_path(raw)
 
         base_unit = int(p.price)
         unit_price = _calc_display_price(base_unit, p.discount_percent)
@@ -152,10 +187,12 @@ async def checkout_submit(
     customer_name: str = Form(...),
     customer_phone: str = Form(...),
     delivery_type: str = Form(...),  # "delivery" | "pickup"
+    pickup_address: str | None = Form(None),
     delivery_address: str | None = Form(None),
     comment: str | None = Form(None),
     session: AsyncSession = Depends(get_async_session),
 ):
+
     cart = _get_cart(request.session)
     items, total_price, total_base, total_weight, total_volume = await _load_cart_products(session, cart)
 
@@ -179,6 +216,8 @@ async def checkout_submit(
         customer_phone = f"+7 ({digits[1:4]}) {digits[4:7]}-{digits[7:9]}-{digits[9:11]}"
 
     delivery_address = (delivery_address or "").strip()
+    pickup_address = (pickup_address or "").strip()
+
     comment = (comment or "").strip() or None
 
     error = None
@@ -190,6 +229,8 @@ async def checkout_submit(
         error = "Укажи номер телефона."
     elif delivery_type not in ("delivery", "pickup"):
         error = "Некорректный способ получения."
+    elif delivery_type == "pickup" and not pickup_address:
+        error = "Для самовывоза нужен пункт самовывоза."
     elif delivery_type == "delivery" and not delivery_address:
         error = "Для доставки нужен адрес."
 
@@ -198,6 +239,8 @@ async def checkout_submit(
             "public/checkout.html",
             {
                 "request": request,
+                "pickup_address": pickup_address,
+
                 "items": items,
                 "total_base": total_base,
                 "total_price": total_price,
@@ -222,11 +265,12 @@ async def checkout_submit(
             comment=comment,
             delivery_type=DeliveryType(delivery_type),
             delivery_address=delivery_address if delivery_type == "delivery" else None,
-            pickup_address=None,  # самовывоз позже
+            pickup_address=pickup_address if delivery_type == "pickup" else None,
+
             total_price=total_price,
             total_weight_kg=total_weight,
             total_volume_m3=total_volume,
-            manager_id=None,  # менеджер назначается позже
+            manager_id=None,
         )
         session.add(order)
         await session.flush()  # получаем order.id
@@ -274,6 +318,8 @@ async def checkout_submit(
                 "total_weight": total_weight,
                 "total_base": total_base,
                 "total_volume": total_volume,
+                "pickup_address": pickup_address,
+
                 "error": "Не удалось создать заявку. Попробуй ещё раз.",
                 "form_data": {
                     "customer_name": customer_name,

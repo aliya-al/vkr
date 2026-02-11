@@ -1,36 +1,59 @@
-<!doctype html>
-<html lang="ru">
-<head>
-  <meta charset="utf-8">
-  <title>Бренды</title>
-</head>
-<body>
-  <h1>Бренды</h1>
-  <p><a href="/admin/dashboard">На главную</a> | <a href="/admin/brands/new">Создать бренд</a></p>
-  <table border="1" cellpadding="6">
-    <thead>
-      <tr>
-        <th>Название</th>
-        <th>Slug</th>
-        <th>Действия</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for brand in brands %}
-        <tr>
-          <td>{{ brand.name }}</td>
-          <td>{{ brand.slug }}</td>
-          <td>
-            <a href="/admin/brands/{{ brand.id }}/edit">Редактировать</a>
-            <form method="post" action="/admin/brands/{{ brand.id }}/delete" style="display:inline;">
-              <button type="submit">Удалить</button>
-            </form>
-          </td>
-        </tr>
-      {% else %}
-        <tr><td colspan="3">Брендов пока нет.</td></tr>
-      {% endfor %}
-    </tbody>
-  </table>
-</body>
-</html>
+{% extends "admin/base.html" %}
+
+{% block title %}Бренды{% endblock %}
+
+{% block head %}{% endblock %}
+
+{% block content %}
+<div class="admin-brands">
+  <div class="container">
+    <div class="pc-narrow">
+
+      <div class="pc-top">
+        <div class="pc-title">Бренды</div>
+        <div class="pc-actions">
+          <a class="pc-btn pc-btn--ghost" href="/admin/dashboard">На главную</a>
+          <a class="pc-btn pc-btn--primary" href="/admin/brands/new">Создать бренд</a>
+        </div>
+      </div>
+
+      <section class="pc-card" aria-label="Таблица брендов">
+        <div class="tableWrap" role="region" aria-label="Таблица брендов">
+          <table class="table">
+            <thead>
+              <tr>
+                <th class="br-thName">Название</th>
+                <th class="br-thActions">Действия</th>
+              </tr>
+            </thead>
+
+            <tbody>
+              {% for brand in brands %}
+                <tr>
+                  <td class="br-tdName">
+                    <div class="br-name">{{ brand.name }}</div>
+                  </td>
+                  <td class="br-tdActions">
+                    <div class="br-actions">
+                      <a class="pc-btn pc-btn--ghost pc-btn--sm" href="/admin/brands/{{ brand.id }}/edit">Редактировать</a>
+                      <form method="post" action="/admin/brands/{{ brand.id }}/delete" class="br-delForm">
+                        <button type="submit" class="pc-btn pc-btn--danger pc-btn--sm">Удалить</button>
+                      </form>
+                    </div>
+                  </td>
+                </tr>
+              {% else %}
+                <tr>
+                  <td colspan="2" class="nl-empty">Брендов пока нет.</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+
+          </table>
+        </div>
+      </section>
+
+    </div>
+  </div>
+</div>
+{% endblock %}
