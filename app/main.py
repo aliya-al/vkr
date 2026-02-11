@@ -8,8 +8,7 @@ from fastapi.staticfiles import StaticFiles
 
 load_dotenv() # загружает переменные из локального
 
-APP_ENV = os.getenv("APP_ENV", "dev").lower()
-IS_PROD = APP_ENV == "prod"
+IS_PROD = 1
 
 app = FastAPI(
     docs_url=None if IS_PROD else "/docs",

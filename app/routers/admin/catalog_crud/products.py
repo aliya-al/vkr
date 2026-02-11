@@ -23,7 +23,7 @@ from app.utils.strings import slugify, ensure_unique_slug
 from app.utils.deps import require_admin_or_404
 
 
-router = APIRouter()
+router = APIRouter(dependencies=[Depends(require_admin_or_404)])
 
 # Папка хранения файлов и web-путь (отсюда отдаем в <img src="...">)
 _PRODUCTS_UPLOAD_DIR = Path("app/static/img/uploads/products")

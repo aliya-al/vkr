@@ -3,14 +3,16 @@ import uuid
 from fastapi import APIRouter, Depends, Form, HTTPException, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
 from sqlalchemy import select, func
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.brand import Brand
 from app.utils.database import get_async_session
 from app.utils.strings import slugify, ensure_unique_slug
 from app.utils.templates import templates
+from app.utils.deps import require_admin_or_404
 
-router = APIRouter()
+router = APIRouter(dependencies=[Depends(require_admin_or_404)])
 
 @router.get("/admin/brands", response_class=HTMLResponse)
 async def brands_list(request: Request, session: AsyncSession = Depends(get_async_session)):
@@ -42,7 +44,6 @@ async def brand_create(
             status_code=400,
         )
 
-    # (опционально, но удобно) ранняя проверка дубля имени (без 500)
     exists_stmt = select(Brand.id).where(func.lower(Brand.name) == name_clean.lower())
     if (await session.execute(exists_stmt)).first():
         return templates.TemplateResponse(

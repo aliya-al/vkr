@@ -28,7 +28,7 @@ from app.services.analytics import (
 from app.services.order_totals import fetch_orders_weight_volume
 
 
-router = APIRouter()
+router = APIRouter(dependencies=[Depends(require_admin_or_404)])
 
 GroupByQuery = Literal["year", "month", "week", "day"]
 ScopeQuery = Literal["recent", "all"]

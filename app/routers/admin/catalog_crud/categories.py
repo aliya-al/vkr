@@ -17,8 +17,9 @@ from app.utils.delete_product_image import delete_product_image_if_local
 from app.utils.strings import ensure_unique_slug, slugify
 from app.utils.templates import templates
 from app.utils.category_image import find_category_image_url, save_category_image, delete_category_image
+from app.utils.deps import require_admin_or_404
 
-router = APIRouter()
+router = APIRouter(dependencies=[Depends(require_admin_or_404)])
 
 CAT_NAME_MAX = 30
 
