@@ -4,13 +4,11 @@
    ========================= */
 
 .cat-card {
-  /* привязки к глобальным токенам theme.css */
   --cat-line: var(--color-line);
   --cat-surface: var(--color-surface);
   --cat-bg: var(--color-bg);
   --cat-text: var(--color-text);
 
-  /* геометрия (дефолт как на home) */
   --cat-card-radius: 16px;
   --cat-card-inner-radius: 12px;
 

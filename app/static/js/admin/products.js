@@ -53,7 +53,6 @@
       applyFilterFromForm(form).catch(console.error);
     });
 
-    // reset/select-all buttons (если ты их добавляла ранее)
     const btnReset = qs("#apReset");
     const btnAll = qs("#apSelectAll");
 

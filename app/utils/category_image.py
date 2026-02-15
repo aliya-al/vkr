@@ -1,4 +1,4 @@
-# app/utils/category_image.py
+
 from __future__ import annotations
 
 import shutil
@@ -10,7 +10,6 @@ from fastapi import UploadFile
 
 from PIL import Image, UnidentifiedImageError
 
-# Разрешаем реальные форматы (по содержимому файла), а не только по content-type/расширению
 _ALLOWED_FORMATS_TO_EXT = {
     "JPEG": ".jpg",
     "PNG": ".png",

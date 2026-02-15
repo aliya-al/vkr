@@ -439,10 +439,8 @@
   padding: var(--space-6) 0 var(--space-8);
 }
 
-/* важно: чтобы main мог нормально сжиматься внутри grid */
 .cat-main { min-width: 0; }
 
-/* Сетка товаров как на home, но адаптирована под main (с sidebar) */
 .cat-page .cat-main .p-grid{
   grid-template-columns: repeat(4, minmax(0, 1fr)); /* вместо 5 */
   gap: var(--space-6); /* как в home */
@@ -455,16 +453,12 @@
   gap: 4px;
 }
 
-
-/* когда экран уже меньше — main ещё уже, делаем 3 колонки */
 @media (max-width: 1200px){
   .cat-page .cat-main .p-grid{
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
 
-/* у тебя на 900px layout становится 1 колонка (sidebar вниз),
-   тут можно вернуть поведение как на home (3 колонки) */
 @media (max-width: 900px){
   .cat-page .cat-main .p-grid{
     grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -472,7 +466,6 @@
   }
 }
 
-/* мобилка как на home */
 @media (max-width: 430px){
   .cat-page .cat-main .p-grid{
     grid-template-columns: repeat(2, minmax(0, 1fr));

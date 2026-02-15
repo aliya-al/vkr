@@ -10,8 +10,6 @@
   gap: var(--space-6);
   align-items: start;
 }
-
-/* Card (как в админке) */
 .ap-card{
   background: var(--color-surface);
   border-radius: var(--radius-md);

@@ -67,15 +67,6 @@ async def _rolling_range_scoped(
     periods: int,
     scope: ScopeQuery,
 ) -> tuple[datetime, datetime]:
-    """
-    Rolling-диапазоны (как ты описала):
-    - week: последние 7 дней * periods (не календарная неделя)
-    - month: последние N месяцев * periods (relativedelta)
-    - year: последние N лет * periods
-    - day: последние N дней * periods
-
-    scope=all: от самой ранней заявки до now.
-    """
     if now.tzinfo is None:
         now = now.replace(tzinfo=MOSCOW_TZ)
 
@@ -85,7 +76,6 @@ async def _rolling_range_scoped(
         min_res = await session.execute(select(func.min(Order.created_at)))
         min_dt = min_res.scalar_one_or_none()
         if not min_dt:
-            # если заказов нет — просто recent-окно
             scope = "recent"
         else:
             if min_dt.tzinfo is None:
@@ -209,8 +199,6 @@ async def request_inline_update(
     if not order:
         return JSONResponse({"ok": False, "error": "Заявка не найдена."}, status_code=404)
 
-    # менеджеру разрешаем менять только то, что он видит,
-    # но всё равно проверим
     if not _is_admin(admin):
         me = _admin_id_uuid(admin)
         if not (order.manager_id is None or order.manager_id == me):
@@ -298,7 +286,7 @@ async def api_sales_series(
 
     start_dt, end_dt = await _rolling_range_scoped(session, now, group, periods, scope)
 
-    series = await fetch_sales_series(session, start_dt=start_dt, end_dt=end_dt, group=group)  # type: ignore[arg-type]
+    series = await fetch_sales_series(session, start_dt=start_dt, end_dt=end_dt, group=group)
     return {"group": group, "scope": scope, "start": start_dt.isoformat(), "end": end_dt.isoformat(), "series": series}
 
 
@@ -315,7 +303,7 @@ async def api_cumulative_series(
 
     start_dt, end_dt = await _rolling_range_scoped(session, now, group, periods, scope)
 
-    base = await fetch_sales_series(session, start_dt=start_dt, end_dt=end_dt, group=group)  # type: ignore[arg-type]
+    base = await fetch_sales_series(session, start_dt=start_dt, end_dt=end_dt, group=group)
     return {"group": group, "scope": scope, "start": start_dt.isoformat(), "end": end_dt.isoformat(), "series": build_cumulative(base)}
 
 

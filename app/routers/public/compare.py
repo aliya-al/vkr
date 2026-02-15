@@ -39,7 +39,6 @@ def _format_value(v: ProductCharacteristicValue) -> str | None:
     if not ch:
         return None
 
-    # value_type хранится в GlobalCharacteristic (Enum CharacteristicType) :contentReference[oaicite:1]{index=1}
     vt = getattr(ch, "value_type", None)
 
     if str(vt) == "CharacteristicType.number" or getattr(vt, "value", None) == "number":
@@ -49,7 +48,6 @@ def _format_value(v: ProductCharacteristicValue) -> str | None:
         unit = getattr(ch, "unit", None)
         return f"{s} {unit}".strip() if unit else s
 
-    # string
     if not v.value_string:
         return None
     return str(v.value_string).strip()
@@ -78,7 +76,6 @@ async def compare_page(
             },
         )
 
-    # UUID list
     ids: list[uuid.UUID] = []
     for s in ids_str:
         try:
@@ -98,7 +95,6 @@ async def compare_page(
             },
         )
 
-    # Подгружаем товары + значения характеристик + сами характеристики (без N+1)
     result = await session.execute(
         select(Product)
         .where(Product.id.in_(ids))
@@ -110,12 +106,9 @@ async def compare_page(
     )
     products = result.scalars().all()
 
-    # Важно: сохраняем порядок из session
     by_id = {p.id: p for p in products}
     ordered_products = [by_id[i] for i in ids if i in by_id]
 
-    # Собираем матрицу: characteristic_id -> {product_id -> value_str}
-    # Плюс метаданные строки (name/unit/value_type)
     row_meta: dict[int, dict[str, Any]] = {}
     matrix: dict[int, dict[uuid.UUID, str]] = {}
 

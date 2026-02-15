@@ -239,7 +239,6 @@
   align-items: start;
 }
 
-/* как на макете: заголовок секции простой */
 .pdp-h {
   margin: 0;
   font-size: var(--fs-sm);
@@ -282,7 +281,6 @@
   pointer-events: none;
 }
 
-/* key/value list like макет */
 .pdp-kv {
   margin: 0;
   display: grid;

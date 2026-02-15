@@ -1,4 +1,3 @@
-# app/routers/public/product.py
 from __future__ import annotations
 
 from fastapi import APIRouter, Depends, HTTPException, Request
@@ -179,7 +178,6 @@ async def product_detail(
     request: Request,
     session: AsyncSession = Depends(get_async_session),
 ):
-    # IDs для UI (сначала — дешево)
     fav_ids = get_favorite_ids(request.session)
     cmp_ids = get_compare_ids(request.session)
 

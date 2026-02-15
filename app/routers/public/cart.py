@@ -1,4 +1,3 @@
-# app/routers/public/cart.py
 from __future__ import annotations
 
 import uuid
@@ -71,13 +70,11 @@ async def cart_add(
     cart[key] = int(cart.get(key, 0)) + qty
     request.session["cart"] = cart
 
-    # Если запрос от fetch — вернем JSON (без редиректа)
     accept = (request.headers.get("accept") or "").lower()
     xrw = (request.headers.get("x-requested-with") or "").lower()
     if "application/json" in accept or xrw == "fetch":
         return {"ok": True, "qty": cart.get(key, 0)}
 
-    # иначе — обычный редирект
     referer = request.headers.get("referer")
     return RedirectResponse(referer or "/cart", status_code=303)
 
@@ -174,7 +171,6 @@ async def cart_update(
 
     request.session["cart"] = cart
 
-    # Если запрос от fetch — вернем JSON (без редиректа)
     accept = (request.headers.get("accept") or "").lower()
     xrw = (request.headers.get("x-requested-with") or "").lower()
     if "application/json" in accept or xrw == "fetch":

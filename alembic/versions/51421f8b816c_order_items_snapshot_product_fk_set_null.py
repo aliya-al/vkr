@@ -95,7 +95,6 @@ def upgrade() -> None:
         """
     )
 
-    # FK на orders (как было)
     op.create_foreign_key(
         "order_items_order_id_fkey",
         "order_items",

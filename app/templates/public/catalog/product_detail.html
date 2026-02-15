@@ -288,82 +288,81 @@
       </div>
     </section>
 
+{% if related and related|length %}
+  <section class="pdp-section pdp-section--last" aria-label="Так же берут">
+    <h2 class="pdp-section__title pdp-section__title--left">Так же берут:</h2>
 
-    <!-- RELATED (оставила как у тебя) -->
-    <section class="pdp-section pdp-section--last" aria-label="Так же берут">
-      <h2 class="pdp-section__title pdp-section__title--left">Так же берут:</h2>
+    <div class="p-grid">
+      {% for p in related %}
+        {% set href = "/product/" ~ p.slug ~ "/" %}
+        <article class="p-card">
+          <div class="p-card__media-wrap">
+            <a class="p-card__media" href="{{ href }}" aria-label="{{ p.name }}">
+              {% if p.main_image %}
+                <img class="p-card__img" src="{{ p.main_image }}" alt="{{ p.name }}" loading="lazy">
+              {% else %}
+                <div class="p-card__img p-card__img--ph" aria-hidden="true"></div>
+              {% endif %}
+            </a>
 
-      <div class="p-grid">
-        {% if related and related|length %}
-          {% for p in related %}
-            {% set href = "/product/" ~ p.slug ~ "/" %}
-            <article class="p-card">
-              <div class="p-card__media-wrap">
-                <a class="p-card__media" href="{{ href }}" aria-label="{{ p.name }}">
-                  {% if p.main_image %}
-                    <img class="p-card__img" src="{{ p.main_image }}" alt="{{ p.name }}" loading="lazy">
-                  {% else %}
-                    <div class="p-card__img p-card__img--ph" aria-hidden="true"></div>
-                  {% endif %}
-                </a>
+            <div class="p-card__icons">
+              <form method="post" action="/favorites/toggle" class="js-icon-toggle">
+                <input type="hidden" name="product_id" value="{{ p.id }}">
+                <button class="icon-btn {{ 'is-active' if p.is_favorite else '' }}" type="submit" aria-label="В избранное">
+                  <svg class="icon-btn__svg icon-heart" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                    <path class="i-fill" d="M12 21s-7.2-4.4-9.6-8.6C.6 9.1 2.2 5.8 5.6 5.2c1.7-.3 3.4.3 4.5 1.6L12 8.9l1.9-2.1c1.1-1.3 2.8-1.9 4.5-1.6 3.4.6 5 3.9 3.2 7.2C19.2 16.6 12 21 12 21z"/>
+                    <path class="i-stroke" d="M12 21s-7.2-4.4-9.6-8.6C.6 9.1 2.2 5.8 5.6 5.2c1.7-.3 3.4.3 4.5 1.6L12 8.9l1.9-2.1c1.1-1.3 2.8-1.9 4.5-1.6 3.4.6 5 3.9 3.2 7.2C19.2 16.6 12 21 12 21z"/>
+                  </svg>
+                </button>
+              </form>
 
-                <div class="p-card__icons">
-                  <form method="post" action="/favorites/toggle" class="js-icon-toggle">
-                    <input type="hidden" name="product_id" value="{{ p.id }}">
-                    <button class="icon-btn {{ 'is-active' if p.is_favorite else '' }}" type="submit" aria-label="В избранное">
-                      <svg class="icon-btn__svg icon-heart" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-                        <path class="i-fill" d="M12 21s-7.2-4.4-9.6-8.6C.6 9.1 2.2 5.8 5.6 5.2c1.7-.3 3.4.3 4.5 1.6L12 8.9l1.9-2.1c1.1-1.3 2.8-1.9 4.5-1.6 3.4.6 5 3.9 3.2 7.2C19.2 16.6 12 21 12 21z"/>
-                        <path class="i-stroke" d="M12 21s-7.2-4.4-9.6-8.6C.6 9.1 2.2 5.8 5.6 5.2c1.7-.3 3.4.3 4.5 1.6L12 8.9l1.9-2.1c1.1-1.3 2.8-1.9 4.5-1.6 3.4.6 5 3.9 3.2 7.2C19.2 16.6 12 21 12 21z"/>
-                      </svg>
-                    </button>
-                  </form>
+              <form method="post" action="/compare/toggle" class="js-icon-toggle">
+                <input type="hidden" name="product_id" value="{{ p.id }}">
+                <button class="icon-btn {{ 'is-active' if p.is_compared else '' }}" type="submit" aria-label="Сравнить">
+                  <svg class="icon-btn__svg icon-compare" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                    <path class="i-stroke" d="M5 19.5h14M7.5 18V10.5M12 18V6.5M16.5 18V13"/>
+                    <rect class="i-fill" x="6.6" y="10.5" width="1.8" height="7.5" rx="0.9"/>
+                    <rect class="i-fill" x="11.1" y="6.5" width="1.8" height="11.5" rx="0.9"/>
+                    <rect class="i-fill" x="15.6" y="13" width="1.8" height="5" rx="0.9"/>
+                  </svg>
+                </button>
+              </form>
+            </div>
+          </div>
 
-                  <form method="post" action="/compare/toggle" class="js-icon-toggle">
-                    <input type="hidden" name="product_id" value="{{ p.id }}">
-                    <button class="icon-btn {{ 'is-active' if p.is_compared else '' }}" type="submit" aria-label="Сравнить">
-                      <svg class="icon-btn__svg icon-compare" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-                        <path class="i-stroke" d="M5 19.5h14M7.5 18V10.5M12 18V6.5M16.5 18V13"/>
-                        <rect class="i-fill" x="6.6" y="10.5" width="1.8" height="7.5" rx="0.9"/>
-                        <rect class="i-fill" x="11.1" y="6.5" width="1.8" height="11.5" rx="0.9"/>
-                        <rect class="i-fill" x="15.6" y="13" width="1.8" height="5" rx="0.9"/>
-                      </svg>
-                    </button>
-                  </form>
-                </div>
-              </div>
+          <div class="p-card__body">
+            <a class="p-card__name" href="{{ href }}">{{ p.name }}</a>
 
-              <div class="p-card__body">
-                <a class="p-card__name" href="{{ href }}">{{ p.name }}</a>
+            <div class="p-card__price">
+              {% if p.has_discount %}
+                <span class="p-card__price-old">{{ p.price_fmt }}р/шт.</span>
+                <span class="p-card__price-new">{{ p.final_price_fmt }}р/шт.</span>
+              {% else %}
+                <span>{{ p.price_fmt }}р/шт.</span>
+              {% endif %}
+            </div>
 
-                <div class="p-card__price">
-                  {% if p.has_discount %}
-                    <span class="p-card__price-old">{{ p.price_fmt }}р/шт.</span>
-                    <span class="p-card__price-new">{{ p.final_price_fmt }}р/шт.</span>
-                  {% else %}
-                    <span>{{ p.price_fmt }}р/шт.</span>
-                  {% endif %}
-                </div>
+            <div class="p-card__actions">
+              <form method="post" action="/cart/add">
+                <input type="hidden" name="product_id" value="{{ p.id }}">
+                <input type="hidden" name="qty" value="1">
+                <button class="p-card__btn" type="submit">
+                  <img class="p-card__btn-icon"
+                       src="/static/img/icons/public/cart.png"
+                       alt=""
+                       aria-hidden="true"
+                       loading="lazy">
+                  <span>в корзину</span>
+                </button>
+              </form>
+            </div>
+          </div>
+        </article>
+      {% endfor %}
+    </div>
+  </section>
+{% endif %}
 
-                <div class="p-card__actions">
-                  <form method="post" action="/cart/add">
-                    <input type="hidden" name="product_id" value="{{ p.id }}">
-                    <input type="hidden" name="qty" value="1">
-                    <button class="p-card__btn" type="submit">
-                      <img class="p-card__btn-icon"
-                           src="/static/img/icons/public/cart.png"
-                           alt=""
-                           aria-hidden="true"
-                           loading="lazy">
-                      <span>в корзину</span>
-                    </button>
-                  </form>
-                </div>
-              </div>
-            </article>
-          {% endfor %}
-        {% endif %}
-      </div>
-    </section>
 
     {% if gallery and gallery.all and (gallery.all|length > 3) %}
       <dialog class="pdp-dlg" id="pdpDlg">
@@ -401,7 +400,6 @@
     });
   });
 
-  // ajax-toggle (как на home)
   const forms = document.querySelectorAll('form.js-icon-toggle');
   if (forms.length) {
     const postForm = async (form) => {

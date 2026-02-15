@@ -221,7 +221,7 @@
 .table{
   width: 100%;
   border-collapse: collapse;
-  min-width: 820px; /* чтобы на мобиле был скролл как надо */
+  min-width: 820px;
 }
 
 .table thead th{
@@ -303,9 +303,6 @@
 
 
 
-/* =========================
-   Inline edit selects (Requests table)
-   ========================= */
 
 .tdInlineSelect{
   display: inline-flex;
@@ -319,7 +316,6 @@
   align-items: center;
 }
 
-/* общий стиль select в таблице */
 .selectPill select{
   appearance: none;
   -webkit-appearance: none;
@@ -361,12 +357,10 @@
   cursor: default;
 }
 
-/* делаем "статус" визуально как бейдж */
 .badgeSelect{
   background: var(--color-surface);
 }
 
-/* Цвета статусов (то, что ты описала) */
 .badge--new{
   background: var(--color-primary-soft);
   border-color: var(--color-primary);
@@ -477,13 +471,8 @@ font-size: var(--fs-xs);
   .dash__kpis{ grid-template-columns: 1fr; }
 }
 
-/* =========================================================
-   DESKTOP: фиксированные высоты блоков + выравнивание по сетке
-   Делается только на широком экране, на мобиле всё остается авто.
-   ========================================================= */
 @media (min-width: 1001px){
 
-  /* Настраиваем "высоты строк" дашборда (можете подогнать под макет) */
   .dash{
     --dash-row-kpi: 70px;     /* строка KPI */
     --dash-row-charts: 240px;  /* строка графиков */

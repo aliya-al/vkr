@@ -1,4 +1,3 @@
-# app/routers/public/__init__.py
 from fastapi import APIRouter
 
 from . import catalog, cart, checkout, compare, favorites, product
