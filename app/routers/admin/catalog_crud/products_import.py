@@ -116,12 +116,13 @@ async def upload_step2(
 
             product = Product(
                 name=base.name,
-                description=None,
+                description=base.description,
                 category_id=base.category_id,
-                price=0,
-                volume_m3=0,
-                weight_kg=0,
-                discount_percent=None,
+                price=base.price,
+                volume_m3=base.volume_m3,
+                weight_kg=base.weight_kg,
+                is_active=base.is_active,
+                discount_percent=base.discount_percent,
             )
             product.slug = await ensure_unique_slug(session, Product, base_slug=slugify(base.name))
             session.add(product)
