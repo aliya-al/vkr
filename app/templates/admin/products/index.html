@@ -101,8 +101,8 @@
           <div class="ap-card__title">Товары</div>
 
           
-            <a class="ap-head-link" href="/admin/import/products">Импорт товаров (Excel)</a>
-          <a class="ap-head-link" href="/admin/products/new">+ Добавить</a>
+            <a class="ap-link" href="/admin/import/products">Импорт товаров (Excel)</a>
+          <a class="ap-link" href="/admin/products/new">+ Добавить</a>
         </header>
 
 <div class="ap-list" id="apProductsList">
@@ -159,14 +159,14 @@
                 </div>
 
                 <div class="ap-actions">
-                  <a class="admin-btn admin-btn--edit" href="/admin/products/{{ p.id }}/edit">Редактировать</a>
+                  <a class="ap-link" href="/admin/products/{{ p.id }}/edit">Редактировать</a>
 
                   <form method="post"
                         action="/admin/products/{{ p.id }}/delete"
                         data-ajax-delete
                         data-confirm="Удалить товар «{{ p.name }}»?"
                         style="display:inline">
-                    <button class="admin-btn admin-btn--delete" type="submit">Удалить</button>
+                    <button class="ap-del" type="submit">Удалить</button>
                   </form>
                 </div>
               </article>

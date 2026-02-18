@@ -96,17 +96,15 @@
 
 .catInlineForm{
   display:inline;
-  margin: 0;
+  margin-left: 10px;
 }
 
-.catActions{
-  width: 100%;
-  display: flex;
-  justify-content: flex-end;
-  align-items: center;
-  gap: 10px;
+.catLink{
+  font-size: var(--fs-xs);
+  color: var(--color-text);
+  text-decoration: underline;
+  text-underline-offset: 2px;
 }
-
 
 .catBtn{
   display:inline-flex;
@@ -123,6 +121,11 @@
   color: inherit;
 }
 
+.catBtn--danger{
+  height: 30px;
+  padding: 0 10px;
+  font-size: var(--fs-xs);
+}
 .catBtn--primary{
   background: var(--color-primary);
   border-color: var(--color-primary);
@@ -133,6 +136,11 @@
   background: transparent;
 }
 
+.catBtn--danger{
+  background: transparent;
+  border-color: var(--color-danger, var(--color-line));
+  color: var(--color-danger, var(--color-text));
+}
 
 .catTdImg{
   padding-left: 10px;

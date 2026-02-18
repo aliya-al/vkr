@@ -41,20 +41,18 @@
     <td class="catTdSlug catMono">{{ cat["slug"] }}</td>
 
     <td class="catTdActions">
-      <div class="catActions">
-        <a class="admin-btn admin-btn--edit" href="/admin/categories/{{ cat['id'] }}/edit">Редактировать</a>
+      <a class="catLink" href="/admin/categories/{{ cat['id'] }}/edit">Редактировать</a>
 
-        {% set need_confirm = cat["has_children"] or cat["has_products"] %}
-        <form method="post"
-              action="/admin/categories/{{ cat['id'] }}/delete"
-              class="catInlineForm"
-              data-ajax-delete
-              {% if need_confirm %}
-              data-confirm="Категория содержит данные, которые будут удалены. Продолжить?"
-              {% endif %}>
-          <button class="admin-btn admin-btn--delete" type="submit">Удалить</button>
-        </form>
-      </div>
+      {% set need_confirm = cat["has_children"] or cat["has_products"] %}
+      <form method="post"
+            action="/admin/categories/{{ cat['id'] }}/delete"
+            class="catInlineForm"
+            data-ajax-delete
+            {% if need_confirm %}
+            data-confirm="Категория содержит данные, которые будут удалены. Продолжить?"
+            {% endif %}>
+        <button class="catBtn catBtn--danger" type="submit">Удалить</button>
+      </form>
     </td>
   </tr>
 
