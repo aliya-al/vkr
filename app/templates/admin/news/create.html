@@ -2,7 +2,11 @@
 
 {% block title %}Создать новость{% endblock %}
 
-{% block head %}{% endblock %}
+{% block head %}
+  <link rel="stylesheet" href="/static/css/admin/entity_pages.css">
+  <link rel="stylesheet" href="/static/css/admin/products_create.css">
+{% endblock %}
+
 
 
 {% block content %}
@@ -12,10 +16,6 @@
 
       <div class="pc-top">
         <div class="pc-title">Создать новость</div>
-        <div class="pc-actions">
-          <a class="pc-btn pc-btn--ghost" href="/admin/news">Назад</a>
-          <a class="pc-btn pc-btn--ghost" href="/admin/dashboard">На главную</a>
-        </div>
       </div>
 
       {% if error %}

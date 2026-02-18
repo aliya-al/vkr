@@ -85,7 +85,7 @@ def save_category_image(category_id: str, upload: UploadFile) -> str:
 
     ext = _ALLOWED_FORMATS_TO_EXT.get(fmt)
     if not ext:
-        raise ValueError("Неверный формат. Разрешены только JPG, PNG или WEBP.")
+        raise ValueError("Неверный формат изображения. Используйте JPG, PNG или WEBP.")
 
     # сохраняем
     delete_category_image(category_id)

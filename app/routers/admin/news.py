@@ -84,14 +84,14 @@ async def news_create(
     if len(title) > NEWS_TITLE_MAX_LEN:
         return templates.TemplateResponse(
             "admin/news/create.html",
-            {"request": request, "error": f"Название должно быть не длиннее {NEWS_TITLE_MAX_LEN} символов."},
+            {"request": request, "error": f"Название должно быть не длиннее {NEWS_TITLE_MAX_LEN} символов.", "form_data": {"title": title}},
             status_code=400,
         )
 
     if not title:
         return templates.TemplateResponse(
             "admin/news/create.html",
-            {"request": request, "error": "Название обязательно."},
+            {"request": request, "error": "Название обязательно.", "form_data": {"title": title}},
             status_code=400,
         )
 
@@ -99,7 +99,7 @@ async def news_create(
     if not image or not image.filename:
         return templates.TemplateResponse(
             "admin/news/create.html",
-            {"request": request, "error": "Фото обязательно. Загрузите изображение."},
+            {"request": request, "error": "Фото обязательно. Загрузите изображение.", "form_data": {"title": title}},
             status_code=400,
         )
 
@@ -108,7 +108,7 @@ async def news_create(
     except ValueError as e:
         return templates.TemplateResponse(
             "admin/news/create.html",
-            {"request": request, "error": str(e)},
+            {"request": request, "error": str(e), "form_data": {"title": title}},
             status_code=400,
         )
 

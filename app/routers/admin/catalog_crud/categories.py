@@ -286,35 +286,33 @@ async def category_create(
     image: UploadFile | None = File(None),
     session: AsyncSession = Depends(get_async_session),
 ):
-
-    name = name.strip()
+    name_value = (name or "").strip()
     parent_uuid = uuid.UUID(parent_id) if parent_id else None
 
-    name_value = (name_value or "").strip()
     if len(name_value) > CAT_NAME_MAX:
         categories = await _get_category_options(session)
         characteristics = await _get_all_characteristics(session)
         return templates.TemplateResponse(
-            "admin/categories/edit.html",
+            "admin/categories/create.html",
             {
                 "request": request,
-                "category": category,  # было category_dict (его тоже нет)
                 "categories": categories,
                 "cat_name_max": CAT_NAME_MAX,
                 "characteristics": characteristics,
-                "selected_characteristic_ids": selected_ids,  # или set(), см. ниже
+                "selected_characteristic_ids": set(_clean_int_list(characteristic_ids)),
                 "error": f"Название категории не должно превышать {CAT_NAME_MAX} символов.",
-                "parent_id_value": selected_parent_id,
+                "parent_id_value": parent_id or "",
                 "name_value": name_value,
-                "pending_change": False,
-                "pending_parent": None,
+                "confirm_required": False,
+                "confirm_text": "",
+                "cancel_url": "",
+                "parent_set": "1",
+                "is_leaf": True,
+                "image_url": None,
             },
             status_code=400,
         )
 
-    # КЛЮЧЕВОЕ ИСПРАВЛЕНИЕ:
-    # если создаём дочернюю категорию и чекбоксы не прислались (из-за отсутствия перерендеринга),
-    # берём стартовый набор характеристик из родителя.
     final_characteristic_ids: list[int]
     final_characteristic_ids = _clean_int_list(characteristic_ids)
 
@@ -376,8 +374,10 @@ async def category_create(
                     {
                         "request": request,
                         "categories": categories,
+                        "cat_name_max": CAT_NAME_MAX,
                         "name_value": name,
                         "parent_id_value": parent_id or "",
+                        "parent_set": "1",
                         "confirm_required": False,
                         "confirm_text": "",
                         "cancel_url": "",
@@ -387,7 +387,7 @@ async def category_create(
                         "image_url": None,
                         "image_error": str(e),
                     },
-                    status_code=200,
+                    status_code=400,
                 )
 
         # сохраняем характеристики (на create всегда можно)
@@ -414,6 +414,8 @@ async def category_edit_page(
     session: AsyncSession = Depends(get_async_session),
 ):
     category_obj = await session.get(Category, category_id)
+    current_parent_str = str(category_obj.parent_id) if category_obj.parent_id else ""
+    selected_parent_id = request.query_params.get("parent_id", current_parent_str) or ""
     if not category_obj:
         raise HTTPException(status_code=404)
 
@@ -440,9 +442,9 @@ async def category_edit_page(
                 "categories": categories,
                 "cat_name_max": CAT_NAME_MAX,
                 "characteristics": characteristics,
-                "selected_characteristic_ids": selected_ids,
+                "selected_characteristic_ids": set(),
                 "error": f"Название категории не должно превышать {CAT_NAME_MAX} символов.",
-                "parent_id_value": selected_parent_id,
+                "parent_id_value": current_parent_str,
                 "name_value": name_value,
                 "pending_change": False,
                 "pending_parent": None,
@@ -450,8 +452,6 @@ async def category_edit_page(
             status_code=400,
         )
 
-    current_parent_str = str(category_obj.parent_id) if category_obj.parent_id else ""
-    selected_parent_id = request.query_params.get("parent_id", current_parent_str) or ""
     confirm_parent_change = request.query_params.get("confirm_parent_change") == "1"
 
     is_leaf = not await _has_children(session, category_id)
@@ -537,6 +537,9 @@ async def category_edit(
     if not category_obj:
         raise HTTPException(status_code=404)
 
+    original_parent_id = category_obj.parent_id
+    original_image_url = category_obj.image_path
+
     name = name.strip()
     new_parent_id = uuid.UUID(parent_id) if parent_id else None
     await _ensure_no_cycle(session, category_id, new_parent_id)
@@ -545,8 +548,6 @@ async def category_edit(
     can_edit_characteristics = is_leaf
 
     parent_changed = (new_parent_id != category_obj.parent_id)
-
-    final_characteristic_ids: list[int]
 
     if can_edit_characteristics:
         if parent_changed and new_parent_id and characteristic_ids is None:
@@ -559,7 +560,6 @@ async def category_edit(
             final_characteristic_ids = _clean_int_list(characteristic_ids)
     else:
         final_characteristic_ids = []
-
 
     move_needed = False
     parent_name: str | None = None
@@ -631,12 +631,10 @@ async def category_edit(
         if can_edit_characteristics:
             await _replace_category_characteristics(session, category_id, final_characteristic_ids)
 
-        # фото категории: удалить по чекбоксу
         if _truthy(delete_image):
             delete_category_image(str(category_id))
             category_obj.image_path = None
 
-        # фото категории: заменить, если загружено новое
         if image and image.filename:
             try:
                 saved_path = save_category_image(str(category_id), image)
@@ -650,13 +648,12 @@ async def category_edit(
                 is_leaf = not await _has_children(session, category_id)
                 can_edit_characteristics = is_leaf
 
-                image_url = category_obj.image_path
-
                 category = {
                     "id": str(category_id),
                     "name": name,
                     "parent_id": str(new_parent_id) if new_parent_id else "",
                 }
+
                 characteristics = []
                 selected_ids = set()
 
@@ -671,10 +668,10 @@ async def category_edit(
                         "category": category,
                         "categories": categories,
                         "name_value": name,
-                        "parent_id_value": parent_id or "",
-                        "selected_parent_id": parent_id or "",
-                        "current_parent_id": str(category_obj.parent_id) if category_obj.parent_id else "",
-                        "effective_parent_id_value": parent_id or "",
+                        "parent_id_value": str(new_parent_id) if new_parent_id else "",
+                        "selected_parent_id": str(new_parent_id) if new_parent_id else "",
+                        "effective_parent_id_value": str(new_parent_id) if new_parent_id else "",
+                        "current_parent_id": str(original_parent_id) if original_parent_id else "",
                         "pending_change": False,
                         "pending_parent": None,
                         "confirm_required": False,
@@ -684,22 +681,19 @@ async def category_edit(
                         "can_edit_characteristics": can_edit_characteristics,
                         "characteristics": characteristics,
                         "selected_characteristic_ids": selected_ids,
-                        "image_url": image_url,
-                        "image_error": str(e),
+                        "image_url": original_image_url,
+                        "error": str(e),
                     },
-                    status_code=200,
+                    status_code=400,
                 )
 
         await session.commit()
-
-
 
     except Exception:
         await session.rollback()
         raise
 
     return RedirectResponse("/admin/categories", status_code=303)
-
 
 @router.post("/admin/categories/{category_id}/delete")
 async def category_delete(category_id: uuid.UUID, session: AsyncSession = Depends(get_async_session)):

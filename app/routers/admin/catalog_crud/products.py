@@ -8,6 +8,7 @@ from fastapi.responses import HTMLResponse, RedirectResponse
 from sqlalchemy import select, text, update
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
+from types import SimpleNamespace
 
 from app.models.brand import Brand
 from app.models.category import Category
@@ -141,22 +142,26 @@ async def _get_subtree_category_ids(session: AsyncSession, root_id: uuid.UUID) -
     rows = (await session.execute(q, {"root_id": root_id})).all()
     return [r[0] for r in rows]
 
-# ----------------------------
-# Характеристики товара
-# ----------------------------
 
-async def _load_category_characteristics(
-    session: AsyncSession,
-    category_id: uuid.UUID,
-) -> list[GlobalCharacteristic]:
-    """Берём реальный набор характеристик категории из БД."""
-    res = await session.execute(
-        select(GlobalCharacteristic)
-        .join(CategoryCharacteristic, CategoryCharacteristic.characteristic_id == GlobalCharacteristic.id)
+async def _load_category_characteristics(session: AsyncSession, category_id: uuid.UUID):
+    result = await session.execute(
+        select(
+            GlobalCharacteristic.id,
+            GlobalCharacteristic.name,
+            GlobalCharacteristic.value_type,
+            GlobalCharacteristic.unit,
+        )
+        .select_from(CategoryCharacteristic)
+        .join(GlobalCharacteristic, GlobalCharacteristic.id == CategoryCharacteristic.characteristic_id)
         .where(CategoryCharacteristic.category_id == category_id)
         .order_by(GlobalCharacteristic.name)
     )
-    return res.scalars().all()
+    rows = result.all()
+    return [
+        SimpleNamespace(id=r.id, name=r.name, value_type=r.value_type, unit=r.unit)
+        for r in rows
+    ]
+
 
 
 def _parse_number(raw: str) -> float:
@@ -167,7 +172,7 @@ def _parse_number(raw: str) -> float:
 
 def _parse_characteristics_from_form(
     form: dict,
-    characteristics: list[GlobalCharacteristic],
+    characteristics: list,
 ) -> tuple[dict[int, tuple[str | None, float | None]], str | None]:
     """
     Возвращает:
@@ -372,21 +377,25 @@ async def product_create(
         selected_category = await session.get(Category, cat_uuid)
 
         return templates.TemplateResponse(
-            "admin/products/edit.html",
+            "admin/products/create.html",
             {
                 "request": request,
-                "product": product,
                 "categories": categories,
                 "brands": brands,
+                "selected_category": selected_category,
                 "selected_category_id": str(cat_uuid),
-                "effective_category_id": str(cat_uuid),
-                "pending_change": False,
-                "pending_category": None,
                 "characteristics": characteristics,
                 "ch_values": {cid: (vs if vs is not None else vn) for cid, (vs, vn) in parsed_ch.items()},
-                "form_data": {"name": name, "description": description or "", "brand_id": brand_id or "",
-                              "price": price, "volume_m3": volume_m3, "weight_kg": weight_kg,
-                              "discount_percent": discount_percent or "", "is_active": bool(is_active)},
+                "form_data": {
+                    "name": name,
+                    "description": description or "",
+                    "brand_id": brand_id or "",
+                    "price": price,
+                    "volume_m3": volume_m3,
+                    "weight_kg": weight_kg,
+                    "discount_percent": discount_percent or "",
+                    "is_active": bool(is_active),
+                },
                 "error": ch_error,
             },
             status_code=400,
@@ -420,7 +429,36 @@ async def product_create(
         try:
             main_path = await _save_product_image(main_image)
         except ValueError as e:
-            raise HTTPException(status_code=400, detail=str(e))
+            await session.rollback()
+
+            categories, brands = await _get_form_choices(session)
+            selected_category = await session.get(Category, cat_uuid)
+            characteristics = await _load_category_characteristics(session, cat_uuid)
+
+            return templates.TemplateResponse(
+                "admin/products/create.html",
+                {
+                    "request": request,
+                    "categories": categories,
+                    "brands": brands,
+                    "selected_category": selected_category,
+                    "selected_category_id": str(cat_uuid),
+                    "characteristics": characteristics,
+                    "ch_values": {cid: (vs if vs is not None else vn) for cid, (vs, vn) in parsed_ch.items()},
+                    "form_data": {
+                        "name": name,
+                        "description": description or "",
+                        "brand_id": brand_id or "",
+                        "price": price,
+                        "volume_m3": volume_m3,
+                        "weight_kg": weight_kg,
+                        "discount_percent": discount_percent or "",
+                        "is_active": bool(is_active),
+                    },
+                    "error": str(e),
+                },
+                status_code=400,
+            )
 
         new_files.append(main_path)
         session.add(ProductImage(product_id=product.id, file_path=main_path, is_main=True))
@@ -610,6 +648,18 @@ async def product_edit(
 
         categories, brands = await _get_form_choices(session, product.category_id)
 
+        from types import SimpleNamespace
+        form_ns = SimpleNamespace(
+            name=name,
+            description=description or "",
+            brand_id=(brand_id or ""),
+            price=price,
+            volume_m3=volume_m3,
+            weight_kg=weight_kg,
+            discount_percent=(discount_percent or ""),
+            is_active=bool(is_active),
+        )
+
         return templates.TemplateResponse(
             "admin/products/edit.html",
             {
@@ -623,6 +673,7 @@ async def product_edit(
                 "pending_category": None,
                 "characteristics": characteristics,
                 "ch_values": {cid: (vs if vs is not None else vn) for cid, (vs, vn) in parsed_ch.items()},
+                "form_data": form_ns,
                 "error": ch_error,
             },
             status_code=400,
@@ -789,7 +840,55 @@ async def product_edit(
             try:
                 new_main_path = await _save_product_image(main_image)
             except ValueError as e:
-                raise HTTPException(status_code=400, detail=str(e))
+                await session.rollback()
+
+                result = await session.execute(
+                    select(Product)
+                    .where(Product.id == product_id)
+                    .options(
+                        selectinload(Product.category),
+                        selectinload(Product.brand),
+                        selectinload(Product.images),
+                        selectinload(Product.characteristics_values).selectinload(
+                            ProductCharacteristicValue.characteristic),
+                    )
+                )
+                product_view = result.scalar_one_or_none()
+                if not product_view:
+                    raise HTTPException(status_code=404)
+
+                categories, brands = await _get_form_choices(session, product_view.category_id)
+
+                from types import SimpleNamespace
+                form_ns = SimpleNamespace(
+                    name=name,
+                    description=description,
+                    brand_id=(brand_id or ""),
+                    price=price,
+                    volume_m3=volume_m3,
+                    weight_kg=weight_kg,
+                    discount_percent=(discount_percent or ""),
+                    is_active=is_active,
+                )
+
+                return templates.TemplateResponse(
+                    "admin/products/edit.html",
+                    {
+                        "request": request,
+                        "product": product_view,
+                        "categories": categories,
+                        "brands": brands,
+                        "selected_category_id": str(cat_uuid),
+                        "effective_category_id": str(cat_uuid),
+                        "pending_change": False,
+                        "pending_category": None,
+                        "characteristics": characteristics,
+                        "ch_values": {cid: (vs if vs is not None else vn) for cid, (vs, vn) in parsed_ch.items()},
+                        "form_data": form_ns,
+                        "error": str(e),
+                    },
+                    status_code=400,
+                )
 
             new_files.append(new_main_path)
 
@@ -813,7 +912,55 @@ async def product_edit(
                 try:
                     p = await _save_product_image(main_fallback)
                 except ValueError as e:
-                    raise HTTPException(status_code=400, detail=str(e))
+                    await session.rollback()
+
+                    result = await session.execute(
+                        select(Product)
+                        .where(Product.id == product_id)
+                        .options(
+                            selectinload(Product.category),
+                            selectinload(Product.brand),
+                            selectinload(Product.images),
+                            selectinload(Product.characteristics_values).selectinload(
+                                ProductCharacteristicValue.characteristic),
+                        )
+                    )
+                    product_view = result.scalar_one_or_none()
+                    if not product_view:
+                        raise HTTPException(status_code=404)
+
+                    categories, brands = await _get_form_choices(session, product_view.category_id)
+
+                    from types import SimpleNamespace
+                    form_ns = SimpleNamespace(
+                        name=name,
+                        description=description,
+                        brand_id=(brand_id or ""),
+                        price=price,
+                        volume_m3=volume_m3,
+                        weight_kg=weight_kg,
+                        discount_percent=(discount_percent or ""),
+                        is_active=is_active,
+                    )
+
+                    return templates.TemplateResponse(
+                        "admin/products/edit.html",
+                        {
+                            "request": request,
+                            "product": product_view,
+                            "categories": categories,
+                            "brands": brands,
+                            "selected_category_id": str(cat_uuid),
+                            "effective_category_id": str(cat_uuid),
+                            "pending_change": False,
+                            "pending_category": None,
+                            "characteristics": characteristics,
+                            "ch_values": {cid: (vs if vs is not None else vn) for cid, (vs, vn) in parsed_ch.items()},
+                            "form_data": form_ns,
+                            "error": str(e),
+                        },
+                        status_code=400,
+                    )
 
                 new_files.append(p)
                 session.add(ProductImage(product_id=product.id, file_path=p, is_main=True))
