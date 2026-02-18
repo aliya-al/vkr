@@ -550,10 +550,10 @@ async def request_new_submit(
     admin: dict = Depends(require_admin_or_404),
     session: AsyncSession = Depends(get_async_session),
 
-    customer_name: str = Form(...),
-    customer_phone: str = Form(...),
+    customer_name: str | None = Form(None),
+    customer_phone: str | None = Form(None),
 
-    delivery_type: str = Form(...),
+    delivery_type: str | None = Form(None),
     pickup_address: str | None = Form(None),
     delivery_address: str | None = Form(None),
 
@@ -606,7 +606,11 @@ async def request_new_submit(
     if not cart:
         err = "Добавь товары в заявку."
     elif not customer_name:
-        err = "Укажи имя."
+        err = "Заполните обязательные поля."
+        field_errors["customer_name"] = "Имя обязательно."
+    elif not customer_phone:
+        err = "Заполните обязательные поля."
+        field_errors["customer_phone"] = "Телефон обязателен."
     elif phone_err:
         err = phone_err
     elif delivery_type not in ("delivery", "pickup"):
@@ -622,6 +626,10 @@ async def request_new_submit(
             OrderStatus(status or "new")
         except Exception:
             err = "Некорректный статус."
+
+    if not err and created_at and created_at_dt and created_at_dt > datetime.now(created_at_dt.tzinfo):
+        err = "Дата заявки не может быть в будущем."
+        field_errors["created_at"] = "Укажи дату и время не позже текущего момента."
 
     mid_uuid: uuid.UUID | None = None
     if not err and _is_admin(admin):

@@ -22,6 +22,8 @@
       <div class="reqn-alert" role="alert">{{ error }}</div>
     {% endif %}
 
+    {% set fe = field_errors or {} %}
+
     <div class="reqn-grid">
 
       <section class="reqn-card" aria-label="Данные заявки">
@@ -39,12 +41,15 @@
             <div class="reqn-2col">
               <label class="reqn-field">
                 <span class="reqn-label">Имя <b class="reqn-req">*</b></span>
-                <input class="reqn-input" type="text" name="customer_name" required value="{{ form_data.get('customer_name','') }}">
+                <input class="reqn-input {% if fe.get('customer_name') %}is-error{% endif %}" type="text" name="customer_name" required value="{{ form_data.get('customer_name','') }}">
+                {% if fe.get('customer_name') %}
+                  <div class="reqn-fieldHint" role="alert">{{ fe.get('customer_name') }}</div>
+                {% endif %}
               </label>
 
               <label class="reqn-field">
                 <span class="reqn-label">Телефон <b class="reqn-req">*</b></span>
-                <input class="reqn-input"
+                <input class="reqn-input {% if fe.get('customer_phone') %}is-error{% endif %}"
                        type="tel"
                        name="customer_phone"
                        id="customerPhone"
@@ -52,6 +57,9 @@
                        inputmode="tel"
                        placeholder="+7 (___) ___-__-__"
                        value="{{ form_data.get('customer_phone','') }}">
+                {% if fe.get('customer_phone') %}
+                  <div class="reqn-fieldHint" role="alert">{{ fe.get('customer_phone') }}</div>
+                {% endif %}
               </label>
             </div>
           </div>
@@ -66,8 +74,6 @@
 
             {% set dt = form_data.get('delivery_type','pickup') %}
             <input type="hidden" name="delivery_type" id="deliveryType" value="{{ dt }}">
-
-            {% set fe = field_errors or {} %}
 
             <div class="reqn-pane" id="panePickup">
               <label class="reqn-field">
@@ -114,7 +120,10 @@
             <div class="reqn-2col">
               <label class="reqn-field">
                 <span class="reqn-label">Дата и время</span>
-                <input class="reqn-input" type="datetime-local" name="created_at" value="{{ form_data.get('created_at','') }}">
+                <input class="reqn-input {% if fe.get('created_at') %}is-error{% endif %}" type="datetime-local" name="created_at" value="{{ form_data.get('created_at','') }}">
+                {% if fe.get('created_at') %}
+                  <div class="reqn-fieldHint" role="alert">{{ fe.get('created_at') }}</div>
+                {% endif %}
               </label>
 
               <label class="reqn-field">
