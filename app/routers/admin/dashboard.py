@@ -250,7 +250,6 @@ async def api_kpis(session: AsyncSession = Depends(get_async_session)):
 
     orders_week = await session.scalar(
         select(func.count()).select_from(Order).where(
-            Order.status == OrderStatus.done,
             Order.created_at >= week_start,
             Order.created_at < now,
         )

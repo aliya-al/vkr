@@ -159,14 +159,15 @@
                 </div>
 
                 <div class="ap-actions">
-                  <a class="ap-link" href="/admin/products/{{ p.id }}/edit">Редактировать</a>
+                  <a class="pc-btn pc-btn--ghost pc-btn--sm" href="/admin/products/{{ p.id }}/edit">Редактировать</a>
 
                   <form method="post"
                         action="/admin/products/{{ p.id }}/delete"
                         data-ajax-delete
+                        data-ajax-delete-scope="catalog-list"
                         data-confirm="Удалить товар «{{ p.name }}»?"
                         style="display:inline">
-                    <button class="ap-del" type="submit">Удалить</button>
+                    <button class="pc-btn pc-btn--danger pc-btn--sm" type="submit">Удалить</button>
                   </form>
                 </div>
               </article>
