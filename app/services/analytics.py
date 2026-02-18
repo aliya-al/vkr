@@ -202,18 +202,44 @@ async def fetch_top_products_total_qty(
     )
 
     rows = (await session.execute(stmt)).mappings().all()
-    return [
-        {
-            "product_id": str(r["product_id"]) if r["product_id"] else None,
-            "name": r["product_name"],
-            "slug": r["product_slug"],
-            "image": r["product_image"],
-            "total_qty": int(r["total_qty"] or 0),
-            "unique_orders": int(r["unique_orders"] or 0),
-            "revenue": int(r["revenue"] or 0),
-        }
-        for r in rows
-    ]
+
+    deduped: dict[str, dict] = {}
+    for r in rows:
+        slug = (r["product_slug"] or "").strip()
+        if not slug:
+            continue
+
+        product_id = str(r["product_id"]) if r["product_id"] else None
+        key = product_id or slug
+
+        row_total_qty = int(r["total_qty"] or 0)
+        row_unique_orders = int(r["unique_orders"] or 0)
+        row_revenue = int(r["revenue"] or 0)
+
+        if key not in deduped:
+            deduped[key] = {
+                "product_id": product_id,
+                "name": r["product_name"],
+                "slug": slug,
+                "image": r["product_image"],
+                "total_qty": row_total_qty,
+                "unique_orders": row_unique_orders,
+                "revenue": row_revenue,
+            }
+            continue
+
+        current = deduped[key]
+        current["total_qty"] += row_total_qty
+        current["unique_orders"] += row_unique_orders
+        current["revenue"] += row_revenue
+        if not current.get("image") and r["product_image"]:
+            current["image"] = r["product_image"]
+
+    return sorted(
+        deduped.values(),
+        key=lambda it: (int(it["total_qty"]), int(it["revenue"])),
+        reverse=True,
+    )[:limit]
 
 
 async def fetch_category_breakdown(
