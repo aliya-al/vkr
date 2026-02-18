@@ -197,6 +197,8 @@ async def checkout_submit(
     items, total_price, total_base, total_weight, total_volume = await _load_cart_products(session, cart)
 
                       
+    error = None
+
     customer_name = customer_name.strip()
     customer_phone = customer_phone.strip()
     digits = "".join(ch for ch in customer_phone if ch.isdigit())
@@ -220,7 +222,6 @@ async def checkout_submit(
 
     comment = (comment or "").strip() or None
 
-    error = None
     if not items:
         error = "Корзина пуста или товары недоступны."
     elif not customer_name:

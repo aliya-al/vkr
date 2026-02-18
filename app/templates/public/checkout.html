@@ -68,7 +68,7 @@
 
 
                 <article class="co-item">
-                  <a class="co-item__media" href="/product/{{ p.id }}" aria-label="Открыть товар">
+                  <a class="co-item__media" href="/product/{{ p.slug }}/" aria-label="Открыть товар">
                     {% if img %}
                       <img class="co-item__img" src="{{ img }}" alt="{{ p.name }}">
                     {% else %}
@@ -78,7 +78,7 @@
                   </a>
 
                   <div class="co-item__body">
-                    <a class="co-item__name" href="/product/{{ p.id }}">{{ p.name }}</a>
+                    <a class="co-item__name" href="/product/{{ p.slug }}/">{{ p.name }}</a>
                     <div class="co-item__meta">
                       <span class="co-item__qty">Кол-во: <b>{{ qty }}</b></span>
                     </div>
