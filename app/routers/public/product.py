@@ -26,28 +26,28 @@ def _normalize_media_path(path: str | None) -> str | None:
     if not p:
         return None
 
-    # внешние ссылки
+                    
     if p.startswith(("http://", "https://", "//")):
         return p
 
-    # уже корректный публичный путь
+                                   
     if p.startswith("/static/"):
         return p
 
-    # если кто-то записал "static/..."
+                                      
     if p.startswith("static/"):
         return "/" + p
 
-    # нормализуем слэши
+                       
     p = p.lstrip("/")
 
-    # если в БД уже лежит полный относительный путь от static
-    #    например: "img/uploads/products/abc.jpg"
+                                                             
+                                                 
     if p.startswith("img/uploads/products/"):
         return "/static/" + p
 
-    # если в БД лежит только имя файла: "abc.jpg"
-    # или "products/abc.jpg"
+                                                 
+                            
     p = p.removeprefix("products/")
 
     return "/static/img/uploads/products/" + p
@@ -57,7 +57,7 @@ def _normalize_media_path(path: str | None) -> str | None:
 def _format_price_rub(value: int | None) -> str:
     if value is None:
         return ""
-    # 2 555 740
+               
     return f"{int(value):,}".replace(",", " ")
 
 
@@ -65,7 +65,7 @@ def _calc_final_price(price: int, discount_percent: int | None) -> int:
     if not discount_percent:
         return price
     pct = max(0, min(int(discount_percent), 100))
-    # округление “в рублях” обычно норм
+                                       
     return int(round(price * (100 - pct) / 100))
 
 
@@ -79,7 +79,7 @@ async def _build_category_chain(session: AsyncSession, leaf: Category) -> list[C
     seen: set[str] = set()
     cur: Category | None = leaf
 
-    # страховка от циклов
+                         
     for _ in range(30):
         if not cur:
             break
@@ -181,15 +181,15 @@ async def product_detail(
     fav_ids = get_favorite_ids(request.session)
     cmp_ids = get_compare_ids(request.session)
 
-    # 1) Товар + связи
+                      
     res = await session.execute(
         select(Product)
         .where(Product.slug == product_slug, Product.is_active.is_(True))
         .options(
-            # many-to-one можно joinedload (без доп. запросов)
+                                                              
             joinedload(Product.brand),
             joinedload(Product.category),
-            # one-to-many — selectinload
+                                        
             selectinload(Product.images),
             selectinload(Product.characteristics_values).selectinload(
                 ProductCharacteristicValue.characteristic
@@ -200,7 +200,7 @@ async def product_detail(
     if not product:
         raise HTTPException(status_code=404, detail="Товар не найден")
 
-    # 2) Цена/скидка
+                    
     final_price = _calc_final_price(product.price, product.discount_percent)
     pricing = {
         "price": product.price,
@@ -211,13 +211,13 @@ async def product_detail(
         "final_price_fmt": _format_price_rub(final_price),
     }
 
-    # 3) Галерея
+                
     gallery = _build_gallery(product)
 
-    # 4) Характеристики
+                       
     characteristics = _extract_characteristics(product)
 
-    # 5) Хлебные крошки (категории -> товар)
+                                            
     breadcrumbs = []
     if product.category:
         chain = await _build_category_chain(session, product.category)
@@ -225,14 +225,14 @@ async def product_detail(
             {
                 "title": c.name,
                 "url": request.url_for("category_detail", category_slug=c.slug)
-                if "category_detail" in request.app.router.routes.__str__()  # мягкая защита
+                if "category_detail" in request.app.router.routes.__str__()                 
                 else f"/catalog/{c.slug}/",
             }
             for c in chain
         ]
     breadcrumbs.append({"title": product.name, "url": str(request.url)})
 
-    # 6) “Так же берут” (та же категория, кроме текущего)
+                                                         
     related_res = await session.execute(
         select(Product)
         .where(
@@ -247,7 +247,7 @@ async def product_detail(
     related_db = related_res.scalars().all()
     related = [_product_card_dict(p, fav_ids, cmp_ids) for p in related_db]
 
-    # 7) UI флаги для текущего товара
+                                     
     pid = str(product.id)
     ui = {
         "fav_ids": fav_ids,

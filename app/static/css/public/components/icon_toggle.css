@@ -10,7 +10,7 @@
   padding: 0;
   cursor: pointer;
 
-  /* важное: цвет управляет SVG через currentColor */
+  
   color: var(--color-text);
 
   transition:
@@ -29,14 +29,14 @@
   }
 }
 
-/* SVG размер + базовая геометрия */
+
 .icon-btn__svg {
   width: 16px;
   height: 16px;
   display: block;
 }
 
-/* по умолчанию — “контурные” иконки */
+
 .icon-btn__svg .i-stroke {
   fill: none;
   stroke: currentColor;
@@ -45,7 +45,7 @@
   stroke-linejoin: round;
 }
 
-/* то, что должно заливаться при active */
+
 .icon-btn__svg .i-fill {
   fill: none;
   stroke: none;
@@ -64,7 +64,7 @@
 .icon-btn.is-active .icon-compare .i-fill { fill: currentColor; }
 
 
-/* Фокус */
+
 .icon-btn:focus-visible {
   outline: 2px solid var(--focus-outline);
   outline-offset: 2px;

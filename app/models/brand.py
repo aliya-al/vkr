@@ -11,7 +11,7 @@ class Brand(Base):
 
     id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
     name: Mapped[str] = mapped_column(String(255), nullable=False, unique=True)
-    slug: Mapped[str] = mapped_column(String(255), nullable=False, unique=True) # для URL
+    slug: Mapped[str] = mapped_column(String(255), nullable=False, unique=True)          
 
-    # Связь с товарами: один бренд → много товаров
+                                                  
     products = relationship("Product", back_populates="brand")

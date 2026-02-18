@@ -14,21 +14,21 @@ class CategoryCharacteristic(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
 
-    # категория, для которой подключена характеристика
+                                                      
     category_id: Mapped[uuid.UUID] = mapped_column(
         ForeignKey("categories.id", ondelete="CASCADE"),
         nullable=False,
     )
 
-    # какую глобальную характеристику подключаю
+                                               
     characteristic_id: Mapped[int] = mapped_column(
         ForeignKey("characteristics.id", ondelete="CASCADE"),
         nullable=False,
     )
 
-    # категория, к которой относится настройка
+                                              
     category = relationship("Category", back_populates="characteristics_links")
 
-    # глобальная характеристика, которая подключена к категории
+                                                               
     characteristic = relationship("GlobalCharacteristic", back_populates="category_links")
 

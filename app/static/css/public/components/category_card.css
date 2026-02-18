@@ -1,7 +1,4 @@
-/* =========================
-   CATEGORY CARD (reusable)
-   File: /static/css/public/components/category_card.css
-   ========================= */
+
 
 .cat-card {
   --cat-line: var(--color-line);
@@ -33,7 +30,7 @@
   display: grid;
   place-items: stretch;
 
-  /* iOS tap */
+  
   -webkit-tap-highlight-color: transparent;
 }
 
@@ -94,17 +91,14 @@
   background: var(--cat-surface);
 }
 
-/* Модификатор для сеток (когда карточка должна растягиваться по колонке) */
+
 .cat-card--fluid {
   width: 100%;
   height: auto;
   min-height: var(--cat-card-h);
 }
 
-/* =========================
-   iPhone / phones sizing
-   (если нужно — переопределяйте переменные на странице)
-   ========================= */
+
 @media (max-width: 430px) {
   .cat-card {
     --cat-card-w: 128px;

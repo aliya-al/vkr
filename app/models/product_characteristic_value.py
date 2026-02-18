@@ -20,22 +20,22 @@ class ProductCharacteristicValue(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
 
-    # Какому товару принадлежит это значение
+                                            
     product_id: Mapped[uuid.UUID] = mapped_column(
         ForeignKey("products.id", ondelete="CASCADE"),
         nullable=False,
     )
 
-    # Какая глобальная характеристика
+                                     
     characteristic_id: Mapped[int] = mapped_column(
         ForeignKey("characteristics.id", ondelete="CASCADE"),
         nullable=False,
     )
 
-    # Текстовое значение (для строковых характеристик)
+                                                      
     value_string: Mapped[str | None] = mapped_column(String, nullable=True)
 
-    # Числовое значение (для числовых характеристик)
+                                                    
     value_number: Mapped[float | None] = mapped_column(Float, nullable=True)
 
 

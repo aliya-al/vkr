@@ -1,4 +1,3 @@
-// app/static/js/admin/products_create.js
 (function () {
   const MAX_PREVIEWS = 3;
 

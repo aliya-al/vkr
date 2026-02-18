@@ -28,7 +28,7 @@
   color: var(--color-muted);
 }
 
-/* Grid of categories */
+
 .catalog__grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, 150px);
@@ -71,7 +71,7 @@
     gap: var(--space-4);
   }
 
-  /* На телефоне в гриде лучше чуть компактнее по высоте */
+  
   .catalog__grid .cat-card {
     --cat-card-h: 172px;
     --cat-thumb: 92px;

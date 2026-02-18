@@ -1,4 +1,4 @@
-{# app/templates/admin/dashboard_admin.html #}
+
 {% extends "admin/base.html" %}
 
 {% block title %}Аналитика продаж{% endblock %}
@@ -11,10 +11,10 @@
 <div class="dash">
   <div class="container">
     <div class="dash__grid">
-      <!-- LEFT -->
+      
       <section class="dash__main">
 
-        <!-- KPI -->
+        
         <div class="dash__kpis">
           <div class="kpi">
             <div class="kpi__icon" aria-hidden="true">
@@ -69,7 +69,7 @@
 
         </div>
 
-        <!-- Charts row -->
+        
         <div class="dash__charts">
           <section class="card card--chart" aria-label="Аналитика по продажам">
             <header class="card__head">
@@ -98,7 +98,7 @@
           </section>
         </div>
 
-        <!-- Requests -->
+        
         <div class="dash__requests">
           {% include "admin/components/dashboard_requests_table.html" %}
         </div>
@@ -106,7 +106,7 @@
 
       </section>
 
-      <!-- RIGHT SIDEBAR -->
+      
       <aside class="dash__side">
         <section class="card dash__categories" aria-label="Продаваемые категории">
           <header class="card__head">
@@ -117,7 +117,7 @@
             </select>
           </header>
           <div class="chart chart--donut" id="chartCategories"></div>
-          <!-- <div class="legend" id="categoriesLegend" aria-label="Легенда категорий"></div>-->
+          
         </section>
 
         <section class="card dash__topProducts" aria-label="Популярные товары">
@@ -130,7 +130,7 @@
           </header>
 
           <div class="toplist" id="topProductsList">
-            <!-- JS -->
+            
           </div>
         </section>
       </aside>

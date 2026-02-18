@@ -22,7 +22,7 @@ def _get_cart(session_obj: dict) -> dict[str, int]:
     if not isinstance(cart, dict):
         cart = {}
         session_obj["cart"] = cart
-    # нормализуем qty
+                     
     normalized: dict[str, int] = {}
     for k, v in cart.items():
         try:
@@ -49,13 +49,13 @@ async def cart_add(
     qty: int = Form(1),
     session: AsyncSession = Depends(get_async_session),
 ):
-    # валидация id
+                  
     try:
         pid = uuid.UUID(product_id)
     except Exception:
         raise HTTPException(status_code=400, detail="Некорректный product_id")
 
-    # проверим товар существует и активен
+                                         
     res = await session.execute(select(Product).where(Product.id == pid))
     product = res.scalar_one_or_none()
     if not product or not product.is_active:
@@ -88,7 +88,7 @@ async def cart_page(request: Request, session: AsyncSession = Depends(get_async_
             {"request": request, "items": [], "total": 0, "total_base": 0},
         )
 
-    # грузим товары одним запросом
+                                  
     ids: list[uuid.UUID] = []
     for k in cart.keys():
         try:
@@ -153,7 +153,7 @@ async def cart_update(
     product_id: str = Form(...),
     qty: int = Form(...),
 ):
-    # валидация id
+                  
     try:
         uuid.UUID(product_id)
     except Exception:
@@ -164,7 +164,7 @@ async def cart_update(
     cart = _get_cart(request.session)
 
     if qty < 1:
-        # если qty < 1 — удаляем позицию
+                                        
         cart.pop(str(product_id), None)
     else:
         cart[str(product_id)] = qty

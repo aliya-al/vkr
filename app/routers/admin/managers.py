@@ -116,7 +116,7 @@ async def manager_edit(
     manager_id: uuid.UUID,
     request: Request,
     login: str = Form(...),
-    password: str | None = Form(None),  # если пусто — пароль не меняем
+    password: str | None = Form(None),                                 
     is_active: bool = Form(False),
     session: AsyncSession = Depends(get_async_session),
 ):
@@ -144,7 +144,7 @@ async def manager_edit(
             status_code=status.HTTP_400_BAD_REQUEST,
         )
 
-    # проверка уникальности логина, если меняем
+                                               
     if login != manager.login:
         existing = await session.execute(select(AdminUser).where(AdminUser.login == login))
         if existing.scalar_one_or_none():

@@ -1,4 +1,4 @@
-/* static/css/admin/dashboard.css */
+
 
 .dash { padding: var(--space-7) 0; }
 
@@ -50,7 +50,7 @@
 .dash__main{ display:flex; flex-direction:column; gap: var(--space-6); }
 .dash__side{ display:flex; flex-direction:column; gap: var(--space-6); }
 
-/* KPI */
+
 .dash__kpis{
   display:grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -80,7 +80,7 @@
   outline: none;
 }
 .kpi__manageSelect:focus{
-  box-shadow: 0 0 0 2px var(--color-accent, #bdbdbd); /* аккуратный фокус */
+  box-shadow: 0 0 0 2px var(--color-accent, #bdbdbd); 
 }
 
 .kpi__manageWrap{
@@ -100,7 +100,7 @@
   pointer-events: none;
 }
 .kpi__manageSelect{
-  padding-right: 28px; /* место под стрелку */
+  padding-right: 28px; 
 }
 
 .kpi{
@@ -137,7 +137,7 @@
   margin-left: var(--space-1)
 }
 
-/* Cards */
+
 .card{
   background: var(--color-surface);
   border-radius: var(--radius-md);
@@ -168,7 +168,7 @@
 }
 .card__select--small{ min-width: 110px; }
 
-/* Charts */
+
 .dash__charts{
   display:grid;
   grid-template-columns: 1fr 1fr;
@@ -208,7 +208,7 @@
   background: var(--color-line);
 }
 
-/* Table */
+
 .card--table{ padding-bottom: 12px; }
 
 .tableWrap{
@@ -263,7 +263,7 @@
   text-underline-offset: 2px;
 }
 
-/* Badges */
+
 .badge{
   display:inline-flex;
   align-items:center;
@@ -279,7 +279,7 @@
 .badge--done{}
 .badge--canceled{}
 
-/* ВАЖНО: перебиваем .selectPill select (он специфичнее .badge--*) */
+
 .selectPill select.badge--new{
   background: var(--color-danger-soft);
   border-color: var(--color-line);
@@ -328,7 +328,7 @@
   border: 1px solid var(--color-line);
   border-radius: var(--radius-xl);
 
-  padding: 6px 26px 6px 10px; /* место под стрелку */
+  padding: 6px 26px 6px 10px; 
   background: var(--color-surface);
   cursor: pointer;
   outline: none;
@@ -386,7 +386,7 @@
 }
 
 
-/* Top products list */
+
 .toplist{ display:flex; flex-direction:column; gap: var(--space-4); }
 
 .topitem{
@@ -440,7 +440,7 @@ font-size: var(--fs-xs);
   gap: 2px;
 }
 
-/* Manager notes */
+
 .card--note{
   background: var(--color-surface);
   border: 1px solid var(--color-line);
@@ -449,7 +449,7 @@ font-size: var(--fs-xs);
 .noteText{ font-size: var(--fs-sm); color: var(--color-muted); }
 .noteLink{ text-decoration: underline; text-underline-offset: 2px; }
 
-/* Responsive */
+
 @media (max-width: 1000px){
   .dash__grid{ grid-template-columns: 1fr; }
   .dash__topRight{ width: 220px; }
@@ -474,12 +474,12 @@ font-size: var(--fs-xs);
 @media (min-width: 1001px){
 
   .dash{
-    --dash-row-kpi: 70px;     /* строка KPI */
-    --dash-row-charts: 240px;  /* строка графиков */
-    --dash-row-bottom: 435px;  /* строка "Заявки" + "Популярные товары" */
+    --dash-row-kpi: 70px;     
+    --dash-row-charts: 240px;  
+    --dash-row-bottom: 435px;  
   }
 
-  /* Главная сетка: 2 колонки, 3 строки, с областями */
+  
   .dash__grid{
     display: grid;
     grid-template-columns: 1fr 320px;
@@ -489,23 +489,23 @@ font-size: var(--fs-xs);
       "charts    categories"
       "requests  top";
     gap: var(--space-6);
-    align-items: stretch; /* чтобы элементы тянулись на высоту строки */
+    align-items: stretch; 
   }
 
-  /* Важно: превращаем обёртки колонок в "прозрачные", чтобы их дети стали grid-item */
+  
   .dash__main,
   .dash__side{
     display: contents;
   }
 
-  /* Назначаем области */
+  
   .dash__kpis{ grid-area: kpis; height: 100%; }
   .dash__charts{ grid-area: charts; height: 100%; }
   .dash__requests{ grid-area: requests; height: 100%; }
   .dash__categories{ grid-area: categories; height: 100%; }
   .dash__topProducts{ grid-area: top; height: 100%; }
 
-  /* KPI: карточки равной высоты */
+  
   .dash__kpis{
     align-content: stretch;
   }
@@ -513,7 +513,7 @@ font-size: var(--fs-xs);
     height: 100%;
   }
 
-  /* Графики: карточки растягиваем, чтобы высота строки работала */
+  
   .dash__charts{
     align-items: stretch;
   }
@@ -524,22 +524,22 @@ font-size: var(--fs-xs);
   }
   .dash__charts .chart{
     flex: 1;
-    height: auto; /* перебиваем фикс 190px */
+    height: auto; 
     min-height: 0;
   }
 
-  /* Продаваемые категории: карточка на 2 строки, внутри донат растягивается */
+  
   .dash__categories{
     display: flex;
     flex-direction: column;
   }
   .dash__categories .chart--donut{
     flex: 1;
-    height: auto;  /* перебиваем 240px */
+    height: auto;  
     min-height: 0;
   }
 
-  /* Нижний ряд: делаем прокрутку контента внутри, чтобы высоты не "ехали" */
+  
   .dash__topProducts{
     display: flex;
     flex-direction: column;
@@ -548,10 +548,10 @@ font-size: var(--fs-xs);
     flex: 1;
     min-height: 0;
     overflow: auto;
-    padding-right: 4px; /* чтобы скролл не лип к тексту */
+    padding-right: 4px; 
   }
 
-  /* "Заявки": контейнер-обёртка растягивается, а внутри карточка занимает 100% */
+  
   .dash__requests{
     display: flex;
     min-height: 0;

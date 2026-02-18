@@ -7,7 +7,7 @@
   padding: var(--space-6) 0 var(--space-8);
 }
 
-/* ===== Header ===== */
+
 .fav-head{
   margin-top: var(--space-4);
   margin-bottom: var(--space-6);
@@ -38,7 +38,7 @@
   justify-self: end;
 }
 
-/* ===== Empty state ===== */
+
 .fav-empty{
   display: grid;
   place-items: center;
@@ -70,7 +70,7 @@
   flex-wrap: wrap;
 }
 
-/* кнопки для empty state (твои локальные — можно оставить) */
+
 .fav-btn{
   height: 36px;
   padding: 0 var(--space-4);
@@ -99,7 +99,7 @@
 
 
 
-/* iPhone */
+
 @media (max-width: 430px){
   .fav{
     padding: var(--space-5) 0 var(--space-7);

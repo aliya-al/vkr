@@ -47,12 +47,10 @@
 
       const json = await res.json().catch(() => null);
       if (json && typeof json === "object") {
-        // если бэкенд возвращает qty — используем
         if (json.ok === false) return { ok: false };
         if (Number.isFinite(Number(json.qty))) return { ok: true, qty: Number(json.qty) };
       }
 
-      // если JSON нет/другой — считаем, что добавили 1
       return { ok: true, qty: 1 };
     } catch (_) {
       return { ok: false };
@@ -96,7 +94,6 @@
       }
     };
 
-    // ADD -> показывает степпер
     if (addForm) {
       addForm.addEventListener("submit", async (e) => {
         e.preventDefault();
@@ -107,7 +104,6 @@
 
         const r = await postAdd(addForm);
         if (!r.ok) {
-          // fallback: обычный сабмит (перезагрузка)
           try { addForm.submit(); } catch (_) {}
           qty = prev;
           setUI();
@@ -119,7 +115,6 @@
       });
     }
 
-    // PLUS / MINUS
     if (plusBtn) {
       plusBtn.addEventListener("click", () => {
         const next = qty + 1;
@@ -134,9 +129,8 @@
       });
     }
 
-    // MANUAL INPUT (как в PDP)
     const parseQty = (v) => {
-      if (v === "" || v == null) return null; // временно пусто — ок
+      if (v === "" || v == null) return null;
       const n = Number(v);
       if (!Number.isFinite(n)) return null;
       return Math.max(0, Math.floor(n));
@@ -178,6 +172,5 @@
     setUI();
   };
 
-  // init all widgets on page
   document.querySelectorAll("[data-cart-widget]").forEach(initCartWidget);
 })();

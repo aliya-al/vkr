@@ -1,4 +1,4 @@
-# app/routers/admin/catalog_crud/products.py
+                                            
 import uuid
 from pathlib import Path
 
@@ -26,15 +26,15 @@ from app.utils.deps import require_admin_or_404
 
 router = APIRouter(dependencies=[Depends(require_admin_or_404)])
 
-# Папка хранения файлов и web-путь (отсюда отдаем в <img src="...">)
+                                                                    
 _PRODUCTS_UPLOAD_DIR = Path("app/static/img/uploads/products")
 _PRODUCTS_WEB_PREFIX = "/static/img/uploads/products"
 
-# Разрешённые расширения
+                        
 _ALLOWED_EXT = {".jpg", ".jpeg", ".png", ".webp", ".gif"}
 
-# Размер чанка при записи (чтобы не держать весь файл в RAM)
-_CHUNK_SIZE = 1024 * 1024  # 1MB
+                                                            
+_CHUNK_SIZE = 1024 * 1024       
 
 MAX_EXTRA_IMAGES = 5
 
@@ -206,7 +206,7 @@ def _format_product_characteristics(values: list[ProductCharacteristicValue]) ->
     """
     items: list[str] = []
 
-    # сортируем по названию характеристики (если связь подгружена)
+                                                                  
     def _key(v: ProductCharacteristicValue) -> str:
         ch = getattr(v, "characteristic", None)
         return (getattr(ch, "name", "") or "").lower()
@@ -219,7 +219,7 @@ def _format_product_characteristics(values: list[ProductCharacteristicValue]) ->
         if ch.value_type == CharacteristicType.number:
             if v.value_number is None:
                 continue
-            # убираем хвосты .0
+                               
             s = f"{v.value_number}".rstrip("0").rstrip(".")
             if ch.unit:
                 s = f"{s} {ch.unit}"
@@ -234,13 +234,13 @@ def _format_product_characteristics(values: list[ProductCharacteristicValue]) ->
 
 @router.get("/admin/products", response_class=HTMLResponse)
 async def products_list(request: Request, session: AsyncSession = Depends(get_async_session)):
-    # 1) Родительские категории для фильтра слева (ТОЛЬКО parent_id is NULL)
+                                                                            
     cats_res = await session.execute(
         select(Category).where(Category.parent_id.is_(None)).order_by(Category.name)
     )
     parent_categories = cats_res.scalars().all()
 
-    # 2) Какие parent выбраны (cat=<uuid>&cat=<uuid>)
+                                                     
     selected_raw = request.query_params.getlist("cat")
     selected_parent_ids: list[uuid.UUID] = []
     for s in selected_raw:
@@ -255,8 +255,8 @@ async def products_list(request: Request, session: AsyncSession = Depends(get_as
     raw_photos = (request.query_params.get("photos") or "all").lower()
     photos = raw_photos if raw_photos in {"all", "with", "without"} else "all"
 
-    # 3) Если выбраны родительские — фильтруем товары по поддереву этих родителей.
-    #    Если фильтр пустой — показываем все товары (и в UI все чекбоксы отмечены).
+                                                                                  
+                                                                                   
     filter_category_ids: set[uuid.UUID] = set()
     if selected_parent_ids:
         for pid in selected_parent_ids:
@@ -293,7 +293,7 @@ async def products_list(request: Request, session: AsyncSession = Depends(get_as
     result = await session.execute(stmt)
     products = result.scalars().all()
 
-    # 4) Текст характеристик (как было)
+                                       
     characteristics_text: dict[uuid.UUID, str] = {}
     for p in products:
         characteristics_text[p.id] = _format_product_characteristics(list(p.characteristics_values or []))
@@ -360,7 +360,7 @@ async def product_create_page(
             "selected_category": selected_category,
             "selected_category_id": str(selected_category.id) if selected_category else "",
             "characteristics": characteristics,
-            "ch_values": {},  # для create пусто
+            "ch_values": {},                    
             "error": None,
             "form_data": {},
         },
@@ -383,7 +383,7 @@ async def product_create(
     discount_percent: str | None = Form(None),
     session: AsyncSession = Depends(get_async_session),
 ):
-    # 1) валидируем характеристики ДО сохранения файлов/транзакции
+                                                                  
     try:
         cat_uuid = uuid.UUID(category_id)
     except Exception:
@@ -444,7 +444,7 @@ async def product_create(
         session.add(product)
         await session.flush()
 
-        # главное фото
+                      
         if not main_image or not main_image.filename:
             raise HTTPException(status_code=400, detail="Главное фото обязательно.")
         try:
@@ -484,7 +484,7 @@ async def product_create(
         new_files.append(main_path)
         session.add(ProductImage(product_id=product.id, file_path=main_path, is_main=True))
 
-        # доп. фото
+                   
         for f in (extra_images or []):
             if not f or not f.filename:
                 continue
@@ -495,7 +495,7 @@ async def product_create(
             new_files.append(p)
             session.add(ProductImage(product_id=product.id, file_path=p, is_main=False))
 
-        # значения характеристик
+                                
         for ch in characteristics:
             v_str, v_num = parsed_ch.get(ch.id, (None, None))
             if v_str is None and v_num is None:
@@ -545,7 +545,7 @@ async def product_edit_page(
     request: Request,
     session: AsyncSession = Depends(get_async_session),
     category_id: str | None = None,
-    confirm_change: str | None = None,  # "1" когда подтвердили смену категории
+    confirm_change: str | None = None,                                         
 ):
     result = await session.execute(
         select(Product)
@@ -566,7 +566,7 @@ async def product_edit_page(
     pending_change = False
     pending_category: Category | None = None
 
-    effective_category_id = product.category_id  # по умолчанию текущая
+    effective_category_id = product.category_id                        
     selected_category_id_str = str(product.category_id)
 
     if category_id:
@@ -576,7 +576,7 @@ async def product_edit_page(
             new_cat_uuid = None
 
         if new_cat_uuid and new_cat_uuid != product.category_id:
-            # Требуем подтверждение смены категории на GET (без потери файлов на POST)
+                                                                                      
             if confirm_change == "1":
                 effective_category_id = new_cat_uuid
                 selected_category_id_str = str(new_cat_uuid)
@@ -587,7 +587,7 @@ async def product_edit_page(
 
     characteristics = await _load_category_characteristics(session, effective_category_id)
 
-    # Значения для префилла (оставляем только те, что есть в effective-наборе)
+                                                                              
     current_values_by_id: dict[int, ProductCharacteristicValue] = {
         v.characteristic_id: v for v in (product.characteristics_values or [])
     }
@@ -642,7 +642,7 @@ async def product_edit(
     form = await request.form()
     set_main_id_raw = form.get("set_main_id")
 
-    # валидируем категорию + значения характеристик до сохранения файлов
+                                                                        
     try:
         cat_uuid = uuid.UUID(category_id)
     except Exception:
@@ -652,7 +652,7 @@ async def product_edit(
     parsed_ch, ch_error = _parse_characteristics_from_form(form, characteristics)
 
     if ch_error:
-        # ререндер edit (без попытки сохранить картинки/данные)
+                                                               
         result = await session.execute(
             select(Product)
             .where(Product.id == product_id)
@@ -718,16 +718,16 @@ async def product_edit(
 
         old_category_id = product.category_id
 
-        # обновляем поля товара
+                               
         product.name = name
 
-        # slug при редактировании (так как имя изменилось)
+                                                          
         base = slugify(product.name)
         product.slug = await ensure_unique_slug(
             session,
             Product,
             base_slug=base,
-            exclude_id=product.id,  # чтобы не конфликтовать с самим собой
+            exclude_id=product.id,                                        
         )
 
         product.description = description
@@ -760,7 +760,7 @@ async def product_edit(
 
             await session.flush()
 
-            # пересчитываем список изображений после удаления
+                                                             
             result_imgs0 = await session.execute(
                 select(Product).where(Product.id == product_id).options(selectinload(Product.images))
             )
@@ -856,7 +856,7 @@ async def product_edit(
             )
 
 
-        # Если загрузили новое главное фото — заменяем текущее главное (или создаём, если нет)
+                                                                                              
         if main_image and main_image.filename:
             try:
                 new_main_path = await _save_product_image(main_image)
@@ -913,18 +913,18 @@ async def product_edit(
 
             new_files.append(new_main_path)
 
-            # ищем текущее главное
+                                  
             current_main = next((img for img in images_sorted if img.is_main), None)
 
             if current_main:
                 old_files_to_delete.append(current_main.file_path)
                 current_main.file_path = new_main_path
-                # гарантируем, что оно остаётся главным
+                                                       
                 for img in images_sorted:
                     img.is_main = False
                 current_main.is_main = True
             else:
-                # если почему-то главного нет — добавляем как главное
+                                                                     
                 session.add(ProductImage(product_id=product.id, file_path=new_main_path, is_main=True))
 
         if not images_sorted:
@@ -1069,23 +1069,23 @@ async def product_edit(
                     new_main.is_main = True
                     await session.flush()
 
-        # ---- значения характеристик ----
+                                          
         allowed_ids = {ch.id for ch in characteristics}
 
         existing_values: list[ProductCharacteristicValue] = list(product.characteristics_values or [])
         existing_by_id: dict[int, ProductCharacteristicValue] = {v.characteristic_id: v for v in existing_values}
 
-        # 1) удаляем все значения, которых нет в наборе новой категории
+                                                                       
         for v in existing_values:
             if v.characteristic_id not in allowed_ids:
                 await session.delete(v)
 
-        # 2) обновляем/создаём значения для allowed набора
+                                                          
         for ch in characteristics:
             v_str, v_num = parsed_ch.get(ch.id, (None, None))
             existing = existing_by_id.get(ch.id)
 
-            # если поле пустое — удаляем запись (если была)
+                                                           
             if v_str is None and v_num is None:
                 if existing:
                     await session.delete(existing)
@@ -1104,9 +1104,9 @@ async def product_edit(
                     )
                 )
 
-        # Инвариант: при смене категории остаются только пересекающиеся characteristic_id,
-        # остальные удалены (см. allowed_ids).
-        _ = old_category_id  # просто чтобы подчеркнуть смысл (old_category_id используется логически)
+                                                                                          
+                                              
+        _ = old_category_id                                                                           
 
 
         await session.commit()

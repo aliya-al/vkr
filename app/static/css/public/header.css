@@ -1,4 +1,4 @@
-/* TOP BAR (скроллится) */
+
 .public-topbar {
   background: var(--color-surface);
   border-bottom: 1px solid var(--color-line);
@@ -12,7 +12,7 @@
   gap: 16px;
   height: 34px;
 
-  font-family: var(--font-serif); /* <-- ДОБАВИТЬ */
+  font-family: var(--font-serif); 
   font-size: var(--fs-sm);
   color: var(--color-text);
 }
@@ -44,9 +44,9 @@
   white-space: nowrap;
 }
 
-/* MAIN BAR (должен быть всегда доступен) */
+
 .public-mainbar {
-  position: sticky; /* см. раздел ниже про “временно sticky” */
+  position: sticky; 
   top: 0;
   z-index: 1000;
   background: var(--color-bg);
@@ -68,7 +68,7 @@
   line-height: 1;
 }
 
-/* Search */
+
 .public-search {
   position: relative;
   display: flex;
@@ -101,7 +101,7 @@
   color: var(--color-muted);
 }
 
-/* Actions */
+
 .public-actions {
   display: flex;
   justify-content: flex-end;
@@ -129,13 +129,13 @@
   line-height: 1;
 }
 
-/* MOBILE: компактный хедер — без логотипа, только иконки */
+
 @media (max-width: 520px) {
    .public-topbar { display: block; }
 
   .public-topbar__nav { display: none; }
 
-  /* На мобилке делаем flex вместо grid */
+  
   .public-topbar__inner {
     display: flex;
     align-items: center;
@@ -143,25 +143,25 @@
 
     height: auto;
     gap: 10px;
-    padding-block: 6px;   /* важно: не трогаем боковые паддинги контейнера */
+    padding-block: 6px;   
     font-size: var(--fs-xs);
   }
 
   .public-topbar__city { white-space: nowrap; }
   .public-topbar__phone { white-space: nowrap; }
-  /* перестраиваем mainbar в 2 колонки: поиск + действия */
+  
   .public-mainbar__inner {
     grid-template-columns: 1fr auto;
     gap: 10px;
     padding-block: 10px;
   }
 
-  /* убираем логотип */
+  
   .public-logo {
     display: none;
   }
 
-  /* делаем поиск компактнее */
+  
   .public-search__input {
     height: 36px;
     padding-left: 38px;
@@ -172,7 +172,7 @@
     left: 12px;
   }
 
-  /* иконки в ряд, меньше отступы */
+  
   .public-actions {
     gap: 10px;
   }
@@ -182,12 +182,12 @@
     gap: 0;
   }
 
-  /* скрываем подписи под иконками */
+  
   .public-action__label {
     display: none;
   }
 
-  /* уменьшаем иконки */
+  
   .public-action__icon {
     width: 20px;
     height: 20px;

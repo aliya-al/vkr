@@ -167,7 +167,6 @@
     t = setTimeout(() => snapToStep('smooth'), 120);
   }, { passive: true });
 
-  // ===== выравнивание высоты по строкам характеристик =====
   const equalizeRows = () => {
     const cols = Number(getComputedStyle(grid).getPropertyValue('--cmp-cols')) || 0;
     if (!cols) return;
@@ -177,14 +176,12 @@
 
     const cells = Array.from(grid.children);
 
-    // сначала сбрасываем (чтобы корректно пересчитать после resize)
     for (const el of cells) {
       if (el.classList && (el.classList.contains('cmp-cell--name') || el.classList.contains('cmp-cell--val'))) {
         el.style.minHeight = '';
       }
     }
 
-    // индекс начала rows: 1 (corner) + cols (product cells)
     const start = 1 + cols;
     const rowSize = 1 + cols;
 
@@ -204,7 +201,6 @@
     }
   };
 
-  // шрифты/картинки могут влиять на высоту — делаем несколько безопасных прогонов
   const scheduleEqualize = () => {
     equalizeRows();
     requestAnimationFrame(equalizeRows);

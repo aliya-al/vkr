@@ -1,11 +1,11 @@
-# app/services/favorites.py
+                           
 from __future__ import annotations
 
 import uuid
 from typing import Iterable
 
 FAVORITES_SESSION_KEY = "favorites"
-FAVORITES_LIMIT = 50  # чтобы не раздувать cookie-сессию
+FAVORITES_LIMIT = 50                                    
 
 
 def _normalize_uuid_str(value: str) -> str | None:

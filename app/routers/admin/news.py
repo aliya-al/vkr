@@ -95,7 +95,7 @@ async def news_create(
             status_code=400,
         )
 
-    # Фото обязательно
+                      
     if not image or not image.filename:
         return templates.TemplateResponse(
             "admin/news/create.html",
@@ -167,10 +167,10 @@ async def news_edit(
 
     has_new_image = bool(image and image.filename)
 
-    # 1) Нельзя “удалить фото”, если нового не загружают (иначе останемся без фото)
+                                                                                   
     if remove_image and not has_new_image:
         msg = "Фото обязательно. Если удаляете текущее фото — загрузите новое."
-        # отдельно подсветим кейс когда фото и так нет
+                                                      
         if not item.image_path:
             msg = "Фото обязательно. Сейчас фото нет — загрузите изображение."
         return templates.TemplateResponse(
@@ -179,7 +179,7 @@ async def news_edit(
             status_code=400,
         )
 
-    # 2) Если фото нет и не загрузили новое — тоже ошибка (инвариант: фото всегда должно быть)
+                                                                                              
     if not item.image_path and not has_new_image:
         return templates.TemplateResponse(
             "admin/news/edit.html",
@@ -187,10 +187,10 @@ async def news_edit(
             status_code=400,
         )
 
-    # применяем изменения
+                         
     item.title = title
 
-    # 3) Если загружают новое фото — заменяем (старое удаляем)
+                                                              
     if has_new_image:
         try:
             new_path = await _save_image(image)  # type: ignore[arg-type]
@@ -201,12 +201,12 @@ async def news_edit(
                 status_code=400,
             )
 
-        # удаляем старое локальное (если было)
+                                              
         _delete_image_if_local(item.image_path)
         item.image_path = new_path
 
-    # 4) remove_image=true + has_new_image=true мы уже обработали как “замена”.
-    # Ничего отдельно удалять не нужно.
+                                                                               
+                                       
 
     await session.commit()
     return RedirectResponse("/admin/news", status_code=303)

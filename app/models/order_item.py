@@ -20,8 +20,8 @@ class OrderItem(Base):
 
     quantity: Mapped[int] = mapped_column(Integer, nullable=False)
 
-    price_per_item: Mapped[int] = mapped_column(Integer, nullable=False)  # базовая цена
-    final_price_per_item: Mapped[int] = mapped_column(Integer, nullable=False, default=0)  # фактическая за штуку (со скидкой)
+    price_per_item: Mapped[int] = mapped_column(Integer, nullable=False)                
+    final_price_per_item: Mapped[int] = mapped_column(Integer, nullable=False, default=0)                                     
     discount_percent: Mapped[int | None] = mapped_column(Integer, nullable=True)
     total_price: Mapped[int] = mapped_column(Integer, nullable=False)
 

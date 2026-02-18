@@ -1,4 +1,4 @@
-{# app/templates/admin/products/edit.html #}
+
 {% extends "admin/base.html" %}
 
 {% block title %}Редактировать товар{% endblock %}
@@ -31,7 +31,7 @@
         <span class="pc-pill">{{ product.category.name if product.category else '—' }}</span>
         <a class="ap-link" href="/admin/products">к списку</a>
       </div>
-{# Шаг 1 — смена категории (GET) #}
+
 <section class="ap-card" aria-label="Шаг 1: выбор категории" style="margin-bottom:16px;">
   <header class="ap-card__head">
     <div class="ap-card__title">Шаг 1 — выбери категорию</div>
@@ -63,7 +63,7 @@
   </form>
 </section>
 
-{# Если выбрали другую категорию, но ещё не подтвердили — показываем подтверждение #}
+
 {% if pending_change %}
   <div class="pc-alert" role="alert" style="margin-bottom:16px;">
     <strong class="pc-alert__label">Подтверди смену категории:</strong>
@@ -87,7 +87,7 @@
             <div class="ap-card__title">Данные товара</div>
           </header>
 
-          {# action подстрой под свой роут (id/slug). Обычно: /admin/products/{{ product.id }}/edit #}
+          
           <form method="post"
                 action="/admin/products/{{ product.id }}/edit"
                 enctype="multipart/form-data"
@@ -288,9 +288,9 @@
         </section>
       </div>
 
-    </div> {# /.pc-narrow #}
-  </div>   {# /.container #}
-</div>     {# /.admin-productCreate #}
+    </div> 
+  </div>   
+</div>     
 {% endblock %}
 
 {% block scripts %}

@@ -52,7 +52,7 @@
   color: var(--cmp-text);
 }
 
-/* ===== Empty state (как в избранном) ===== */
+
 .cmp-empty{
   display: grid;
   place-items: center;
@@ -117,7 +117,7 @@
   border-color: var(--color-primary-strong);
 }
 
-/* ===== Board ===== */
+
 .cmp-board{
   position: relative;
 }
@@ -303,7 +303,7 @@
   word-break: break-word;
 }
 
-/* ===== Responsive ===== */
+
 @media (max-width: 900px){
   .cmp{
     --cmp-name-w: 180px;

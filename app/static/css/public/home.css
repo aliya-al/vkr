@@ -1,15 +1,15 @@
 .home {
-  /* базовые привязки к глобальным токенам theme.css */
+  
   --home-line: var(--color-line);
   --home-surface: var(--color-surface);
   --home-bg: var(--color-bg);
   --home-text: var(--color-text);
 
-  /* геометрия/ритм */
+  
   --home-radius: 18px;
   --home-gap: 24px;
 
-  /* HERO */
+  
   --hero-h: 320px;
 
   padding: var(--space-6) 0 var(--space-8);
@@ -18,7 +18,7 @@
 
 .cartw { --cartw-h: 32px; }
 
-/* ---------- HERO ---------- */
+
 .home-hero {
   margin-top: var(--space-4);
   margin-bottom: var(--space-7);
@@ -31,7 +31,7 @@
   align-items: stretch;
 }
 
-/* ---------- NEWS ---------- */
+
 .home-news {
   height: var(--hero-h);
   border-radius: var(--home-radius);
@@ -144,7 +144,7 @@
 }
 .home-news__img--ph { background: var(--home-surface); }
 
-/* ---------- CATEGORIES PANEL (viewport scroll + arrows) ---------- */
+
 .home-cats {
   height: var(--hero-h);
 
@@ -239,7 +239,7 @@
 }
 
 
-/* скроллит viewport (важно для iPhone) */
+
 .home-cats__viewport {
   overflow: hidden;
   padding-inline: calc(var(--cats-nav-size) + var(--cats-nav-gap));
@@ -321,7 +321,7 @@
   background: var(--home-bg);
 }
 
-/* ---------- SECTIONS ---------- */
+
 .home-section { margin-top: var(--space-7); }
 .home-section--last { margin-bottom: var(--space-7); }
 
@@ -334,9 +334,7 @@
   color: var(--home-text);
 }
 
-/* =========================
-   RESPONSIVE
-   ========================= */
+
 
 @media (max-width: 900px) {
   .home-hero__grid {
@@ -350,7 +348,7 @@
   }
 }
 
-/* iPhone / телефоны */
+
 @media (max-width: 430px) {
   .home {
     --home-gap: 14px;
@@ -363,7 +361,7 @@
     gap: var(--home-gap);
   }
 
-  /* NEWS */
+  
   .home-news {
     height: var(--hero-h);
     --news-frame-pad: 12px;
@@ -375,7 +373,7 @@
 
   .home-news__nav svg { width: 16px; height: 16px; }
 
-  /* CATS */
+  
   .home-cats {
     height: var(--hero-h);
     padding: 16px;
@@ -396,7 +394,7 @@
   .home-cat { flex: 0 0 128px; height: 176px; }
   .home-cat__thumb { width: 92px; height: 92px; }
 
-  /* PRODUCTS (теперь в product_cards.css) */
+  
   .home-section { margin-top: var(--space-6); }
 
   .home-section__title {

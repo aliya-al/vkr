@@ -1,4 +1,4 @@
-{# templates/public/components/product_card.html #}
+
 
 {% set pslug = (p.slug if p.slug is defined else p.id) %}
 {% set href = "/product/" ~ pslug %}
@@ -67,7 +67,7 @@
 
     <div class="p-card__price">
       {% if p.discount_percent %}
-        {% set new_price = (p.price * (100 - p.discount_percent) // 100) %}
+        {% set new_price = (p.price * (100 - p.discount_percent)
         <span class="p-card__price-old">{{ p.price }}р/шт.</span>
         <span class="p-card__price-new">{{ new_price }}р/шт.</span>
       {% else %}

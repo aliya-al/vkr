@@ -14,14 +14,14 @@
     {% set fav_ids = (ui.fav_ids if ui and ui.fav_ids is defined else []) %}
     {% set cmp_ids = (ui.cmp_ids if ui and ui.cmp_ids is defined else []) %}
 
-    {# qty из корзины в сессии (без правок роутинга) #}
+    
     {% set cart_map = (request.session.get('cart') if request and request.session is defined else {}) %}
     {% set cart_qty = 0 %}
     {% if cart_map is mapping %}
       {% set cart_qty = (cart_map.get(product.id|string, 0) | int) %}
     {% endif %}
 
-    <!-- breadcrumbs -->
+    
     <nav class="pdp-bc" aria-label="Хлебные крошки">
       <ol class="pdp-bc__list">
         {% if breadcrumbs and breadcrumbs|length %}
@@ -43,7 +43,7 @@
       <h1 class="pdp-title">{{ product.name }}</h1>
 
       <div class="pdp-actions" aria-label="Действия с товаром">
-        <!-- favorite -->
+        
         <form method="post" action="/favorites/toggle" class="js-icon-toggle pdp-actions__item">
           <input type="hidden" name="product_id" value="{{ product.id }}">
           <button class="icon-btn {{ 'is-active' if ((product.id|string) in fav_ids) else '' }}"
@@ -57,7 +57,7 @@
           <span class="pdp-actions__txt">из избранное</span>
         </form>
 
-        <!-- compare -->
+        
         <form method="post" action="/compare/toggle" class="js-icon-toggle pdp-actions__item">
           <input type="hidden" name="product_id" value="{{ product.id }}">
           <button class="icon-btn {{ 'is-active' if ((product.id|string) in cmp_ids) else '' }}"
@@ -73,18 +73,18 @@
           <span class="pdp-actions__txt">в сравнение</span>
         </form>
 
-        <!-- share (JS) -->
+        
         <button class="pdp-share" type="button" aria-label="Поделиться">
           <svg class="pdp-share__ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-  <!-- левая "скоба" -->
+  
   <path d="M10 8H7a4 4 0 0 0 0 8h3"
         fill="none" stroke="currentColor" stroke-width="2"
         stroke-linecap="round" stroke-linejoin="round"/>
-  <!-- правая "скоба" -->
+  
   <path d="M14 8h3a4 4 0 0 1 0 8h-3"
         fill="none" stroke="currentColor" stroke-width="2"
         stroke-linecap="round" stroke-linejoin="round"/>
-  <!-- перемычка внутри -->
+  
   <path d="M9 12h6"
         fill="none" stroke="currentColor" stroke-width="2"
         stroke-linecap="round"/>
@@ -95,9 +95,9 @@
       </div>
     </header>
 
-    <!-- TOP GRID -->
+    
     <section class="pdp-top" aria-label="Галерея и основные данные">
-      <!-- GALLERY -->
+      
       <div class="pdp-gallery" aria-label="Галерея товара">
         <div class="pdp-thumbs" role="list">
           {% if gallery and gallery.all and gallery.all|length %}
@@ -135,9 +135,9 @@
         </div>
       </div>
 
-      <!-- RIGHT -->
+      
       <div class="pdp-right">
-        <!-- SHORT SPECS -->
+        
         <section class="pdp-meta" aria-label="Короткие характеристики">
           <div class="pdp-blockhead">
             <h2 class="pdp-h">Характеристики:</h2>
@@ -171,7 +171,7 @@
           <a class="pdp-more js-scrollto" href="#pdpSpecsFull">Показать полностью</a>
         </section>
 
-        <!-- BUY -->
+        
         <aside class="pdp-buy" aria-label="Покупка">
           <div class="pdp-buy__label">Цена:</div>
 
@@ -184,7 +184,7 @@
             {% endif %}
           </div>
 
-          <!-- CART (button <-> stepper) -->
+          
 <div class="pdp-cart"
      data-product-id="{{ product.id }}"
      data-initial-qty="{{ cart_qty }}">
@@ -215,7 +215,7 @@
 
         </aside>
 
-        <!-- SHORT DESCRIPTION -->
+        
         <section class="pdp-short" aria-label="Короткое описание">
           <div class="pdp-blockhead">
             <h2 class="pdp-h">Описание товара:</h2>
@@ -233,7 +233,7 @@
       </div>
     </section>
 
-    <!-- FULL DESCRIPTION -->
+    
     <section class="pdp-section" id="pdpDescFull" aria-label="Описание товара">
       <h2 class="pdp-section__title">Описание товара:</h2>
 
@@ -251,7 +251,7 @@
       </div>
     </section>
 
-    <!-- FULL SPECS -->
+    
     <section class="pdp-section" id="pdpSpecsFull" aria-label="Характеристики товара">
       <h2 class="pdp-section__title">Характеристики:</h2>
 
@@ -387,7 +387,6 @@
 {% block scripts %}
 <script>
 (() => {
-  // smooth scroll for "Показать полностью"
   document.querySelectorAll('a.js-scrollto[href^="#"]').forEach((a) => {
     a.addEventListener('click', (e) => {
       const id = a.getAttribute('href');
@@ -432,7 +431,6 @@
     });
   }
 
-  // gallery thumbs -> main
   const mainImg = document.getElementById('pdpMainImg');
   const thumbs = document.querySelectorAll('.pdp-thumb[data-src]');
   thumbs.forEach((b) => {
@@ -442,7 +440,6 @@
     });
   });
 
-  // dialog "show all"
   const dlg = document.getElementById('pdpDlg');
   const showAll = document.querySelector('.pdp-showall');
   if (dlg && showAll && typeof dlg.showModal === 'function') {
@@ -457,7 +454,6 @@
     });
   }
 
-  // share
   const shareBtn = document.querySelector('.pdp-share');
   if (shareBtn) {
     shareBtn.addEventListener('click', async () => {
@@ -470,12 +466,11 @@
     });
   }
 
-// CART
   const cart = document.querySelector('.pdp-cart');
   if (cart) {
     const addForm = cart.querySelector('form.js-cart-add');
     const step = cart.querySelector('.js-cart-step');
-    const qtyEl = cart.querySelector('.js-step-qty'); // теперь это <input type="number">
+    const qtyEl = cart.querySelector('.js-step-qty');
     const plusBtn = cart.querySelector('.js-step-plus');
     const minusBtn = cart.querySelector('.js-step-minus');
 
@@ -532,7 +527,7 @@
             'Accept': 'application/json',
             'X-Requested-With': 'fetch',
           },
-          body: data.toString(), // qty=1 из формы
+          body: data.toString(),
           credentials: 'same-origin',
           redirect: 'follow',
         });
@@ -548,12 +543,11 @@
       }
     };
 
-    // ---------- РУЧНОЙ ВВОД ----------
     const parseQty = (v) => {
-      if (v === '' || v == null) return null;          // пусто — разрешаем временно
+      if (v === '' || v == null) return null;
       const n = Number(v);
       if (!Number.isFinite(n)) return null;
-      return Math.max(0, Math.floor(n));               // только целые >= 0
+      return Math.max(0, Math.floor(n));
     };
 
     let debounceTimer = null;
@@ -587,7 +581,7 @@
       qtyEl.addEventListener('blur', () => {
         clearTimeout(debounceTimer);
         const next = parseQty(qtyEl.value);
-        const finalNext = (next === null) ? 0 : next; // пусто/мусор -> 0
+        const finalNext = (next === null) ? 0 : next;
 
         qty = finalNext;
         setUI();
@@ -603,7 +597,6 @@
       });
     }
 
-    // ---------- ADD ----------
     if (addForm) {
       addForm.addEventListener('submit', async (e) => {
         e.preventDefault();
@@ -625,7 +618,6 @@
       });
     }
 
-    // ---------- PLUS / MINUS ----------
     if (plusBtn) {
       plusBtn.addEventListener('click', async () => {
         const prev = qty;

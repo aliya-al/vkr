@@ -44,7 +44,7 @@
             </div>
           {% endif %}
 
-          <!-- СОСТАВ ЗАКАЗА -->
+          
           <div class="co-card">
             <div class="co-card__head">
               <h2 class="co-card__title">Состав заказа</h2>
@@ -97,7 +97,7 @@
             </div>
           </div>
 
-          <!-- ИТОГО + ФОРМА -->
+          
           <div class="co-card">
             <h2 class="co-card__title co-card__title--center">Итого</h2>
 
@@ -157,7 +157,7 @@
                 {% set dt = form_data.get('delivery_type','pickup') %}
                 <input type="hidden" name="delivery_type" id="deliveryType" value="{{ dt }}" />
 
-                <!-- PICKUP -->
+                
                 <div class="co-pane" id="panePickup">
                   <label class="co-field">
                     <span class="co-field__label">Пункт самовывоза <b class="co-req">*</b></span>
@@ -175,7 +175,7 @@
                   </label>
                 </div>
 
-                <!-- DELIVERY -->
+                
                 <div class="co-pane is-hidden" id="paneDelivery">
                   <label class="co-field">
                     <span class="co-field__label">Адрес доставки <b class="co-req">*</b></span>
@@ -227,18 +227,14 @@
   const digitsOnly = (s) => (s || '').replace(/\D/g, '');
 
   const normalizeRu = (digits) => {
-    // принимаем: 9XXXXXXXXX -> 7XXXXXXXXXX
-    //          8XXXXXXXXXX -> 7XXXXXXXXXX
-    //          7XXXXXXXXXX -> 7XXXXXXXXXX
     if (!digits) return '';
     if (digits[0] === '9') digits = '7' + digits;
     if (digits[0] === '8') digits = '7' + digits.slice(1);
-    if (digits[0] !== '7') return digits; // оставим как есть, но дальше провалится на проверке
+    if (digits[0] !== '7') return digits;
     return digits.slice(0, 11);
   };
 
   const formatRu = (digits11) => {
-    // digits11: 7XXXXXXXXXX
     if (!digits11) return '';
     const d = digits11;
     const a = d.slice(1, 4);
@@ -260,7 +256,6 @@
     const norm = normalizeRu(raw);
     phoneEl.value = formatRu(norm);
 
-    // Валидация: строго 11 цифр и начинается с 7
     const ok = norm.length === 11 && norm[0] === '7';
     phoneEl.setCustomValidity(ok || phoneEl.value === '' ? '' : 'Введите телефон в формате +7 (999) 999-99-99');
   };
@@ -268,10 +263,8 @@
   phoneEl.addEventListener('input', applyMask);
   phoneEl.addEventListener('blur', applyMask);
 
-  // если при ошибке бекенд вернул значение — сразу отформатируем
   applyMask();
 
-  // перед отправкой формы — ещё раз зафиксируем маску/валидность
   const form = document.getElementById('checkoutForm');
   if (form) {
     form.addEventListener('submit', () => applyMask());
@@ -297,7 +290,6 @@
     panePickup?.classList.toggle('is-hidden', !isPickup);
     paneDelivery?.classList.toggle('is-hidden', isPickup);
 
-    // required: только нужное поле
     if (pickupAddress) pickupAddress.required = isPickup;
     if (deliveryAddress) deliveryAddress.required = !isPickup;
 
@@ -315,7 +307,6 @@
     });
   });
 
-  // дефолт: берем из hidden input (сервер кладет form_data.delivery_type)
   setMode(deliveryType ? deliveryType.value : 'pickup');
 })();
 </script>

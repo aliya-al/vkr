@@ -25,7 +25,7 @@ async def main():
     keep = set([x.strip() for x in args.keep_login if x and x.strip()])
 
     async with async_session_maker() as session:
-        # Сколько попадёт под действие
+                                      
         count_q = select(func.count()).select_from(AdminUser)
         if keep:
             count_q = count_q.where(~AdminUser.login.in_(keep))
