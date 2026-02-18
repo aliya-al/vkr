@@ -1,0 +1,55 @@
+{% extends "public/base.html" %}
+
+{% block title %}Поиск{% endblock %}
+
+{% block head %}
+  <link rel="stylesheet" href="/static/css/public/components/icon_toggle.css">
+  <link rel="stylesheet" href="/static/css/public/components/product_cards.css">
+  <link rel="stylesheet" href="/static/css/public/search.css">
+{% endblock %}
+
+{% block content %}
+<div class="search-page">
+  <div class="container">
+    {% set cart_map = cart_map if cart_map is defined else (request.session.get('cart') if request and request.session is defined else {}) %}
+
+    <header class="search-head">
+      <h1 class="search-title">Поиск</h1>
+      {% if q %}
+        <p class="search-subtitle">Результаты по запросу “{{ q }}”</p>
+      {% else %}
+        <p class="search-subtitle">Найдите товары по названию или категории</p>
+      {% endif %}
+
+      <div class="search-meta">
+        {% if show_prompt %}
+          Введите запрос
+        {% else %}
+          Найдено товаров: {{ products|length }}
+        {% endif %}
+      </div>
+    </header>
+
+    {% if show_prompt %}
+      <section class="search-empty" aria-live="polite">
+        <div class="search-empty__card">Введите запрос</div>
+      </section>
+    {% elif products and products|length %}
+      <section class="search-results" aria-label="Результаты поиска">
+        <div class="p-grid">
+          {% for p in products %}
+            {% include "public/components/product_card.html" %}
+          {% endfor %}
+        </div>
+      </section>
+    {% else %}
+      <section class="search-empty" aria-live="polite">
+        <div class="search-empty__card">
+          <div class="search-empty__title">Ничего не найдено</div>
+          <div class="search-empty__text">Попробуйте изменить запрос, например уточнить название товара или категории.</div>
+        </div>
+      </section>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

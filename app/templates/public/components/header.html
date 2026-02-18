@@ -16,13 +16,14 @@
   <div class="container public-mainbar__inner">
     <a class="public-logo" href="/" aria-label="На главную">Логотип</a>
 
-    <form class="public-search" action="/catalog" method="get" role="search">
+    <form class="public-search" action="/search" method="get" role="search" data-search-form data-suggest-url="/search/suggest">
       <span class="public-search__icon" aria-hidden="true">
         <svg viewBox="0 0 24 24" width="18" height="18" focusable="false" aria-hidden="true">
           <path d="M10 4a6 6 0 1 1 0 12A6 6 0 0 1 10 4m0-2a8 8 0 1 0 4.9 14.3l4.4 4.4 1.4-1.4-4.4-4.4A8 8 0 0 0 10 2z"></path>
         </svg>
       </span>
-      <input class="public-search__input" type="search" name="q" placeholder="поиск по товарам..." autocomplete="off" />
+      <input class="public-search__input" type="search" name="q" value="{{ request.query_params.get('q', '') if request is defined else '' }}" placeholder="поиск по товарам..." autocomplete="off" data-search-input />
+      <div class="public-search__suggestions" data-search-suggestions hidden></div>
     </form>
 
     <div class="public-actions" aria-label="Действия">
