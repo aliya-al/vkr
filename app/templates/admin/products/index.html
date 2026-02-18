@@ -125,7 +125,7 @@
   {% endif %}
 {% endif %}
 
-<article class="ap-row">
+<article class="ap-row" data-delete-item>
   <div class="ap-thumb {% if not img %}ap-thumb--ph{% endif %}">
     {% if img %}
       <img src="{{ img }}" alt="{{ p.name }}" loading="lazy">
@@ -163,7 +163,8 @@
 
                   <form method="post"
                         action="/admin/products/{{ p.id }}/delete"
-                        onsubmit="return confirm('Удалить товар «{{ p.name }}»?');"
+                        data-ajax-delete
+                        data-confirm="Удалить товар «{{ p.name }}»?"
                         style="display:inline">
                     <button class="ap-del" type="submit">Удалить</button>
                   </form>
@@ -183,5 +184,6 @@
 {% endblock %}
 
 {% block scripts %}
+<script src="/static/js/admin/ajax-delete.js"></script>
 <script src="/static/js/admin/products.js"></script>
 {% endblock %}

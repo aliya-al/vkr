@@ -2,7 +2,9 @@
 
 {% block title %}Бренды{% endblock %}
 
+
 {% block head %}{% endblock %}
+
 
 {% block content %}
 <div class="admin-brands">
@@ -29,14 +31,14 @@
 
             <tbody>
               {% for brand in brands %}
-                <tr>
+                <tr data-delete-item>
                   <td class="br-tdName">
                     <div class="br-name">{{ brand.name }}</div>
                   </td>
                   <td class="br-tdActions">
                     <div class="br-actions">
                       <a class="pc-btn pc-btn--ghost pc-btn--sm" href="/admin/brands/{{ brand.id }}/edit">Редактировать</a>
-                      <form method="post" action="/admin/brands/{{ brand.id }}/delete" class="br-delForm">
+                      <form method="post" action="/admin/brands/{{ brand.id }}/delete" class="br-delForm" data-ajax-delete>
                         <button type="submit" class="pc-btn pc-btn--danger pc-btn--sm">Удалить</button>
                       </form>
                     </div>
@@ -56,4 +58,8 @@
     </div>
   </div>
 </div>
+{% endblock %}
+
+{% block scripts %}
+<script src="/static/js/admin/ajax-delete.js"></script>
 {% endblock %}

@@ -2,7 +2,9 @@
 
 {% block title %}Характеристики{% endblock %}
 
+
 {% block head %}{% endblock %}
+
 
 {% block content %}
 <div class="admin-attributes">
@@ -31,7 +33,7 @@
 
 <tbody>
   {% for a in attributes %}
-    <tr>
+    <tr data-delete-item>
       <td><strong>{{ a.name }}</strong></td>
       <td>{{ {'string':'строка','number':'число'}.get(a.value_type, a.value_type) }}</td>
       <td>{{ a.unit or '—' }}</td>
@@ -39,7 +41,7 @@
   <div class="br-actions">
 
           <a class="pc-btn pc-btn--ghost pc-btn--sm" href="/admin/attributes/{{ a.id }}/edit">Редактировать</a>
-          <form method="post" action="/admin/attributes/{{ a.id }}/delete" class="br-delForm">
+          <form method="post" action="/admin/attributes/{{ a.id }}/delete" class="br-delForm" data-ajax-delete>
             <button type="submit" class="pc-btn pc-btn--danger pc-btn--sm">Удалить</button>
           </form>
         </div>
@@ -61,4 +63,8 @@
     </div>
   </div>
 </div>
+{% endblock %}
+
+{% block scripts %}
+<script src="/static/js/admin/ajax-delete.js"></script>
 {% endblock %}

@@ -2,7 +2,9 @@
 
 {% block title %}Новости{% endblock %}
 
+
 {% block head %}{% endblock %}
+
 
 
 {% block content %}
@@ -31,7 +33,7 @@
             </thead>
             <tbody>
               {% for n in news %}
-                <tr>
+                <tr data-delete-item>
                   <td class="nl-tdTitle">
                     <div class="nl-title">{{ n.title }}</div>
                   </td>
@@ -48,7 +50,7 @@
                   <td class="nl-tdActions">
                     <div class="nl-actions">
                       <a class="pc-btn pc-btn--ghost pc-btn--sm" href="/admin/news/{{ n.id }}/edit">Редактировать</a>
-                      <form method="post" action="/admin/news/{{ n.id }}/delete" class="nl-delForm">
+                      <form method="post" action="/admin/news/{{ n.id }}/delete" class="nl-delForm" data-ajax-delete>
                         <button class="pc-btn pc-btn--danger pc-btn--sm" type="submit">Удалить</button>
                       </form>
                     </div>
@@ -67,4 +69,8 @@
     </div>
   </div>
 </div>
+{% endblock %}
+
+{% block scripts %}
+<script src="/static/js/admin/ajax-delete.js"></script>
 {% endblock %}
