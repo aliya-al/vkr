@@ -214,12 +214,9 @@ function normalizeSeries(arr) {
   function renderTopProducts(arr) {
     if (!topListEl) return;
     topListEl.innerHTML = "";
-    const seenSlugs = new Set();
-
     (arr || []).slice(0, 5).forEach((it) => {
       const slug = String(it.product_slug ?? it.slug ?? "").trim();
-      if (!slug || seenSlugs.has(slug)) return;
-      seenSlugs.add(slug);
+      if (!slug) return;
 
       const name = it.name ?? it.product_name ?? it.title ?? "—";
       const uniq = it.unique_orders ?? it.unique ?? it.orders_unique ?? it.uniqueCount ?? 0;

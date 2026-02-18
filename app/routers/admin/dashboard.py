@@ -336,7 +336,7 @@ async def api_top_products(
     group: GroupByQuery = Query("month"),
     scope: ScopeQuery = Query("recent"),
     periods: int = Query(0, ge=0, le=200),
-    limit: int = Query(4, ge=1, le=50),
+    limit: int = Query(5, ge=1, le=50),
 ):
     now = datetime.now(MOSCOW_TZ)
     if periods <= 0:

@@ -9,6 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.order import Order, OrderStatus
 from app.models.order_item import OrderItem
+from app.models.product import Product
 
 GroupBy = Literal["year", "month", "week", "day"]
 Scope = Literal["recent", "all"]
@@ -167,79 +168,52 @@ async def fetch_top_products_total_qty(
     limit: int = 5,
 ) -> list[dict]:
     """
-    Топ товаров по количеству (DONE):
-    Берём из snapshot OrderItem, чтобы не зависеть от products (товар могли удалить).
+    Топ товаров по количеству (DONE) только по валидным актуальным товарам.
     """
     total_qty = func.coalesce(func.sum(OrderItem.quantity), 0).label("total_qty")
     unique_orders = func.count(distinct(OrderItem.order_id)).label("unique_orders")
     revenue = func.coalesce(func.sum(OrderItem.total_price), 0).label("revenue")
 
+    image = func.max(OrderItem.product_image).label("product_image")
+
     stmt = (
         select(
-            OrderItem.product_id.label("product_id"),
-            OrderItem.product_name.label("product_name"),
-            OrderItem.product_slug.label("product_slug"),
-            OrderItem.product_image.label("product_image"),
+            Product.id.label("product_id"),
+            Product.name.label("product_name"),
+            Product.slug.label("product_slug"),
+            image,
             total_qty,
             unique_orders,
             revenue,
         )
         .select_from(OrderItem)
         .join(Order, Order.id == OrderItem.order_id)
+        .join(Product, Product.id == OrderItem.product_id)
         .where(
             Order.status == OrderStatus.done,
             Order.created_at >= start_dt,
             Order.created_at < end_dt,
+            Product.slug.is_not(None),
+            Product.slug != "",
         )
-        .group_by(
-            OrderItem.product_id,
-            OrderItem.product_name,
-            OrderItem.product_slug,
-            OrderItem.product_image,
-        )
+        .group_by(Product.id, Product.name, Product.slug)
         .order_by(total_qty.desc(), revenue.desc())
         .limit(limit)
     )
 
     rows = (await session.execute(stmt)).mappings().all()
-
-    deduped: dict[str, dict] = {}
-    for r in rows:
-        slug = (r["product_slug"] or "").strip()
-        if not slug:
-            continue
-
-        product_id = str(r["product_id"]) if r["product_id"] else None
-        key = product_id or slug
-
-        row_total_qty = int(r["total_qty"] or 0)
-        row_unique_orders = int(r["unique_orders"] or 0)
-        row_revenue = int(r["revenue"] or 0)
-
-        if key not in deduped:
-            deduped[key] = {
-                "product_id": product_id,
-                "name": r["product_name"],
-                "slug": slug,
-                "image": r["product_image"],
-                "total_qty": row_total_qty,
-                "unique_orders": row_unique_orders,
-                "revenue": row_revenue,
-            }
-            continue
-
-        current = deduped[key]
-        current["total_qty"] += row_total_qty
-        current["unique_orders"] += row_unique_orders
-        current["revenue"] += row_revenue
-        if not current.get("image") and r["product_image"]:
-            current["image"] = r["product_image"]
-
-    return sorted(
-        deduped.values(),
-        key=lambda it: (int(it["total_qty"]), int(it["revenue"])),
-        reverse=True,
-    )[:limit]
+    return [
+        {
+            "product_id": str(r["product_id"]),
+            "name": r["product_name"],
+            "slug": r["product_slug"],
+            "image": r["product_image"],
+            "total_qty": int(r["total_qty"] or 0),
+            "unique_orders": int(r["unique_orders"] or 0),
+            "revenue": int(r["revenue"] or 0),
+        }
+        for r in rows
+    ]
 
 
 async def fetch_category_breakdown(
