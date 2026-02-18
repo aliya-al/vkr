@@ -21,12 +21,6 @@ from app.models.characteristic import CharacteristicType, GlobalCharacteristic
 STEP1_HEADERS = [
     "Название товара",
     "Категория",
-    "Цена",
-    "Описание",
-    "Объём, м³",
-    "Вес, кг",
-    "Активен",
-    "Скидка, %",
 ]
 
 STEP2_BASE_HEADERS = [
@@ -37,7 +31,6 @@ STEP2_BASE_HEADERS = [
     "Описание",
     "Объём, м³",
     "Вес, кг",
-    "Активен",
     "Скидка, %",
 ]
 
@@ -72,6 +65,7 @@ class Step2Row:
     sheet_name: str
     row_number: int
     import_row_id: str
+    base_row: Step1Row
     characteristic_values: dict[int, tuple[str | None, float | None]]
 
 
@@ -267,38 +261,6 @@ async def parse_step1_build_step2(session: AsyncSession, source_bytes: bytes) ->
         if category and not _is_leaf(category, by_parent):
             errors.append(ImportErrorItem("Товары", row_idx, "Категория", "Можно указывать только листовую категорию."))
 
-        try:
-            price = _to_int(row_values[2])
-        except ValueError as e:
-            errors.append(ImportErrorItem("Товары", row_idx, "Цена", str(e)))
-            price = 0
-
-        description = _normalize_text(row_values[3]) or None
-
-        try:
-            volume_m3 = _to_float(row_values[4])
-        except ValueError as e:
-            errors.append(ImportErrorItem("Товары", row_idx, "Объём, м³", str(e)))
-            volume_m3 = 0.0
-
-        try:
-            weight_kg = _to_float(row_values[5])
-        except ValueError as e:
-            errors.append(ImportErrorItem("Товары", row_idx, "Вес, кг", str(e)))
-            weight_kg = 0.0
-
-        try:
-            is_active = _to_bool(row_values[6], default=True)
-        except ValueError as e:
-            errors.append(ImportErrorItem("Товары", row_idx, "Активен", str(e)))
-            is_active = True
-
-        try:
-            discount_percent = _to_optional_int(row_values[7])
-        except ValueError as e:
-            errors.append(ImportErrorItem("Товары", row_idx, "Скидка, %", str(e)))
-            discount_percent = None
-
         if not errors or all(er.row != row_idx for er in errors):
             assert category is not None
             valid_rows.append(
@@ -308,12 +270,12 @@ async def parse_step1_build_step2(session: AsyncSession, source_bytes: bytes) ->
                     category_id=category.id,
                     category_path=_build_category_path(category.id, by_id),
                     name=name,
-                    price=price,
-                    description=description,
-                    volume_m3=volume_m3,
-                    weight_kg=weight_kg,
-                    is_active=is_active,
-                    discount_percent=discount_percent,
+                    price=0,
+                    description=None,
+                    volume_m3=0.0,
+                    weight_kg=0.0,
+                    is_active=False,
+                    discount_percent=None,
                 )
             )
 
@@ -396,12 +358,11 @@ async def _build_step2_workbook(session: AsyncSession, rows: list[Step1Row], by_
                     item.import_row_id,
                     item.name,
                     item.category_path,
-                    item.price,
-                    item.description,
-                    item.volume_m3,
-                    item.weight_kg,
-                    "да" if item.is_active else "нет",
-                    item.discount_percent,
+                    None,
+                    None,
+                    None,
+                    None,
+                    None,
                     *([None] * len(cat_characteristics)),
                 ]
             )
@@ -420,12 +381,6 @@ async def _build_step2_workbook(session: AsyncSession, rows: list[Step1Row], by_
             "category_id",
             "category_path",
             "name",
-            "price",
-            "description",
-            "volume_m3",
-            "weight_kg",
-            "is_active",
-            "discount_percent",
         ]
     )
     for item in rows:
@@ -436,12 +391,6 @@ async def _build_step2_workbook(session: AsyncSession, rows: list[Step1Row], by_
                 str(item.category_id),
                 item.category_path,
                 item.name,
-                item.price,
-                item.description,
-                item.volume_m3,
-                item.weight_kg,
-                item.is_active,
-                item.discount_percent,
             ]
         )
 
@@ -510,12 +459,12 @@ def parse_step2(source_bytes: bytes) -> tuple[dict[str, list[CharacteristicMeta]
                 category_id=category_id,
                 category_path=_normalize_text(meta.cell(r, 4).value),
                 name=_normalize_text(meta.cell(r, 5).value),
-                price=int(meta.cell(r, 6).value or 0),
-                description=_normalize_text(meta.cell(r, 7).value) or None,
-                volume_m3=float(meta.cell(r, 8).value or 0),
-                weight_kg=float(meta.cell(r, 9).value or 0),
-                is_active=_to_bool(meta.cell(r, 10).value, default=True),
-                discount_percent=int(meta.cell(r, 11).value) if meta.cell(r, 11).value not in (None, "") else None,
+                price=0,
+                description=None,
+                volume_m3=0.0,
+                weight_kg=0.0,
+                is_active=False,
+                discount_percent=None,
             )
 
     parsed_rows: list[Step2Row] = []
@@ -532,6 +481,51 @@ def parse_step2(source_bytes: bytes) -> tuple[dict[str, list[CharacteristicMeta]
             if import_row_id not in row_map:
                 errors.append(ImportErrorItem(sheet_name, r, "import_row_id", "Не найден import_row_id в META."))
                 continue
+
+            name = _normalize_text(ws.cell(r, 2).value)
+            if not name:
+                errors.append(ImportErrorItem(sheet_name, r, "Название товара", "Поле обязательно."))
+
+            try:
+                price = _to_int(ws.cell(r, 4).value)
+            except ValueError as e:
+                errors.append(ImportErrorItem(sheet_name, r, "Цена", str(e)))
+                price = 0
+
+            description = _normalize_text(ws.cell(r, 5).value) or None
+
+            try:
+                volume_m3 = _to_float(ws.cell(r, 6).value)
+            except ValueError as e:
+                errors.append(ImportErrorItem(sheet_name, r, "Объём, м³", str(e)))
+                volume_m3 = 0.0
+
+            try:
+                weight_kg = _to_float(ws.cell(r, 7).value)
+            except ValueError as e:
+                errors.append(ImportErrorItem(sheet_name, r, "Вес, кг", str(e)))
+                weight_kg = 0.0
+
+            try:
+                discount_percent = _to_optional_int(ws.cell(r, 8).value)
+            except ValueError as e:
+                errors.append(ImportErrorItem(sheet_name, r, "Скидка, %", str(e)))
+                discount_percent = None
+
+            meta_row = row_map[import_row_id]
+            base_row = Step1Row(
+                row_number=r,
+                import_row_id=import_row_id,
+                category_id=meta_row.category_id,
+                category_path=meta_row.category_path,
+                name=name,
+                price=price,
+                description=description,
+                volume_m3=volume_m3,
+                weight_kg=weight_kg,
+                is_active=False,
+                discount_percent=discount_percent,
+            )
 
             ch_values: dict[int, tuple[str | None, float | None]] = {}
             for ch in mapping:
@@ -558,7 +552,13 @@ def parse_step2(source_bytes: bytes) -> tuple[dict[str, list[CharacteristicMeta]
                     ch_values[ch.characteristic_id] = (txt, None)
 
             parsed_rows.append(
-                Step2Row(sheet_name=sheet_name, row_number=r, import_row_id=import_row_id, characteristic_values=ch_values)
+                Step2Row(
+                    sheet_name=sheet_name,
+                    row_number=r,
+                    import_row_id=import_row_id,
+                    base_row=base_row,
+                    characteristic_values=ch_values,
+                )
             )
 
     return mapping_by_sheet, row_map, parsed_rows, errors
