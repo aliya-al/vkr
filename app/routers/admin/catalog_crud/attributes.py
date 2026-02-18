@@ -10,6 +10,8 @@ from app.utils.templates import templates
 from app.utils.deps import require_admin_or_404
 
 from app.models.characteristic import GlobalCharacteristic, CharacteristicType
+from app.models.category_characteristic import CategoryCharacteristic
+from app.models.product_characteristic_value import ProductCharacteristicValue
 
 router = APIRouter(dependencies=[Depends(require_admin_or_404)])
 
@@ -18,7 +20,36 @@ router = APIRouter(dependencies=[Depends(require_admin_or_404)])
 async def attributes_list(request: Request, session: AsyncSession = Depends(get_async_session)):
     result = await session.execute(select(GlobalCharacteristic).order_by(GlobalCharacteristic.name))
     attributes = result.scalars().all()
-    return templates.TemplateResponse("admin/attributes/index.html", {"request": request, "attributes": attributes})
+
+    product_usage_rows = await session.execute(
+        select(
+            ProductCharacteristicValue.characteristic_id,
+            func.count(ProductCharacteristicValue.id),
+        )
+        .group_by(ProductCharacteristicValue.characteristic_id)
+    )
+    category_usage_rows = await session.execute(
+        select(
+            CategoryCharacteristic.characteristic_id,
+            func.count(CategoryCharacteristic.id),
+        )
+        .group_by(CategoryCharacteristic.characteristic_id)
+    )
+
+    product_usage = {int(cid): int(cnt or 0) for cid, cnt in product_usage_rows.all()}
+    category_usage = {int(cid): int(cnt or 0) for cid, cnt in category_usage_rows.all()}
+    attribute_usage = {
+        int(a.id): {
+            "products": int(product_usage.get(int(a.id), 0)),
+            "categories": int(category_usage.get(int(a.id), 0)),
+        }
+        for a in attributes
+    }
+
+    return templates.TemplateResponse(
+        "admin/attributes/index.html",
+        {"request": request, "attributes": attributes, "attribute_usage": attribute_usage},
+    )
 
 
 @router.get("/admin/attributes/new", response_class=HTMLResponse)

@@ -13,6 +13,27 @@
     return "";
   };
 
+  const showMessage = (text, type = "ok") => {
+    const note = document.createElement("div");
+    note.className = `admin-toast admin-toast--${type}`;
+    note.textContent = text;
+    note.style.cssText = [
+      "position:fixed",
+      "right:16px",
+      "bottom:16px",
+      "z-index:9999",
+      "padding:10px 12px",
+      "border-radius:10px",
+      "border:1px solid var(--color-line)",
+      "background:var(--color-surface)",
+      "font-size:var(--fs-xs)",
+      type === "error" ? "color:var(--color-danger, #b91c1c)" : "color:var(--color-text)",
+    ].join(";");
+
+    document.body.appendChild(note);
+    window.setTimeout(() => note.remove(), 1800);
+  };
+
   const readErrorText = async (res) => {
     const contentType = res.headers.get("content-type") || "";
 
@@ -20,6 +41,7 @@
       const data = await res.json().catch(() => null);
       if (data?.detail) return String(data.detail);
       if (data?.message) return String(data.message);
+      if (data?.error) return String(data.error);
     }
 
     const text = await res.text().catch(() => "");
@@ -32,12 +54,17 @@
     const form = e.target.closest("form[data-ajax-delete]");
     if (!form) return;
 
-    e.preventDefault();
-
     const confirmText = form.dataset.confirm;
     if (confirmText && !window.confirm(confirmText)) {
+      e.preventDefault();
       return;
     }
+
+    if (!form.dataset.ajaxDeleteScope) {
+      return;
+    }
+
+    e.preventDefault();
 
     const body = new URLSearchParams(new FormData(form));
     const headers = {
@@ -60,19 +87,19 @@
         body,
       });
     } catch (_) {
-      alert("Ошибка сети. Попробуйте ещё раз.");
+      showMessage("Ошибка сети. Попробуйте ещё раз.", "error");
       return;
     }
 
     if (!res.ok) {
       const msg = (await readErrorText(res)) || "Не удалось удалить запись.";
-      alert(msg);
+      showMessage(msg, "error");
       return;
     }
 
     const row = form.closest("[data-delete-item]") || form.closest("tr, article, li, .card");
     if (row) row.remove();
 
-    alert("Удалено");
+    showMessage("Удалено", "ok");
   });
 })();

@@ -41,7 +41,14 @@
   <div class="br-actions">
 
           <a class="pc-btn pc-btn--ghost pc-btn--sm" href="/admin/attributes/{{ a.id }}/edit">Редактировать</a>
-          <form method="post" action="/admin/attributes/{{ a.id }}/delete" class="br-delForm" data-ajax-delete>
+          {% set usage = (attribute_usage.get(a.id) if attribute_usage else None) %}
+          {% set used_products = usage.products if usage else 0 %}
+          {% set used_categories = usage.categories if usage else 0 %}
+          {% set is_used = (used_products + used_categories) > 0 %}
+          <form method="post" action="/admin/attributes/{{ a.id }}/delete" class="br-delForm" data-ajax-delete
+                {% if is_used %}
+                data-confirm="Характеристика используется в {{ used_products }} товарах и {{ used_categories }} категориях. Удалить?"
+                {% endif %}>
             <button type="submit" class="pc-btn pc-btn--danger pc-btn--sm">Удалить</button>
           </form>
         </div>
