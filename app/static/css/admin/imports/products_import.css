@@ -1,0 +1,196 @@
+.admin-productImport {
+  padding: var(--space-7) 0;
+}
+
+.pi-shell {
+  max-width: 920px;
+  margin: 0 auto;
+  display: grid;
+  gap: var(--space-6);
+}
+
+.pi-header {
+  display: grid;
+  gap: 8px;
+}
+
+.pi-title {
+  margin: 0;
+  font-family: var(--font-serif);
+  font-size: calc(var(--fs-base) * 1.9);
+  line-height: 1.1;
+}
+
+.pi-subtitle {
+  margin: 0;
+  color: var(--color-muted);
+  font-size: var(--fs-sm);
+  line-height: 1.4;
+}
+
+.pi-card {
+  padding: 18px;
+}
+
+.pi-card__head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.pi-card__title {
+  margin: 0;
+  font-size: var(--fs-sm);
+  font-weight: 800;
+}
+
+.pi-card__hint {
+  margin: 0;
+  font-size: var(--fs-xs);
+  color: var(--color-muted);
+}
+
+.pi-step + .pi-step {
+  margin-top: 10px;
+}
+
+.pi-step__title {
+  margin: 0 0 6px;
+  font-size: var(--fs-sm);
+}
+
+.pi-step__text {
+  margin: 0;
+  color: var(--color-text);
+  font-size: var(--fs-xs);
+  line-height: 1.45;
+}
+
+.pi-step__actions {
+  margin-top: 10px;
+}
+
+.pi-divider {
+  height: 1px;
+  background: var(--color-line);
+  margin: 16px 0;
+}
+
+.pi-form {
+  margin-top: 12px;
+  display: grid;
+  gap: 12px;
+}
+
+.pi-fileInput {
+  padding: 9px 10px;
+}
+
+.pi-fileInput::file-selector-button {
+  margin-right: 12px;
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-xl);
+  padding: 6px 10px;
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.pi-fileInput:hover::file-selector-button {
+  background: color-mix(in oklab, var(--color-bg), var(--color-surface) 30%);
+}
+
+.pi-fieldHelp {
+  margin: 6px 0 0;
+  color: var(--color-muted);
+  font-size: var(--fs-xs);
+}
+
+.pi-fieldHelp span {
+  color: var(--color-text);
+  font-weight: 700;
+}
+
+.pi-alert {
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-line);
+  padding: 12px 14px;
+  font-size: var(--fs-xs);
+  line-height: 1.4;
+}
+
+.pi-alert--success {
+  background: color-mix(in oklab, var(--color-success-soft), var(--color-bg) 15%);
+  border-color: color-mix(in oklab, var(--color-success), var(--color-line) 65%);
+  color: var(--color-success);
+}
+
+.pi-alert--error {
+  background: color-mix(in oklab, var(--color-danger-soft), var(--color-bg) 12%);
+  border-color: color-mix(in oklab, var(--color-danger), var(--color-line) 68%);
+  color: var(--color-danger);
+}
+
+.pi-alert--warning {
+  background: color-mix(in oklab, #ffcf99, var(--color-bg) 42%);
+  border-color: color-mix(in oklab, #b86a15, var(--color-line) 65%);
+  color: #8a4d0f;
+}
+
+.pi-alert--info {
+  background: color-mix(in oklab, var(--color-surface), var(--color-bg) 25%);
+  color: var(--color-muted);
+}
+
+.pi-errorsWrap {
+  margin-top: 10px;
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-md);
+  max-height: 360px;
+  overflow: auto;
+  background: var(--color-bg);
+}
+
+.pi-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 680px;
+}
+
+.pi-table th,
+.pi-table td {
+  text-align: left;
+  font-size: var(--fs-xs);
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--color-line);
+  vertical-align: top;
+}
+
+.pi-table thead th {
+  position: sticky;
+  top: 0;
+  background: var(--color-surface);
+  z-index: 1;
+  font-weight: 800;
+}
+
+.pi-form .pc-btn:disabled,
+.pi-form .pc-btn.is-loading {
+  opacity: 0.75;
+  cursor: not-allowed;
+}
+
+@media (max-width: 760px) {
+  .pi-card {
+    padding: 14px;
+  }
+
+  .pi-card__head {
+    flex-direction: column;
+    margin-bottom: 10px;
+  }
+}

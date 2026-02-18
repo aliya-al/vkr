@@ -2,73 +2,98 @@
 
 {% block title %}Импорт товаров из Excel{% endblock %}
 
+{% block head %}
+  <link rel="stylesheet" href="/static/css/admin/imports/products_import.css">
+{% endblock %}
+
 {% block content %}
-<div class="admin-productCreate">
+<div class="admin-productImport">
   <div class="container">
-    <div class="pc-narrow">
-      <div class="pc-top">
-        <div class="pc-title">Импорт товаров из Excel (2 шага)</div>
-      </div>
+    <div class="pi-shell">
+      <header class="pi-header">
+        <h1 class="pi-title">Импорт товаров</h1>
+        <p class="pi-subtitle">Загрузите Excel-файлы по шагам: сначала шаблон с товарами, затем файл с ценами и характеристиками.</p>
+      </header>
 
-      <section class="pc-card" aria-label="Импорт товаров">
-        <div class="pc-section">
-          <div class="pc-section__title">Шаг 1</div>
-          <p>1) Скачайте шаблон, заполните только «Название товара» и «Категория» на листе «Товары» и загрузите файл обратно.</p>
-          <p><a class="pc-btn pc-btn--ghost" href="/admin/import/products/step1-template">Скачать шаблон Шаг 1</a></p>
+      <section class="pc-card pi-card" aria-labelledby="pi-file-card-title">
+        <div class="pi-card__head">
+          <h2 id="pi-file-card-title" class="pi-card__title">Файл Excel</h2>
+          <p class="pi-card__hint">Поддерживается только формат <strong>.xlsx</strong></p>
+        </div>
 
-          <form method="post" action="/admin/import/products/step1" enctype="multipart/form-data" style="margin-top:12px;">
+        <div class="pi-step">
+          <h3 class="pi-step__title">Шаг 1. Подготовка шаблона</h3>
+          <p class="pi-step__text">Скачайте шаблон, заполните на листе «Товары» колонки «Название товара» и «Категория», затем загрузите файл обратно.</p>
+          <div class="pi-step__actions">
+            <a class="pc-btn pc-btn--ghost" href="/admin/import/products/step1-template">Скачать шаблон Шаг 1</a>
+          </div>
+          <form class="pi-form" method="post" action="/admin/import/products/step1" enctype="multipart/form-data" data-import-form>
             <div class="pc-field">
-              <label class="pc-label">Загрузить Шаг 1</label>
-              <input class="pc-input" type="file" name="file" accept=".xlsx" required>
+              <label class="pc-label" for="step1-file">Загрузить файл Шаг 1</label>
+              <input id="step1-file" class="pc-input pi-fileInput" type="file" name="file" accept=".xlsx" required>
+              <p class="pi-fieldHelp">Пример имени: <span>Products_Step1.xlsx</span></p>
             </div>
-            <button type="submit" class="pc-btn pc-btn--primary">Сгенерировать Шаг 2</button>
+            <button type="submit" class="pc-btn pc-btn--primary" data-submit-label="Сгенерировать Шаг 2">Сгенерировать Шаг 2</button>
           </form>
         </div>
 
-        <div class="pc-section">
-          <div class="pc-section__title">Шаг 2</div>
-          <p>2) Заполните цену, описание, объём, вес, скидку и значения характеристик на листах категорий, затем загрузите файл.</p>
+        <div class="pi-divider"></div>
 
-          <form method="post" action="/admin/import/products/step2" enctype="multipart/form-data" style="margin-top:12px;">
+        <div class="pi-step">
+          <h3 class="pi-step__title">Шаг 2. Импорт в систему</h3>
+          <p class="pi-step__text">Заполните цену, описание, объём, вес, скидку и значения характеристик на листах категорий, затем загрузите готовый файл.</p>
+          <form class="pi-form" method="post" action="/admin/import/products/step2" enctype="multipart/form-data" data-import-form>
             <div class="pc-field">
-              <label class="pc-label">Загрузить Шаг 2</label>
-              <input class="pc-input" type="file" name="file" accept=".xlsx" required>
+              <label class="pc-label" for="step2-file">Загрузить файл Шаг 2</label>
+              <input id="step2-file" class="pc-input pi-fileInput" type="file" name="file" accept=".xlsx" required>
+              <p class="pi-fieldHelp">Проверьте, что заполнены только допустимые поля шаблона.</p>
             </div>
-            <button type="submit" class="pc-btn pc-btn--primary">Импортировать в базу</button>
+            <button type="submit" class="pc-btn pc-btn--primary" data-submit-label="Импортировать в базу">Импортировать в базу</button>
           </form>
+        </div>
+      </section>
+
+      <section class="pc-card pi-card" aria-labelledby="pi-result-card-title">
+        <div class="pi-card__head">
+          <h2 id="pi-result-card-title" class="pi-card__title">Результат импорта</h2>
         </div>
 
         {% if success_count is not none %}
-          <div class="pc-alert" role="status" style="margin-top:16px; border-color:#2b8a3e; color:#2b8a3e;">
-            Успешно импортировано товаров: {{ success_count }}
+          <div class="pi-alert pi-alert--success" role="status">
+            <strong>Успех:</strong> импортировано товаров: {{ success_count }}.
           </div>
         {% endif %}
 
         {% if errors %}
-          <div class="pc-alert" role="alert" style="margin-top:16px;">
-            <strong class="pc-alert__label">Ошибки импорта:</strong>
+          <div class="pi-alert pi-alert--error" role="alert">
+            <strong>Ошибка:</strong> при импорте найдены проблемы в файле. Исправьте строки из списка ниже и повторите загрузку.
           </div>
-          <div style="overflow:auto; margin-top:12px;">
-            <table class="ap-table" style="width:100%; border-collapse: collapse;">
+
+          <div class="pi-errorsWrap" role="region" aria-label="Список ошибок импорта">
+            <table class="pi-table">
               <thead>
                 <tr>
-                  <th style="text-align:left; border-bottom:1px solid #ddd; padding:6px;">Лист</th>
-                  <th style="text-align:left; border-bottom:1px solid #ddd; padding:6px;">Строка</th>
-                  <th style="text-align:left; border-bottom:1px solid #ddd; padding:6px;">Колонка</th>
-                  <th style="text-align:left; border-bottom:1px solid #ddd; padding:6px;">Ошибка</th>
+                  <th>Лист</th>
+                  <th>Строка</th>
+                  <th>Колонка</th>
+                  <th>Описание ошибки</th>
                 </tr>
               </thead>
               <tbody>
                 {% for e in errors %}
                   <tr>
-                    <td style="padding:6px; border-bottom:1px solid #f0f0f0;">{{ e.sheet }}</td>
-                    <td style="padding:6px; border-bottom:1px solid #f0f0f0;">{{ e.row }}</td>
-                    <td style="padding:6px; border-bottom:1px solid #f0f0f0;">{{ e.column }}</td>
-                    <td style="padding:6px; border-bottom:1px solid #f0f0f0;">{{ e.message }}</td>
+                    <td>{{ e.sheet }}</td>
+                    <td>{{ e.row }}</td>
+                    <td>{{ e.column }}</td>
+                    <td>{{ e.message }}</td>
                   </tr>
                 {% endfor %}
               </tbody>
             </table>
+          </div>
+        {% elif success_count is none %}
+          <div class="pi-alert pi-alert--info" role="status">
+            Загрузите файл, чтобы увидеть статус импорта и возможные ошибки валидации.
           </div>
         {% endif %}
       </section>
@@ -77,7 +102,21 @@
 </div>
 {% endblock %}
 
-{% block head %}
-  <link rel="stylesheet" href="/static/css/admin/products.css">
-  <link rel="stylesheet" href="/static/css/admin/products_create.css">
+{% block scripts %}
+<script>
+  (function () {
+    const forms = document.querySelectorAll('[data-import-form]');
+    forms.forEach((form) => {
+      form.addEventListener('submit', () => {
+        const button = form.querySelector('button[type="submit"]');
+        if (!button) return;
+
+        button.disabled = true;
+        button.classList.add('is-loading');
+        button.dataset.originalText = button.dataset.submitLabel || button.textContent.trim();
+        button.textContent = 'Импорт выполняется…';
+      });
+    });
+  })();
+</script>
 {% endblock %}
