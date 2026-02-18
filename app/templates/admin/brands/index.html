@@ -38,7 +38,7 @@
                   <td class="br-tdActions">
                     <div class="br-actions">
                       <a class="pc-btn pc-btn--ghost pc-btn--sm" href="/admin/brands/{{ brand.id }}/edit">Редактировать</a>
-                      <form method="post" action="/admin/brands/{{ brand.id }}/delete" class="br-delForm" data-ajax-delete>
+                      <form method="post" action="/admin/brands/{{ brand.id }}/delete" class="br-delForm" data-ajax-delete data-ajax-delete-scope="catalog-list" data-confirm="Удалить бренд «{{ brand.name }}»?">
                         <button type="submit" class="pc-btn pc-btn--danger pc-btn--sm">Удалить</button>
                       </form>
                     </div>

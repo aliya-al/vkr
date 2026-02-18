@@ -31,7 +31,7 @@ from app.services.order_totals import fetch_orders_weight_volume
 router = APIRouter(dependencies=[Depends(require_admin_or_404)])
 
 GroupByQuery = Literal["year", "month", "week", "day"]
-ScopeQuery = Literal["recent", "all"]
+ScopeQuery = Literal["recent", "all", "month", "year"]
 
 MOSCOW_TZ = ZoneInfo("Europe/Moscow")
 
@@ -71,6 +71,12 @@ async def _rolling_range_scoped(
         now = now.replace(tzinfo=MOSCOW_TZ)
 
     end_dt = now
+
+    if scope == "month":
+        return end_dt - timedelta(days=30), end_dt
+
+    if scope == "year":
+        return end_dt - relativedelta(years=1), end_dt
 
     if scope == "all":
         min_res = await session.execute(select(func.min(Order.created_at)))
@@ -250,7 +256,6 @@ async def api_kpis(session: AsyncSession = Depends(get_async_session)):
 
     orders_week = await session.scalar(
         select(func.count()).select_from(Order).where(
-            Order.status == OrderStatus.done,
             Order.created_at >= week_start,
             Order.created_at < now,
         )

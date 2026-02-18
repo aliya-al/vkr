@@ -41,7 +41,7 @@
     <td class="catTdSlug catMono">{{ cat["slug"] }}</td>
 
     <td class="catTdActions">
-      <a class="catLink" href="/admin/categories/{{ cat['id'] }}/edit">Редактировать</a>
+      <a class="pc-btn pc-btn--ghost pc-btn--sm" href="/admin/categories/{{ cat['id'] }}/edit">Редактировать</a>
 
       {% set need_confirm = cat["has_children"] or cat["has_products"] %}
       <form method="post"
@@ -51,7 +51,7 @@
             {% if need_confirm %}
             data-confirm="Категория содержит данные, которые будут удалены. Продолжить?"
             {% endif %}>
-        <button class="catBtn catBtn--danger" type="submit">Удалить</button>
+        <button class="pc-btn pc-btn--danger pc-btn--sm" type="submit">Удалить</button>
       </form>
     </td>
   </tr>
@@ -69,8 +69,8 @@
       <div class="catTitle">Категории</div>
 
       <div class="catTopActions">
-        <a class="catBtn catBtn--ghost" href="/admin/dashboard">На главную</a>
-        <a class="catBtn catBtn--primary" href="/admin/categories/new">Создать категорию</a>
+        <a class="pc-btn pc-btn--ghost" href="/admin/dashboard">На главную</a>
+        <a class="pc-btn pc-btn--primary" href="/admin/categories/new">Создать категорию</a>
       </div>
     </div>
 
