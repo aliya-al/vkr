@@ -1,0 +1,83 @@
+{% extends "admin/base.html" %}
+
+{% block title %}Импорт товаров из Excel{% endblock %}
+
+{% block content %}
+<div class="admin-productCreate">
+  <div class="container">
+    <div class="pc-narrow">
+      <div class="pc-top">
+        <div class="pc-title">Импорт товаров из Excel (2 шага)</div>
+      </div>
+
+      <section class="pc-card" aria-label="Импорт товаров">
+        <div class="pc-section">
+          <div class="pc-section__title">Шаг 1</div>
+          <p>1) Скачайте шаблон, заполните лист «Товары» и загрузите файл обратно.</p>
+          <p><a class="pc-btn pc-btn--ghost" href="/admin/import/products/step1-template">Скачать шаблон Шаг 1</a></p>
+
+          <form method="post" action="/admin/import/products/step1" enctype="multipart/form-data" style="margin-top:12px;">
+            <div class="pc-field">
+              <label class="pc-label">Загрузить Шаг 1</label>
+              <input class="pc-input" type="file" name="file" accept=".xlsx" required>
+            </div>
+            <button type="submit" class="pc-btn pc-btn--primary">Сгенерировать Шаг 2</button>
+          </form>
+        </div>
+
+        <div class="pc-section">
+          <div class="pc-section__title">Шаг 2</div>
+          <p>2) Заполните значения характеристик на листах категорий и загрузите файл.</p>
+
+          <form method="post" action="/admin/import/products/step2" enctype="multipart/form-data" style="margin-top:12px;">
+            <div class="pc-field">
+              <label class="pc-label">Загрузить Шаг 2</label>
+              <input class="pc-input" type="file" name="file" accept=".xlsx" required>
+            </div>
+            <button type="submit" class="pc-btn pc-btn--primary">Импортировать в базу</button>
+          </form>
+        </div>
+
+        {% if success_count is not none %}
+          <div class="pc-alert" role="status" style="margin-top:16px; border-color:#2b8a3e; color:#2b8a3e;">
+            Успешно импортировано товаров: {{ success_count }}
+          </div>
+        {% endif %}
+
+        {% if errors %}
+          <div class="pc-alert" role="alert" style="margin-top:16px;">
+            <strong class="pc-alert__label">Ошибки импорта:</strong>
+          </div>
+          <div style="overflow:auto; margin-top:12px;">
+            <table class="ap-table" style="width:100%; border-collapse: collapse;">
+              <thead>
+                <tr>
+                  <th style="text-align:left; border-bottom:1px solid #ddd; padding:6px;">Лист</th>
+                  <th style="text-align:left; border-bottom:1px solid #ddd; padding:6px;">Строка</th>
+                  <th style="text-align:left; border-bottom:1px solid #ddd; padding:6px;">Колонка</th>
+                  <th style="text-align:left; border-bottom:1px solid #ddd; padding:6px;">Ошибка</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for e in errors %}
+                  <tr>
+                    <td style="padding:6px; border-bottom:1px solid #f0f0f0;">{{ e.sheet }}</td>
+                    <td style="padding:6px; border-bottom:1px solid #f0f0f0;">{{ e.row }}</td>
+                    <td style="padding:6px; border-bottom:1px solid #f0f0f0;">{{ e.column }}</td>
+                    <td style="padding:6px; border-bottom:1px solid #f0f0f0;">{{ e.message }}</td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        {% endif %}
+      </section>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block head %}
+  <link rel="stylesheet" href="/static/css/admin/products.css">
+  <link rel="stylesheet" href="/static/css/admin/products_create.css">
+{% endblock %}
