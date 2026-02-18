@@ -23,12 +23,18 @@
       const link = document.createElement('a');
       link.className = 'public-search__suggestion';
       link.href = item.url;
-      link.textContent = item.name || '';
+      link.title = item.name || '';
+
+      const text = document.createElement('span');
+      text.className = 'public-search__suggestion-text';
+      text.textContent = item.name || '';
 
       const type = document.createElement('small');
+      type.className = 'public-search__suggestion-type';
       type.textContent = item.type === 'category' ? 'категория' : 'товар';
-      link.appendChild(type);
 
+      link.appendChild(text);
+      link.appendChild(type);
       box.appendChild(link);
     });
     box.hidden = false;
