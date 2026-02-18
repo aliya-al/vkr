@@ -2,6 +2,7 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_asyn
 from sqlalchemy.orm import DeclarativeBase
 
 DATABASE_URL = "postgresql+asyncpg://postgres:passs@localhost:5432/vkr"
+#важно+что сделать: вынести DATABASE_URL в переменные окружения (.env) и убрать хардкод перед деплоем.
 
 engine = create_async_engine(DATABASE_URL, echo=True)
 class Base(DeclarativeBase): pass

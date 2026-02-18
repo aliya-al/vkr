@@ -156,7 +156,6 @@
         <div class="p-grid">
           {% if products and products|length %}
             {% for p in products %}
-              {% set href = "/product/" ~ pslug %}
 
               {% set main_img = p.main_image %}
               {% if main_img and not main_img.startswith('/') %}

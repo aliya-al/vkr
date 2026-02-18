@@ -67,7 +67,7 @@
 
     <div class="p-card__price">
       {% if p.discount_percent %}
-        {% set new_price = (p.price * (100 - p.discount_percent)
+        {% set new_price = (p.display_price if p.display_price is defined else (p.final_price if p.final_price is defined else (p.price * (100 - p.discount_percent) / 100) | round | int)) %}
         <span class="p-card__price-old">{{ p.price }}р/шт.</span>
         <span class="p-card__price-new">{{ new_price }}р/шт.</span>
       {% else %}
