@@ -216,7 +216,7 @@
   color: var(--color-neutral);
 }
 
-.ap-link{
+.ap-head-link{
   font-size: var(--fs-xs);
   text-decoration: underline;
   text-underline-offset: 2px;
@@ -230,6 +230,7 @@
   padding: 6px 10px;
   cursor: pointer;
 }
+
 .ap-del:hover{
   background: color-mix(in oklab, var(--color-bg), var(--color-surface) 35%);
 }
