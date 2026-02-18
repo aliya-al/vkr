@@ -23,6 +23,8 @@
         {# cat — мультиселект через query params: ?cat=<uuid>&cat=<uuid> #}
         {% set q = request.query_params %}
         {% set selected = selected_parent_category_ids if selected_parent_category_ids is defined else q.getlist('cat') %}
+        {% set selected_activity = activity if activity is defined else q.get('activity', 'all') %}
+        {% set selected_photos = photos if photos is defined else q.get('photos', 'all') %}
 
 <form method="get" id="apFilterForm">
   {# нужно для режима "ничего не выбрано" #}
@@ -33,7 +35,7 @@
     <button type="button" class="ap-del" id="apSelectAll">Найти всё</button>
   </div>
 
-  <div class="ap-checks">
+  <div class="ap-checks {% if parent_categories|length > 10 %}ap-checks--scroll{% endif %}">
 
             {% for c in parent_categories %}
               {# если selected пустой — считаем “выбраны все” #}
@@ -48,7 +50,47 @@
             {% endfor %}
           </div>
 
-          <input type="hidden" name="q" value="{{ q.get('q','') }}">
+          <div class="ap-filter-block">
+            <p class="ap-filter-block__title">Активность</p>
+            <div class="ap-segmented" role="radiogroup" aria-label="Фильтр по активности">
+              <label class="ap-segmented__item">
+                <input type="radio" name="activity" value="all" {% if selected_activity == 'all' %}checked{% endif %}>
+                <span>Все</span>
+              </label>
+              <label class="ap-segmented__item">
+                <input type="radio" name="activity" value="active" {% if selected_activity == 'active' %}checked{% endif %}>
+                <span>Активные</span>
+              </label>
+              <label class="ap-segmented__item">
+                <input type="radio" name="activity" value="inactive" {% if selected_activity == 'inactive' %}checked{% endif %}>
+                <span>Неактивные</span>
+              </label>
+            </div>
+          </div>
+
+          <div class="ap-filter-block">
+            <p class="ap-filter-block__title">Фотографии</p>
+            <div class="ap-segmented" role="radiogroup" aria-label="Фильтр по фотографиям">
+              <label class="ap-segmented__item">
+                <input type="radio" name="photos" value="all" {% if selected_photos == 'all' %}checked{% endif %}>
+                <span>Все</span>
+              </label>
+              <label class="ap-segmented__item">
+                <input type="radio" name="photos" value="with" {% if selected_photos == 'with' %}checked{% endif %}>
+                <span>С фото</span>
+              </label>
+              <label class="ap-segmented__item">
+                <input type="radio" name="photos" value="without" {% if selected_photos == 'without' %}checked{% endif %}>
+                <span>Без фото</span>
+              </label>
+            </div>
+          </div>
+
+          {% for key, value in q.multi_items() %}
+            {% if key not in ['cat', 'none', 'activity', 'photos'] %}
+              <input type="hidden" name="{{ key }}" value="{{ value }}">
+            {% endif %}
+          {% endfor %}
 
         </form>
       </aside>
