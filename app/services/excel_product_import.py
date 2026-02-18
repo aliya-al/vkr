@@ -543,7 +543,7 @@ def parse_step2(source_bytes: bytes) -> tuple[dict[str, list[CharacteristicMeta]
                                 sheet_name,
                                 r,
                                 ws.cell(1, ch.column_index).value or str(ch.column_index),
-                                "Ожидалось числовое значение.",
+                                "ожидалось число",
                             )
                         )
                         continue

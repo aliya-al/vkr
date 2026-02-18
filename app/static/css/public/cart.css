@@ -113,6 +113,11 @@ justify-self: center;
   grid-template-columns: 1fr auto;
   gap: var(--space-4);
   align-items: center;
+  min-width: 0;
+}
+
+.cart-item__main {
+  min-width: 0;
 }
 
 .cart-item__name {
