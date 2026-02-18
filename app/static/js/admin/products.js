@@ -45,12 +45,23 @@
 
     const noneEl = qs("#apNone");
 
-    // change checkbox -> ajax
+    form.addEventListener("submit", (e) => {
+      e.preventDefault();
+      applyFilterFromForm(form).catch(console.error);
+    });
+
+    // change checkbox/select -> ajax
     form.addEventListener("change", (e) => {
       const el = e.target;
-      if (!el || !el.matches('input[type="checkbox"][name="cat"]')) return;
-      if (noneEl) noneEl.value = ""; // руками кликаем — это не "ничего"
-      applyFilterFromForm(form).catch(console.error);
+      if (!el) return;
+
+      if (el.matches('input[type="checkbox"][name="cat"]')) {
+        if (noneEl) noneEl.value = ""; // руками кликаем — это не "ничего"
+      }
+
+      if (el.matches('input[type="checkbox"][name="cat"], select[name="active"], select[name="photos"]')) {
+        applyFilterFromForm(form).catch(console.error);
+      }
     });
 
     const btnReset = qs("#apReset");
@@ -59,6 +70,12 @@
     if (btnReset) {
       btnReset.addEventListener("click", () => {
         qsa('input[type="checkbox"][name="cat"]', form).forEach(cb => cb.checked = false);
+
+        const active = qs('select[name="active"]', form);
+        const photos = qs('select[name="photos"]', form);
+        if (active) active.value = "all";
+        if (photos) photos.value = "all";
+
         if (noneEl) noneEl.value = "1";
         applyFilterFromForm(form).catch(console.error);
       });
