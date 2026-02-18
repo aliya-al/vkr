@@ -214,8 +214,10 @@ function normalizeSeries(arr) {
   function renderTopProducts(arr) {
     if (!topListEl) return;
     topListEl.innerHTML = "";
-
     (arr || []).slice(0, 5).forEach((it) => {
+      const slug = String(it.product_slug ?? it.slug ?? "").trim();
+      if (!slug) return;
+
       const name = it.name ?? it.product_name ?? it.title ?? "—";
       const uniq = it.unique_orders ?? it.unique ?? it.orders_unique ?? it.uniqueCount ?? 0;
       const total = it.total_qty ?? it.qty ?? it.total ?? it.orders_total ?? 0;
@@ -223,11 +225,7 @@ function normalizeSeries(arr) {
       const wrap = document.createElement("div");
       wrap.className = "topitem";
 
-      const pid  = it.product_id ?? it.id ?? "";
-      const slug = it.product_slug ?? it.slug ?? "";
-
-      let productUrl = "";
-      if (pid) productUrl = `/product/${slug}/`;
+      const productUrl = `/product/${slug}/`;
 
       const img = document.createElement("div");
       img.className = "topitem__img";
@@ -245,16 +243,12 @@ function normalizeSeries(arr) {
         img.style.backgroundRepeat = "no-repeat";
       }
 
-      if (productUrl) {
-        const link = document.createElement("a");
-        link.className = "topitem__imgLink";
-        link.href = productUrl;
-        link.title = name;
-        link.appendChild(img);
-        wrap.appendChild(link);
-      } else {
-        wrap.appendChild(img);
-      }
+      const link = document.createElement("a");
+      link.className = "topitem__imgLink";
+      link.href = productUrl;
+      link.title = name;
+      link.appendChild(img);
+      wrap.appendChild(link);
 
 
 

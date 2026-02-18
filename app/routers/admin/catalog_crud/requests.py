@@ -550,10 +550,10 @@ async def request_new_submit(
     admin: dict = Depends(require_admin_or_404),
     session: AsyncSession = Depends(get_async_session),
 
-    customer_name: str = Form(...),
-    customer_phone: str = Form(...),
+    customer_name: str | None = Form(None),
+    customer_phone: str | None = Form(None),
 
-    delivery_type: str = Form(...),
+    delivery_type: str | None = Form(None),
     pickup_address: str | None = Form(None),
     delivery_address: str | None = Form(None),
 
@@ -603,25 +603,40 @@ async def request_new_submit(
     err: str | None = None
     field_errors: dict[str, str] = {}
 
-    if not cart:
-        err = "Добавь товары в заявку."
-    elif not customer_name:
-        err = "Укажи имя."
-    elif phone_err:
-        err = phone_err
-    elif delivery_type not in ("delivery", "pickup"):
-        err = "Некорректный способ получения."
-    elif delivery_type == "delivery" and not delivery_address:
-        err = "Для доставки нужен адрес."
-        field_errors["delivery_address"] = "Укажи адрес доставки."
-    elif delivery_type == "pickup" and not pickup_address:
-        err = "Для самовывоза нужен пункт."
-        field_errors["pickup_address"] = "Укажи пункт самовывоза."
-    else:
-        try:
-            OrderStatus(status or "new")
-        except Exception:
-            err = "Некорректный статус."
+    if created_at and not created_at_dt:
+        err = "Некорректная дата заявки."
+        field_errors["created_at"] = "Проверь формат даты и времени."
+
+    if not err:
+        if not cart:
+            err = "Добавь товары в заявку."
+        elif not customer_name:
+            err = "Заполните обязательные поля."
+            field_errors["customer_name"] = "Имя обязательно."
+        elif not customer_phone:
+            err = "Заполните обязательные поля."
+            field_errors["customer_phone"] = "Телефон обязателен."
+        elif phone_err:
+            err = phone_err
+        elif delivery_type not in ("delivery", "pickup"):
+            err = "Некорректный способ получения."
+        elif delivery_type == "delivery" and not delivery_address:
+            err = "Для доставки нужен адрес."
+            field_errors["delivery_address"] = "Укажи адрес доставки."
+        elif delivery_type == "pickup" and not pickup_address:
+            err = "Для самовывоза нужен пункт."
+            field_errors["pickup_address"] = "Укажи пункт самовывоза."
+        else:
+            try:
+                OrderStatus(status or "new")
+            except Exception:
+                err = "Некорректный статус."
+
+    if not err and created_at_dt:
+        now_dt = datetime.now(created_at_dt.tzinfo) if created_at_dt.tzinfo else datetime.now()
+        if created_at_dt > now_dt:
+            err = "Дата заявки не может быть в будущем."
+            field_errors["created_at"] = "Укажи дату и время не позже текущего момента."
 
     mid_uuid: uuid.UUID | None = None
     if not err and _is_admin(admin):
