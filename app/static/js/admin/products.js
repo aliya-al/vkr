@@ -48,8 +48,13 @@
     // change checkbox -> ajax
     form.addEventListener("change", (e) => {
       const el = e.target;
-      if (!el || !el.matches('input[type="checkbox"][name="cat"]')) return;
-      if (noneEl) noneEl.value = ""; // руками кликаем — это не "ничего"
+      if (!el) return;
+
+      const isCategory = el.matches('input[type="checkbox"][name="cat"]');
+      const isExtraFilter = el.matches('input[type="radio"][name="activity"], input[type="radio"][name="photos"]');
+      if (!isCategory && !isExtraFilter) return;
+
+      if (isCategory && noneEl) noneEl.value = ""; // руками кликаем — это не "ничего"
       applyFilterFromForm(form).catch(console.error);
     });
 

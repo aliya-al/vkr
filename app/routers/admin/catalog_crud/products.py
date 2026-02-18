@@ -5,7 +5,7 @@ from pathlib import Path
 import anyio
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, UploadFile, Body
 from fastapi.responses import HTMLResponse, RedirectResponse
-from sqlalchemy import select, text, update
+from sqlalchemy import select, text, update, exists
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 from types import SimpleNamespace
@@ -249,6 +249,12 @@ async def products_list(request: Request, session: AsyncSession = Depends(get_as
         except Exception:
             pass
 
+    raw_activity = (request.query_params.get("activity") or "all").lower()
+    activity = raw_activity if raw_activity in {"all", "active", "inactive"} else "all"
+
+    raw_photos = (request.query_params.get("photos") or "all").lower()
+    photos = raw_photos if raw_photos in {"all", "with", "without"} else "all"
+
     # 3) Если выбраны родительские — фильтруем товары по поддереву этих родителей.
     #    Если фильтр пустой — показываем все товары (и в UI все чекбоксы отмечены).
     filter_category_ids: set[uuid.UUID] = set()
@@ -271,6 +277,19 @@ async def products_list(request: Request, session: AsyncSession = Depends(get_as
     if filter_category_ids:
         stmt = stmt.where(Product.category_id.in_(filter_category_ids))
 
+    if activity == "active":
+        stmt = stmt.where(Product.is_active.is_(True))
+    elif activity == "inactive":
+        stmt = stmt.where(Product.is_active.is_(False))
+
+    has_photo = exists(
+        select(ProductImage.id).where(ProductImage.product_id == Product.id)
+    )
+    if photos == "with":
+        stmt = stmt.where(has_photo)
+    elif photos == "without":
+        stmt = stmt.where(~has_photo)
+
     result = await session.execute(stmt)
     products = result.scalars().all()
 
@@ -286,6 +305,8 @@ async def products_list(request: Request, session: AsyncSession = Depends(get_as
             "products": products,
             "characteristics_text": characteristics_text,
             "parent_categories": parent_categories,
+            "activity": activity,
+            "photos": photos,
         },
     )
 @router.post("/admin/products/{product_id}/inline", dependencies=[Depends(require_admin_or_404)])

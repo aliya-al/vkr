@@ -47,9 +47,27 @@
   display: flex;
   flex-direction: column;
   gap: 8px;
-  max-height: 70vh;
-  overflow: auto;
   padding-right: 4px;
+}
+
+.ap-checks--scroll{
+  max-height: 320px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in oklab, var(--color-line), transparent 30%) transparent;
+}
+
+.ap-checks--scroll::-webkit-scrollbar{
+  width: 7px;
+}
+
+.ap-checks--scroll::-webkit-scrollbar-track{
+  background: transparent;
+}
+
+.ap-checks--scroll::-webkit-scrollbar-thumb{
+  background: color-mix(in oklab, var(--color-line), transparent 25%);
+  border-radius: 999px;
 }
 
 /* Checkbox component (в стиле твоей системы) */
@@ -228,6 +246,7 @@
   .ap-grid{ grid-template-columns: 1fr; }
   .ap-filter{ position: static; }
   .ap-checks{ max-height: none; }
+  .ap-checks--scroll{ max-height: none; }
   .ap-row{ grid-template-columns: 56px 1fr; }
   .ap-actions{
     grid-column: 1 / -1;
@@ -286,4 +305,63 @@
   background: var(--color-danger-soft);
   border-color: var(--color-line);
   color: var(--color-danger);
+}
+
+
+.ap-filter-block{
+  margin-top: 14px;
+}
+
+.ap-filter-block__title{
+  margin: 0 0 8px;
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  color: var(--color-text);
+}
+
+.ap-segmented{
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.ap-segmented__item{
+  position: relative;
+}
+
+.ap-segmented__item input{
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.ap-segmented__item span{
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 32px;
+  padding: 6px 12px;
+  border-radius: var(--radius-xl);
+  border: 1px solid var(--color-line);
+  background: var(--color-bg);
+  color: var(--color-muted);
+  font-size: var(--fs-xs);
+  cursor: pointer;
+  transition: background-color .15s ease, color .15s ease, border-color .15s ease;
+}
+
+.ap-segmented__item span:hover{
+  background: color-mix(in oklab, var(--color-bg), var(--color-surface) 35%);
+}
+
+.ap-segmented__item input:focus-visible + span{
+  outline: 2px solid color-mix(in oklab, var(--color-primary), white 25%);
+  outline-offset: 2px;
+}
+
+.ap-segmented__item input:checked + span{
+  background: color-mix(in oklab, var(--color-primary-soft), var(--color-bg) 18%);
+  border-color: color-mix(in oklab, var(--color-primary), var(--color-line) 40%);
+  color: var(--color-primary);
+  font-weight: 700;
 }
