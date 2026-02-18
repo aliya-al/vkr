@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, HTTPException, Request
-from fastapi.responses import HTMLResponse
-from sqlalchemy import select, func, case, cast, Integer
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
+from fastapi.responses import HTMLResponse, JSONResponse
+from sqlalchemy import select, func, case, cast, Integer, or_
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -248,3 +248,113 @@ async def catalog_category(slug: str, request: Request, session: AsyncSession = 
             "cmp_ids_set": cmp_ids_set,
         },
     )
+
+
+@router.get("/search", response_class=HTMLResponse)
+async def catalog_search(
+    request: Request,
+    q: str = Query(default=""),
+    session: AsyncSession = Depends(get_async_session),
+):
+    query = (q or "").strip()
+
+    products: list[dict] = []
+    if query:
+        stmt = (
+            select(Product)
+            .join(Category, Product.category_id == Category.id)
+            .where(
+                Product.is_active.is_(True),
+                or_(
+                    Product.name.ilike(f"%{query}%"),
+                    Category.name.ilike(f"%{query}%"),
+                ),
+            )
+            .options(selectinload(Product.images))
+            .order_by(Product.name.asc())
+        )
+        prod_res = await session.execute(stmt)
+        products_db = prod_res.scalars().all()
+
+        products = [
+            {
+                "id": str(p.id),
+                "slug": p.slug,
+                "name": p.name,
+                "price": p.price,
+                "discount_percent": p.discount_percent,
+                "display_price": _calc_display_price(p.price, p.discount_percent),
+                "main_image": p.images[0].file_path if p.images else None,
+            }
+            for p in products_db
+        ]
+
+    fav_ids = [str(x) for x in (get_favorite_ids(request.session) or [])]
+    cmp_ids = [str(x) for x in (get_compare_ids(request.session) or [])]
+
+    return templates.TemplateResponse(
+        "public/catalog/search.html",
+        {
+            "request": request,
+            "q": query,
+            "products": products,
+            "results_count": len(products),
+            "fav_ids": fav_ids,
+            "cmp_ids": cmp_ids,
+            "fav_ids_set": set(fav_ids),
+            "cmp_ids_set": set(cmp_ids),
+        },
+    )
+
+
+@router.get("/search/suggest", response_class=JSONResponse)
+async def search_suggest(
+    q: str = Query(default="", max_length=120),
+    session: AsyncSession = Depends(get_async_session),
+):
+    query = (q or "").strip()
+    if not query:
+        return JSONResponse({"items": []})
+
+    products_res = await session.execute(
+        select(Product)
+        .where(
+            Product.is_active.is_(True),
+            Product.name.ilike(f"%{query}%"),
+        )
+        .order_by(Product.name.asc())
+        .limit(6)
+    )
+    products = products_res.scalars().all()
+
+    categories_res = await session.execute(
+        select(Category)
+        .join(Product, Product.category_id == Category.id)
+        .where(
+            Product.is_active.is_(True),
+            Category.name.ilike(f"%{query}%"),
+        )
+        .distinct()
+        .order_by(Category.name.asc())
+        .limit(6)
+    )
+    categories = categories_res.scalars().all()
+
+    items = [
+        {
+            "type": "product",
+            "name": p.name,
+            "url": f"/product/{p.slug}/",
+        }
+        for p in products
+    ]
+    items.extend(
+        {
+            "type": "category",
+            "name": c.name,
+            "url": f"/catalog/{c.slug}/",
+        }
+        for c in categories
+    )
+
+    return JSONResponse({"items": items[:6]})
