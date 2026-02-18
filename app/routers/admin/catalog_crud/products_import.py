@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from fastapi import APIRouter, Depends, File, Request, UploadFile
-from fastapi.responses import HTMLResponse, RedirectResponse, StreamingResponse
+from fastapi.responses import HTMLResponse, StreamingResponse
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -98,7 +98,9 @@ async def upload_step2(
         for parsed_row in parsed_rows:
             base = row_map.get(parsed_row.import_row_id)
             if not base:
-                errors.append(ImportErrorItem(parsed_row.sheet_name, parsed_row.row_number, "import_row_id", "Не найдены данные строки в META."))
+                errors.append(
+                    ImportErrorItem(parsed_row.sheet_name, parsed_row.row_number, "import_row_id", "Не найдены данные строки в META.")
+                )
                 continue
 
             duplicate_q = await session.execute(
@@ -108,7 +110,9 @@ async def upload_step2(
                 )
             )
             if duplicate_q.scalar_one_or_none() is not None:
-                errors.append(ImportErrorItem(parsed_row.sheet_name, parsed_row.row_number, "Название товара", "Товар с таким названием уже есть в этой категории."))
+                errors.append(
+                    ImportErrorItem(parsed_row.sheet_name, parsed_row.row_number, "Название товара", "Товар с таким названием уже есть в этой категории.")
+                )
                 continue
 
             if not base.main_image:

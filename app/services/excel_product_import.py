@@ -11,7 +11,7 @@ from openpyxl import Workbook, load_workbook
 from openpyxl.styles import Font
 from openpyxl.utils import get_column_letter
 from openpyxl.worksheet.datavalidation import DataValidation
-from sqlalchemy import Select, func, select
+from sqlalchemy import Select, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.category import Category
@@ -96,11 +96,6 @@ def _normalize_text(value: Any) -> str:
 
 def _normalize_category_token(token: str) -> str:
     return " ".join(token.strip().split()).lower()
-
-
-def _normalize_category_path(raw: str) -> str:
-    tokens = [_normalize_category_token(t) for t in raw.split("/") if _normalize_category_token(t)]
-    return " / ".join(tokens)
 
 
 async def _load_all_categories(session: AsyncSession) -> list[Category]:
@@ -233,7 +228,7 @@ async def generate_step1_template(session: AsyncSession) -> bytes:
     last = max(2, len(leaf_paths) + 1)
     dv = DataValidation(type="list", formula1=f"=Справочники!$A$2:$A${last}", allow_blank=False)
     ws_products.add_data_validation(dv)
-    dv.add(f"B2:B1048576")
+    dv.add("B2:B1048576")
 
     ws_refs.sheet_state = "hidden"
 
@@ -360,7 +355,7 @@ async def _load_characteristics_for_categories(session: AsyncSession, category_i
 
 
 def _safe_sheet_name(raw: str, used: set[str]) -> str:
-    bad = set('[]:*?/\\')
+    bad = set("[]:*?/\\")
     cleaned = "".join(ch for ch in raw if ch not in bad).strip() or "Категория"
     cleaned = cleaned[:31]
     candidate = cleaned
@@ -401,10 +396,7 @@ async def _build_step2_workbook(session: AsyncSession, rows: list[Step1Row], by_
         ws = wb.create_sheet(sheet_name)
         base_headers = list(STEP2_BASE_HEADERS)
         cat_characteristics = ch_by_cat.get(category_id, [])
-        ch_headers = [
-            f"{ch.name} ({ch.unit})" if ch.unit else ch.name
-            for ch in cat_characteristics
-        ]
+        ch_headers = [f"{ch.name} ({ch.unit})" if ch.unit else ch.name for ch in cat_characteristics]
         all_headers = base_headers + ch_headers
         _set_headers(ws, all_headers)
 
@@ -413,20 +405,22 @@ async def _build_step2_workbook(session: AsyncSession, rows: list[Step1Row], by_
                 ws.column_dimensions[get_column_letter(base_col_idx)].hidden = True
 
         for item in cat_rows:
-            ws.append([
-                item.import_row_id,
-                item.name,
-                item.category_path,
-                item.price,
-                item.description,
-                item.main_image,
-                item.extra_images,
-                item.volume_m3,
-                item.weight_kg,
-                "да" if item.is_active else "нет",
-                item.discount_percent,
-                *([None] * len(cat_characteristics)),
-            ])
+            ws.append(
+                [
+                    item.import_row_id,
+                    item.name,
+                    item.category_path,
+                    item.price,
+                    item.description,
+                    item.main_image,
+                    item.extra_images,
+                    item.volume_m3,
+                    item.weight_kg,
+                    "да" if item.is_active else "нет",
+                    item.discount_percent,
+                    *([None] * len(cat_characteristics)),
+                ]
+            )
 
         first_ch_col = len(base_headers) + 1
         for offset, ch in enumerate(cat_characteristics):
@@ -434,38 +428,42 @@ async def _build_step2_workbook(session: AsyncSession, rows: list[Step1Row], by_
             meta_ws.append([sheet_name, col_idx, ch.id, ch.value_type.value])
 
     meta_ws.append([])
-    meta_ws.append(["row_mapping"]) 
-    meta_ws.append([
-        "import_row_id",
-        "sheet_name",
-        "category_id",
-        "category_path",
-        "name",
-        "price",
-        "description",
-        "main_image",
-        "extra_images",
-        "volume_m3",
-        "weight_kg",
-        "is_active",
-        "discount_percent",
-    ])
+    meta_ws.append(["row_mapping"])
+    meta_ws.append(
+        [
+            "import_row_id",
+            "sheet_name",
+            "category_id",
+            "category_path",
+            "name",
+            "price",
+            "description",
+            "main_image",
+            "extra_images",
+            "volume_m3",
+            "weight_kg",
+            "is_active",
+            "discount_percent",
+        ]
+    )
     for item in rows:
-        meta_ws.append([
-            item.import_row_id,
-            sheet_name_by_category[item.category_id],
-            str(item.category_id),
-            item.category_path,
-            item.name,
-            item.price,
-            item.description,
-            item.main_image,
-            item.extra_images,
-            item.volume_m3,
-            item.weight_kg,
-            item.is_active,
-            item.discount_percent,
-        ])
+        meta_ws.append(
+            [
+                item.import_row_id,
+                sheet_name_by_category[item.category_id],
+                str(item.category_id),
+                item.category_path,
+                item.name,
+                item.price,
+                item.description,
+                item.main_image,
+                item.extra_images,
+                item.volume_m3,
+                item.weight_kg,
+                item.is_active,
+                item.discount_percent,
+            ]
+        )
 
     bio = io.BytesIO()
     wb.save(bio)
@@ -538,7 +536,7 @@ def parse_step2(source_bytes: bytes) -> tuple[dict[str, list[CharacteristicMeta]
                 extra_images=_normalize_text(meta.cell(r, 9).value) or None,
                 volume_m3=float(meta.cell(r, 10).value or 0),
                 weight_kg=float(meta.cell(r, 11).value or 0),
-                is_active=bool(meta.cell(r, 12).value),
+                is_active=_to_bool(meta.cell(r, 12).value, default=True),
                 discount_percent=int(meta.cell(r, 13).value) if meta.cell(r, 13).value not in (None, "") else None,
             )
 
@@ -568,13 +566,22 @@ def parse_step2(source_bytes: bytes) -> tuple[dict[str, list[CharacteristicMeta]
                     try:
                         num = _to_float(raw)
                     except ValueError:
-                        errors.append(ImportErrorItem(sheet_name, r, ws.cell(1, ch.column_index).value or str(ch.column_index), "Ожидалось числовое значение."))
+                        errors.append(
+                            ImportErrorItem(
+                                sheet_name,
+                                r,
+                                ws.cell(1, ch.column_index).value or str(ch.column_index),
+                                "Ожидалось числовое значение.",
+                            )
+                        )
                         continue
                     ch_values[ch.characteristic_id] = (None, num)
                 else:
                     ch_values[ch.characteristic_id] = (txt, None)
 
-            parsed_rows.append(Step2Row(sheet_name=sheet_name, row_number=r, import_row_id=import_row_id, characteristic_values=ch_values))
+            parsed_rows.append(
+                Step2Row(sheet_name=sheet_name, row_number=r, import_row_id=import_row_id, characteristic_values=ch_values)
+            )
 
     return mapping_by_sheet, row_map, parsed_rows, errors
 
