@@ -7,6 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.product import Product
 from app.models.product_characteristic_value import ProductCharacteristicValue
+from app.models.product_image import ProductImage
 from app.services.excel_product_import import (
     ImportErrorItem,
     generate_step1_template,
@@ -97,7 +98,9 @@ async def upload_step2(
         for parsed_row in parsed_rows:
             base = row_map.get(parsed_row.import_row_id)
             if not base:
-                errors.append(ImportErrorItem(parsed_row.sheet_name, parsed_row.row_number, "import_row_id", "Не найдены данные строки в META."))
+                errors.append(
+                    ImportErrorItem(parsed_row.sheet_name, parsed_row.row_number, "import_row_id", "Не найдены данные строки в META.")
+                )
                 continue
 
             duplicate_q = await session.execute(
@@ -107,7 +110,13 @@ async def upload_step2(
                 )
             )
             if duplicate_q.scalar_one_or_none() is not None:
-                errors.append(ImportErrorItem(parsed_row.sheet_name, parsed_row.row_number, "Название товара", "Товар с таким названием уже есть в этой категории."))
+                errors.append(
+                    ImportErrorItem(parsed_row.sheet_name, parsed_row.row_number, "Название товара", "Товар с таким названием уже есть в этой категории.")
+                )
+                continue
+
+            if not base.main_image:
+                errors.append(ImportErrorItem(parsed_row.sheet_name, parsed_row.row_number, "Главное фото", "Поле обязательно."))
                 continue
 
             product = Product(
@@ -123,6 +132,12 @@ async def upload_step2(
             product.slug = await ensure_unique_slug(session, Product, base_slug=slugify(base.name))
             session.add(product)
             await session.flush()
+
+            session.add(ProductImage(product_id=product.id, file_path=base.main_image, is_main=True))
+
+            extra_images = [item.strip() for item in (base.extra_images or "").split(";") if item.strip()]
+            for path in extra_images[:5]:
+                session.add(ProductImage(product_id=product.id, file_path=path, is_main=False))
 
             for characteristic_id, (value_string, value_number) in parsed_row.characteristic_values.items():
                 if value_string is None and value_number is None:
