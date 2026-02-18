@@ -638,6 +638,10 @@ async def request_new_submit(
             err = "Дата заявки не может быть в будущем."
             field_errors["created_at"] = "Укажи дату и время не позже текущего момента."
 
+    if not err and created_at and created_at_dt and created_at_dt > datetime.now(created_at_dt.tzinfo):
+        err = "Дата заявки не может быть в будущем."
+        field_errors["created_at"] = "Укажи дату и время не позже текущего момента."
+
     mid_uuid: uuid.UUID | None = None
     if not err and _is_admin(admin):
         mid_raw = (manager_id or "").strip()
