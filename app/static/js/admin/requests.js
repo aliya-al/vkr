@@ -319,6 +319,7 @@
         if (lineEl) lineEl.textContent = formatMoney(unit * newQty);
 
         ensureEmptyCartState();
+        updateTotals();
         return;
       }
 
@@ -327,6 +328,7 @@
 
       wrap.appendChild(item);
       ensureEmptyCartState();
+      updateTotals();
     });
   };
 
@@ -341,6 +343,8 @@
       const unit = parseNum(item.getAttribute("data-unit"), 0);
       const lineEl = item.querySelector("[data-line-total]");
       if (lineEl) lineEl.textContent = formatMoney(unit * nextQty);
+
+      updateTotals();
 
       const prefix = getCartPrefix();
       const r = await postForm(`${prefix}/cart/update`, { product_id: pid, qty: nextQty });
@@ -365,13 +369,13 @@
 
       if (e.target.closest("[data-minus]")) {
         const next = Math.max(1, cur - 1);
-        commit(item, pid, next);
+        await commit(item, pid, next);
         return;
       }
 
       if (e.target.closest("[data-plus]")) {
         const next = cur + 1;
-        commit(item, pid, next);
+        await commit(item, pid, next);
         return;
       }
 

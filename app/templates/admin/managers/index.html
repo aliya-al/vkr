@@ -39,7 +39,7 @@
                   <td class="mg-tdActions">
                     <div class="mg-actions">
                       <a class="pc-btn pc-btn--sm" href="/admin/managers/{{ m.id }}/edit">Редактировать</a>
-                      <form class="mg-delForm" method="post" action="/admin/managers/{{ m.id }}/delete" data-ajax-delete>
+                      <form class="mg-delForm" method="post" action="/admin/managers/{{ m.id }}/delete" data-ajax-delete data-confirm="Удалить менеджера {{ m.login }}?">
                         <button class="pc-btn pc-btn--sm pc-btn--danger" type="submit">Удалить</button>
                       </form>
                     </div>
