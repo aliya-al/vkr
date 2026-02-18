@@ -77,7 +77,7 @@ async def upload_step2(
     session: AsyncSession = Depends(get_async_session),
 ):
     source = await file.read()
-    _, row_map, parsed_rows, parse_errors = parse_step2(source)
+    _, _, parsed_rows, parse_errors = parse_step2(source)
 
     if parse_errors:
         return templates.TemplateResponse(
@@ -95,12 +95,7 @@ async def upload_step2(
 
     try:
         for parsed_row in parsed_rows:
-            base = row_map.get(parsed_row.import_row_id)
-            if not base:
-                errors.append(
-                    ImportErrorItem(parsed_row.sheet_name, parsed_row.row_number, "import_row_id", "Не найдены данные строки в META.")
-                )
-                continue
+            base = parsed_row.base_row
 
             duplicate_q = await session.execute(
                 select(Product.id).where(
@@ -121,7 +116,7 @@ async def upload_step2(
                 price=base.price,
                 volume_m3=base.volume_m3,
                 weight_kg=base.weight_kg,
-                is_active=base.is_active,
+                is_active=False,
                 discount_percent=base.discount_percent,
             )
             product.slug = await ensure_unique_slug(session, Product, base_slug=slugify(base.name))
