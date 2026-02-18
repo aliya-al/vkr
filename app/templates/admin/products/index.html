@@ -27,13 +27,45 @@
 <form method="get" id="apFilterForm">
   {# нужно для режима "ничего не выбрано" #}
   <input type="hidden" name="none" id="apNone" value="{{ q.get('none','') }}">
+  <input type="hidden" name="q" value="{{ q.get('q','') }}">
+  <input type="hidden" name="page" value="{{ q.get('page','') }}">
+  <input type="hidden" name="sort" value="{{ q.get('sort','') }}">
+  <input type="hidden" name="order" value="{{ q.get('order','') }}">
 
-  <div style="display:flex; gap:10px; margin: 10px 0 12px;">
-    <button type="button" class="ap-del" id="apReset">Сбросить</button>
-    <button type="button" class="ap-del" id="apSelectAll">Найти всё</button>
+  <div class="ap-filter-controls">
+    <div class="ap-field">
+      <label class="ap-field__label" for="apFilterActive">Активность</label>
+      <span class="selectPill selectPill--wide">
+        <select id="apFilterActive" name="active" aria-label="Фильтр по активности">
+          <option value="all" {% if active_filter == 'all' %}selected{% endif %}>Все</option>
+          <option value="active" {% if active_filter == 'active' %}selected{% endif %}>Активные</option>
+          <option value="inactive" {% if active_filter == 'inactive' %}selected{% endif %}>Неактивные</option>
+        </select>
+      </span>
+    </div>
+
+    <div class="ap-field">
+      <label class="ap-field__label" for="apFilterPhotos">Фотографии</label>
+      <span class="selectPill selectPill--wide">
+        <select id="apFilterPhotos" name="photos" aria-label="Фильтр по фотографиям">
+          <option value="all" {% if photos_filter == 'all' %}selected{% endif %}>Все</option>
+          <option value="with" {% if photos_filter == 'with' %}selected{% endif %}>С фото</option>
+          <option value="without" {% if photos_filter == 'without' %}selected{% endif %}>Без фото</option>
+        </select>
+      </span>
+    </div>
   </div>
 
-  <div class="ap-checks">
+  <div class="ap-filter-actions">
+    <button type="submit" class="ap-del">Применить</button>
+    <button type="button" class="ap-del" id="apReset">Сбросить</button>
+    <button type="button" class="ap-del" id="apSelectAll">Выбрать все</button>
+  </div>
+
+  <div class="ap-field">
+    <div class="ap-field__label">Категории</div>
+    <div class="ap-checks-wrap">
+      <div class="ap-checks">
 
             {% for c in parent_categories %}
               {# если selected пустой — считаем “выбраны все” #}
@@ -47,8 +79,10 @@
               </label>
             {% endfor %}
           </div>
+    </div>
+  </div>
 
-          <input type="hidden" name="q" value="{{ q.get('q','') }}">
+
 
         </form>
       </aside>
@@ -57,10 +91,10 @@
       <section class="ap-card" aria-label="Список товаров">
         <header class="ap-card__head">
           <div class="ap-card__title">Товары</div>
-
-          {# опционально: кнопка создать #}
+          <div class="ap-head-actions">
             <a class="ap-link" href="/admin/import/products">Импорт товаров (Excel)</a>
-          <a class="ap-link" href="/admin/products/new">+ Добавить</a>
+            <a class="ap-link" href="/admin/products/new">+ Добавить</a>
+          </div>
         </header>
 
 <div class="ap-list" id="apProductsList">

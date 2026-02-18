@@ -5,7 +5,7 @@ from pathlib import Path
 import anyio
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, UploadFile, Body
 from fastapi.responses import HTMLResponse, RedirectResponse
-from sqlalchemy import select, text, update
+from sqlalchemy import exists, select, text, update
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 from types import SimpleNamespace
@@ -234,6 +234,13 @@ def _format_product_characteristics(values: list[ProductCharacteristicValue]) ->
 
 @router.get("/admin/products", response_class=HTMLResponse)
 async def products_list(request: Request, session: AsyncSession = Depends(get_async_session)):
+    def _normalized_choice(raw: str | None, allowed: set[str]) -> str:
+        value = (raw or "").strip().lower()
+        return value if value in allowed else "all"
+
+    active_filter = _normalized_choice(request.query_params.get("active"), {"all", "active", "inactive"})
+    photos_filter = _normalized_choice(request.query_params.get("photos"), {"all", "with", "without"})
+
     # 1) Родительские категории для фильтра слева (ТОЛЬКО parent_id is NULL)
     cats_res = await session.execute(
         select(Category).where(Category.parent_id.is_(None)).order_by(Category.name)
@@ -271,6 +278,19 @@ async def products_list(request: Request, session: AsyncSession = Depends(get_as
     if filter_category_ids:
         stmt = stmt.where(Product.category_id.in_(filter_category_ids))
 
+    if active_filter == "active":
+        stmt = stmt.where(Product.is_active.is_(True))
+    elif active_filter == "inactive":
+        stmt = stmt.where(Product.is_active.is_(False))
+
+    has_images_subquery = exists(
+        select(ProductImage.id).where(ProductImage.product_id == Product.id)
+    )
+    if photos_filter == "with":
+        stmt = stmt.where(has_images_subquery)
+    elif photos_filter == "without":
+        stmt = stmt.where(~has_images_subquery)
+
     result = await session.execute(stmt)
     products = result.scalars().all()
 
@@ -286,6 +306,8 @@ async def products_list(request: Request, session: AsyncSession = Depends(get_as
             "products": products,
             "characteristics_text": characteristics_text,
             "parent_categories": parent_categories,
+            "active_filter": active_filter,
+            "photos_filter": photos_filter,
         },
     )
 @router.post("/admin/products/{product_id}/inline", dependencies=[Depends(require_admin_or_404)])
