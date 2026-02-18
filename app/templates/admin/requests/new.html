@@ -148,19 +148,17 @@
                   <div class="reqn-totalRow">
                     <span class="reqn-muted">Сумма</span>
                     <span class="reqn-strong">
-                      {% if total_base is defined and total_base > total_price %}
-                        <span class="reqn-old">{{ total_base }} ₽</span>
-                      {% endif %}
-                      <span>{{ total_price }} ₽</span>
+                      <span class="reqn-old" data-total-base {% if not (total_base is defined and total_base > total_price) %}hidden{% endif %}>{{ total_base }} ₽</span>
+                      <span data-total-price>{{ total_price }} ₽</span>
                     </span>
                   </div>
                   <div class="reqn-totalRow">
                     <span class="reqn-muted">Вес</span>
-                    <span class="reqn-strong">{{ "%.1f"|format(total_weight or 0) }} кг</span>
+                    <span class="reqn-strong" data-total-weight>{{ "%.1f"|format(total_weight or 0) }} кг</span>
                   </div>
                   <div class="reqn-totalRow">
                     <span class="reqn-muted">Кубатура</span>
-                    <span class="reqn-strong">{{ "%.3f"|format(total_volume or 0) }} м³</span>
+                    <span class="reqn-strong" data-total-volume>{{ "%.3f"|format(total_volume or 0) }} м³</span>
                   </div>
                 </div>
               </div>

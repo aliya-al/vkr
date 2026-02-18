@@ -2,12 +2,14 @@
 
 {% block title %}Категории{% endblock %}
 
+
 {% block head %}
   <link rel="stylesheet" href="/static/css/admin/categories.css">
 {% endblock %}
 
+
 {% macro row(cat, level=0) %}
-  <tr>
+  <tr data-delete-item>
     <td class="catTdName">
       <div class="catName" style="--lvl: {{ level }};">
         {% if cat["children"]|length %}
@@ -45,8 +47,9 @@
       <form method="post"
             action="/admin/categories/{{ cat['id'] }}/delete"
             class="catInlineForm"
+            data-ajax-delete
             {% if need_confirm %}
-            onsubmit="return confirm('Категория содержит данные, которые будут удалены. Продолжить?');"
+            data-confirm="Категория содержит данные, которые будут удалены. Продолжить?"
             {% endif %}>
         <button class="catBtn catBtn--danger" type="submit">Удалить</button>
       </form>
@@ -108,4 +111,8 @@
 
   </div>
 </div>
+{% endblock %}
+
+{% block scripts %}
+<script src="/static/js/admin/ajax-delete.js"></script>
 {% endblock %}

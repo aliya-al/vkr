@@ -402,8 +402,6 @@
       if (lineEl) lineEl.textContent = formatMoney(unit * next);
 
       const prefix = getCartPrefix();
-      console.log("ADD", { prefix, productId, draft: getDraft() });
-
       const r = await postForm(`${prefix}/cart/update`, { product_id: pid, qty: next });
       if (!r || r.ok !== true) return;
 
