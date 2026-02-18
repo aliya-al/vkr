@@ -17,9 +17,6 @@
   margin: 10px 0 0;
   color: var(--color-text);
   font-size: var(--fs-base);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
 
 .search-head__meta {
