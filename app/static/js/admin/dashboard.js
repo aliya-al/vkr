@@ -323,7 +323,7 @@ function normalizeSeries(arr) {
   async function loadCategories() {
     if (!catChart) return;
     const g = groupCategories ? groupCategories.value : "month";
-    const scope = scopeCategories ? scopeCategories.value : "recent";
+    const scope = scopeCategories ? scopeCategories.value : "month";
 
     const url = new URL("/admin/api/analytics/categories", window.location.origin);
     url.searchParams.set("group", g);
@@ -338,7 +338,7 @@ function normalizeSeries(arr) {
   async function loadTopProducts() {
     if (!topListEl) return;
     const g = groupTop ? groupTop.value : "month";
-    const scope = scopeTop ? scopeTop.value : "all";
+    const scope = scopeTop ? scopeTop.value : "month";
 
     const url = new URL("/admin/api/analytics/top-products", window.location.origin);
     url.searchParams.set("group", g);
