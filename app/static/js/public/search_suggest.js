@@ -1,15 +1,18 @@
 (() => {
   const form = document.querySelector('[data-search-form]');
-  const input = document.querySelector('[data-search-input]');
-  const box = document.querySelector('[data-search-suggestions]');
+  if (!form) return;
 
-  if (!form || !input || !box) return;
+  const input = form.querySelector('[data-search-input]');
+  const container = form.querySelector('[data-search-suggestions]');
+  const endpoint = form.getAttribute('data-suggest-url');
+
+  if (!input || !container || !endpoint) return;
 
   let timer = null;
 
   const hide = () => {
-    box.hidden = true;
-    box.innerHTML = '';
+    container.hidden = true;
+    container.innerHTML = '';
   };
 
   const render = (items) => {
@@ -18,30 +21,48 @@
       return;
     }
 
-    box.innerHTML = '';
+    const fragment = document.createDocumentFragment();
+
     items.slice(0, 6).forEach((item) => {
-      const link = document.createElement('a');
-      link.className = 'public-search__suggestion';
-      link.href = item.url;
-      link.textContent = item.name || '';
+      const button = document.createElement('button');
+      button.className = 'public-search__suggestion';
+      button.type = 'button';
+      button.dataset.url = item.url || '';
 
-      const type = document.createElement('small');
-      type.textContent = item.type === 'category' ? 'категория' : 'товар';
-      link.appendChild(type);
+      const title = document.createElement('span');
+      title.className = 'public-search__suggestion-title';
+      title.textContent = item.title || '';
 
-      box.appendChild(link);
+      const subtitle = document.createElement('span');
+      subtitle.className = 'public-search__suggestion-subtitle';
+      subtitle.textContent = item.subtitle || '';
+
+      button.append(title, subtitle);
+      fragment.append(button);
     });
-    box.hidden = false;
+
+    container.innerHTML = '';
+    container.append(fragment);
+    container.hidden = false;
   };
 
-  const load = async (query) => {
+  const loadSuggestions = async () => {
+    const q = input.value.trim();
+    if (!q) {
+      hide();
+      return;
+    }
+
     try {
-      const resp = await fetch(`/search/suggest?q=${encodeURIComponent(query)}`);
-      if (!resp.ok) {
+      const res = await fetch(`${endpoint}?q=${encodeURIComponent(q)}`, {
+        headers: { Accept: 'application/json' },
+      });
+      if (!res.ok) {
         hide();
         return;
       }
-      const data = await resp.json();
+
+      const data = await res.json();
       render(Array.isArray(data.items) ? data.items : []);
     } catch {
       hide();
@@ -49,23 +70,22 @@
   };
 
   input.addEventListener('input', () => {
-    const q = input.value.trim();
-    if (timer) clearTimeout(timer);
-    if (!q) {
-      hide();
-      return;
-    }
-
-    timer = setTimeout(() => {
-      load(q);
-    }, 180);
+    clearTimeout(timer);
+    timer = window.setTimeout(loadSuggestions, 180);
   });
 
-  document.addEventListener('click', (evt) => {
-    if (!form.contains(evt.target)) hide();
+  container.addEventListener('click', (event) => {
+    const button = event.target.closest('[data-url]');
+    if (!button) return;
+    const url = button.getAttribute('data-url');
+    if (url) window.location.href = url;
   });
 
-  input.addEventListener('keydown', (evt) => {
-    if (evt.key === 'Escape') hide();
+  document.addEventListener('click', (event) => {
+    if (!form.contains(event.target)) hide();
+  });
+
+  input.addEventListener('focus', () => {
+    if (input.value.trim()) loadSuggestions();
   });
 })();
