@@ -17,5 +17,5 @@ def moscow_dt(value: datetime | None, fmt: str = "%d.%m.%Y") -> str:
     return msk.strftime(fmt)
 
 
-# регистрируем фильтр для Jinja
+                               
 templates.env.filters["moscow_dt"] = moscow_dt

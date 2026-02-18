@@ -54,7 +54,7 @@ async def favorites_page(
     )
     products = result.scalars().all()
 
-    # сохранить порядок из session
+                                  
     by_id = {p.id: p for p in products}
     ordered_products = [by_id[i] for i in ids if i in by_id]
 
@@ -81,7 +81,7 @@ async def favorites_add(
     request: Request,
     session: AsyncSession = Depends(get_async_session),
 ):
-    # проверяем, что товар существует
+                                     
     exists = await session.execute(select(Product.id).where(Product.id == product_id))
     if not exists.scalar_one_or_none():
         raise HTTPException(status_code=404)
@@ -97,7 +97,7 @@ async def favorites_toggle(
     product_id: uuid.UUID = Form(...),
     session: AsyncSession = Depends(get_async_session),
 ):
-    # проверяем, что товар существует
+                                     
     exists = await session.execute(select(Product.id).where(Product.id == product_id))
     if not exists.scalar_one_or_none():
         raise HTTPException(status_code=404)

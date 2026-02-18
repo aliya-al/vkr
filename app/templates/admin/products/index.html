@@ -1,4 +1,4 @@
-{# templates/admin/products/index.html #}
+
 {% extends "admin/base.html" %}
 
 {% block title %}Товары{% endblock %}
@@ -13,21 +13,21 @@
 
     <div class="ap-grid">
 
-      {# LEFT: фильтр родительских категорий #}
+      
       <aside class="ap-card ap-filter" aria-label="Фильтр по категориям">
         <header class="ap-card__head">
           <div class="ap-card__title">Категории</div>
         </header>
 
 
-        {# cat — мультиселект через query params: ?cat=<uuid>&cat=<uuid> #}
+        
         {% set q = request.query_params %}
         {% set selected = selected_parent_category_ids if selected_parent_category_ids is defined else q.getlist('cat') %}
         {% set selected_activity = activity if activity is defined else q.get('activity', 'all') %}
         {% set selected_photos = photos if photos is defined else q.get('photos', 'all') %}
 
 <form method="get" id="apFilterForm">
-  {# нужно для режима "ничего не выбрано" #}
+  
   <input type="hidden" name="none" id="apNone" value="{{ q.get('none','') }}">
 
   <div style="display:flex; gap:10px; margin: 10px 0 12px;">
@@ -38,7 +38,7 @@
   <div class="ap-checks {% if parent_categories|length > 10 %}ap-checks--scroll{% endif %}">
 
             {% for c in parent_categories %}
-              {# если selected пустой — считаем “выбраны все” #}
+              
               {% set is_none = (q.get('none') == '1') %}
 {% set is_checked = (not is_none) and ((selected|length == 0) or ((c.id|string) in selected)) %}
 
@@ -95,12 +95,12 @@
         </form>
       </aside>
 
-      {# RIGHT: список товаров #}
+      
       <section class="ap-card" aria-label="Список товаров">
         <header class="ap-card__head">
           <div class="ap-card__title">Товары</div>
 
-          {# опционально: кнопка создать #}
+          
             <a class="ap-link" href="/admin/import/products">Импорт товаров (Excel)</a>
           <a class="ap-link" href="/admin/products/new">+ Добавить</a>
         </header>
@@ -109,17 +109,17 @@
 
           {% if products and products|length %}
             {% for p in products %}
-              {# --- main image from p.images --- #}
+              
 {% set img = None %}
 {% if p.images %}
-  {# 1) пробуем найти главное #}
+  
   {% for im in p.images %}
     {% if im.is_main %}
       {% set img = im.file_path %}
     {% endif %}
   {% endfor %}
 
-  {# 2) если главного нет — берём первое #}
+  
   {% if not img %}
     {% set img = p.images[0].file_path %}
   {% endif %}

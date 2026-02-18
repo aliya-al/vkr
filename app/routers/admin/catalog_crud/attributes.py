@@ -63,7 +63,7 @@ async def attribute_create(
     if value_type_clean not in {"string", "number"}:
         raise HTTPException(status_code=400, detail="value_type must be 'string' or 'number'")
 
-    # 1) Предварительная проверка (чтобы не падать в 500)
+                                                         
     exists_stmt = select(GlobalCharacteristic.id).where(
         func.lower(GlobalCharacteristic.name) == name_clean.lower()
     )
@@ -80,7 +80,7 @@ async def attribute_create(
             status_code=400,
         )
 
-    # 2) Уникальный slug
+                        
     base = slugify(name_clean)
     slug = await ensure_unique_slug(session, GlobalCharacteristic, base)
 
@@ -92,7 +92,7 @@ async def attribute_create(
     )
     session.add(attr)
 
-    # 3) На всякий случай ловим IntegrityError (гонки/параллельные запросы)
+                                                                           
     try:
         await session.commit()
     except IntegrityError:
@@ -155,13 +155,13 @@ async def attribute_edit(
     if value_type_clean not in {"string", "number"}:
         raise HTTPException(status_code=400, detail="value_type must be 'string' or 'number'")
 
-    # Проверка дубля имени (кроме самой себя)
+                                             
     exists_stmt = select(GlobalCharacteristic.id).where(
         func.lower(GlobalCharacteristic.name) == name_clean.lower(),
         GlobalCharacteristic.id != attribute_id,
     )
     if (await session.execute(exists_stmt)).first():
-        # чтобы форма показала введённые значения
+                                                 
         attr.name = name_clean
         attr.value_type = CharacteristicType(value_type_clean)
         attr.unit = unit_clean

@@ -25,28 +25,28 @@ def _normalize_media_path(path: str | None) -> str | None:
     if not p:
         return None
 
-    # внешние ссылки
+                    
     if p.startswith(("http://", "https://", "//")):
         return p
 
-    # уже корректный публичный путь
+                                   
     if p.startswith("/static/"):
         return p
 
-    # если кто-то записал "static/..."
+                                      
     if p.startswith("static/"):
         return "/" + p
 
-    # нормализуем слэши
+                       
     p = p.lstrip("/")
 
-    # если в БД уже лежит полный относительный путь от static
-    #    например: "img/uploads/products/abc.jpg"
+                                                             
+                                                 
     if p.startswith("img/uploads/products/"):
         return "/static/" + p
 
-    # если в БД лежит только имя файла: "abc.jpg"
-    # или "products/abc.jpg"
+                                                 
+                            
     p = p.removeprefix("products/")
 
     return "/static/img/uploads/products/" + p
@@ -91,7 +91,7 @@ async def _load_cart_products(
     if not cart:
         return [], 0, 0, 0.0, 0.0
 
-    # приводим ключи корзины к uuid
+                                   
     ids: list[uuid.UUID] = []
     for pid_str in cart.keys():
         try:
@@ -186,7 +186,7 @@ async def checkout_submit(
     request: Request,
     customer_name: str = Form(...),
     customer_phone: str = Form(...),
-    delivery_type: str = Form(...),  # "delivery" | "pickup"
+    delivery_type: str = Form(...),                         
     pickup_address: str | None = Form(None),
     delivery_address: str | None = Form(None),
     comment: str | None = Form(None),
@@ -196,23 +196,23 @@ async def checkout_submit(
     cart = _get_cart(request.session)
     items, total_price, total_base, total_weight, total_volume = await _load_cart_products(session, cart)
 
-    # базовые проверки
+                      
     customer_name = customer_name.strip()
     customer_phone = customer_phone.strip()
     digits = "".join(ch for ch in customer_phone if ch.isdigit())
 
-    # 9XXXXXXXXX -> 7XXXXXXXXXX
+                               
     if digits.startswith("9"):
         digits = "7" + digits
-    # 8XXXXXXXXXX -> 7XXXXXXXXXX
+                                
     if digits.startswith("8") and len(digits) == 11:
         digits = "7" + digits[1:]
 
-    # строгая проверка
+                      
     if not (len(digits) == 11 and digits.startswith("7")):
         error = "Укажи телефон в формате +7 (999) 999-99-99."
     else:
-        # сохраняем в одном нормальном виде
+                                           
         customer_phone = f"+7 ({digits[1:4]}) {digits[4:7]}-{digits[7:9]}-{digits[9:11]}"
 
     delivery_address = (delivery_address or "").strip()
@@ -273,7 +273,7 @@ async def checkout_submit(
             manager_id=None,
         )
         session.add(order)
-        await session.flush()  # получаем order.id
+        await session.flush()                     
 
         for it in items:
             p: Product = it["product"]
@@ -332,7 +332,7 @@ async def checkout_submit(
             status_code=500,
         )
 
-    # очищаем корзину после успешного сохранения
+                                                
     request.session["cart"] = {}
     request.session["last_order_id"] = str(order.id)
 

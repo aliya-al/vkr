@@ -29,9 +29,9 @@ class Order(Base):
         nullable=False,
     )
 
-    # aдрес доставки (если delivery)
+                                    
     delivery_address: Mapped[str | None] = mapped_column(String, nullable=True)
-    # aдрес самовывоза (если pickup) — конкретная точка
+                                                       
     pickup_address: Mapped[str | None] = mapped_column(String, nullable=True)
 
     status: Mapped[OrderStatus] = mapped_column(
@@ -42,13 +42,13 @@ class Order(Base):
 
     total_price: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
 
-    # общий вес заказа в килограммах - (weight_kg товара * quantity) по всем позициям
+                                                                                     
     total_weight_kg: Mapped[float] = mapped_column(
         Float,
         nullable=False,
         default=0.0,
     )
-    # общий объём заказа в кубических метрах - (volume_m3 товара * quantity)
+                                                                            
     total_volume_m3: Mapped[float] = mapped_column(
         Float,
         nullable=False,

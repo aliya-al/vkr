@@ -43,7 +43,7 @@ async def fetch_orders_weight_volume(
             "volume_m3": float(volume_m3 or 0.0),
         }
 
-    # Заказы без позиций тоже должны иметь 0
+                                            
     for oid in ids:
         out.setdefault(oid, {"weight_kg": 0.0, "volume_m3": 0.0})
 

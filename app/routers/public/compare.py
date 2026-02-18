@@ -24,12 +24,12 @@ from app.utils.templates import templates
 router = APIRouter()
 
 def _get_brand_name(p: Product) -> str | None:
-    # 1) если бренд хранится строкой в продукте
+                                               
     bn = getattr(p, "brand_name", None) or getattr(p, "brand", None)
     if isinstance(bn, str) and bn.strip():
         return bn.strip()
 
-    # 2) если бренд — relationship (p.brand.name)
+                                                 
     b = getattr(p, "brand", None)
     name = getattr(b, "name", None) if b else None
     if isinstance(name, str) and name.strip():
@@ -136,7 +136,7 @@ async def compare_page(
             matrix.setdefault(cid, {})
             matrix[cid][p.id] = value_str
 
-    # Ряды в стабильном порядке: по имени характеристики
+                                                        
     def _row_sort_key(item: dict[str, Any]) -> str:
         return (item.get("name") or "").lower()
 
@@ -147,7 +147,7 @@ async def compare_page(
             {
                 "characteristic_id": cid,
                 "name": meta.get("name", ""),
-                # ключи UUID-строки, значения - готовые строки для отображения
+                                                                              
                 "cells": {str(p.id): values_by_product_id.get(p.id, "—") for p in ordered_products},
             }
         )
@@ -187,7 +187,7 @@ async def compare_add(
     request: Request,
     session: AsyncSession = Depends(get_async_session),
 ):
-    # Проверка: товар существует (и можно добавить только активный, если нужно)
+                                                                               
     exists = await session.execute(select(Product.id).where(Product.id == product_id))
     if not exists.scalar_one_or_none():
         raise HTTPException(status_code=404)
@@ -203,7 +203,7 @@ async def compare_toggle(
     product_id: uuid.UUID = Form(...),
     session: AsyncSession = Depends(get_async_session),
 ):
-    # проверяем, что товар существует
+                                     
     exists = await session.execute(select(Product.id).where(Product.id == product_id))
     if not exists.scalar_one_or_none():
         raise HTTPException(status_code=404)

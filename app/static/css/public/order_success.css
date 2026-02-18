@@ -126,7 +126,7 @@
   line-height: 1.45;
 }
 
-/* iPhone / small */
+
 @media (max-width: 430px){
   .os{
     padding: var(--space-6) 0 var(--space-7);

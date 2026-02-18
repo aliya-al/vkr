@@ -1,11 +1,11 @@
-# app/services/compare.py
+                         
 from __future__ import annotations
 
 import uuid
 from typing import Iterable
 
 COMPARE_SESSION_KEY = "compare_product_ids"
-COMPARE_LIMIT = 10  # ограничение, чтобы не раздувать таблицу
+COMPARE_LIMIT = 10                                           
 
 def _normalize_uuid_str(value: str) -> str | None:
     try:

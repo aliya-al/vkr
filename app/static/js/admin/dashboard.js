@@ -39,40 +39,32 @@
   }
 
 
-// Принимает label из API (iso, YYYY-MM-DD, YYYY-MM, YYYY, YYYY-Www) и делает человеко-понятную строку
 function formatPeriodLabel(raw) {
   if (raw == null) return "";
   const s = String(raw).trim();
   if (!s) return "";
 
-  // ISO / datetime (2026-01-31T00:00:00+03:00)
-  // и просто YYYY-MM-DD
   const isoOrDate = s.match(/^(\d{4})-(\d{2})-(\d{2})(?:[T\s].*)?$/);
   if (isoOrDate) {
     const [, y, m, d] = isoOrDate;
     return `${d}.${m}.${y}`;
   }
 
-  // YYYY-MM
   const ym = s.match(/^(\d{4})-(\d{2})$/);
   if (ym) {
     const [, y, m] = ym;
-    // чтобы было в "день.месяц.год" стиле — оставим месяц.год
     return `${m}.${y}`;
   }
 
-  // ISO week: 2026-W05 или 2026-W5
   const yw = s.match(/^(\d{4})-W(\d{1,2})$/i);
   if (yw) {
     const [, y, w] = yw;
     return `нед ${pad2(w)}, ${y}`;
   }
 
-  // Year
   const yOnly = s.match(/^\d{4}$/);
   if (yOnly) return s;
 
-  // Если уже “красиво” или это названия месяцев — не трогаем
   return s;
 }
 
@@ -418,7 +410,6 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   document.addEventListener("DOMContentLoaded", () => {
-    // запоминаем предыдущее значение для отката при ошибке
     document.querySelectorAll(".js-inline-status, .js-inline-manager").forEach((s) => {
       s.dataset.prevValue = s.value;
     });
@@ -443,11 +434,10 @@ document.addEventListener("DOMContentLoaded", () => {
         setStatusClass(statusSel, data.status || next);
         sel.dataset.prevValue = next;
       } else {
-        await postInline(orderId, { manager_id: next }); // "" = снять менеджера
+        await postInline(orderId, { manager_id: next });
         sel.dataset.prevValue = next;
       }
     } catch (err) {
-      // откат
       sel.value = prev;
       sel.dataset.prevValue = prev;
       if (statusSel) setStatusClass(statusSel, prev || "new");

@@ -7,24 +7,24 @@
 
   --pdp-radius: 18px;
 
-  /* требование: картинка 350x350 */
+  
   --pdp-img: 350px;
 
-  /* clamp: половина высоты картинки */
+  
   --pdp-clamp-h: calc(var(--pdp-img) / 2);
 
   --pdp-gap: 35px;
   .pdp-right { gap: 14px 35px; }
 
 
-  /* thumbs уже, чтобы правый блок был левее */
+  
   --pdp-thumb: 60px;
   --pdp-thumb-gap: 12px;
 
   padding: var(--space-6) 0 var(--space-8);
 }
 
-/* ---------- breadcrumbs ---------- */
+
 .pdp-bc { margin-top: var(--space-4); }
 .pdp-bc__list {
   list-style: none;
@@ -42,7 +42,7 @@
 .pdp-bc__cur { color: var(--pdp-muted); }
 .pdp-bc__sep { opacity: 0.7; }
 
-/* ---------- header ---------- */
+
 .pdp-head {
   display: grid;
   gap: 10px;
@@ -116,8 +116,8 @@
 
 .pdp-step__qty {
   width: 56px;
-  height: 100%;          /* чтобы занять высоту 34px контейнера */
-  line-height: 34px;     /* вертикальный центр текста */
+  height: 100%;          
+  line-height: 34px;     
   padding: 0;
   margin: 0;
 
@@ -135,7 +135,7 @@
   -webkit-tap-highlight-color: transparent;
 }
 
-/* перебить возможные глобальные стили фокуса */
+
 .pdp-step__qty:focus,
 .pdp-step__qty:focus-visible,
 .pdp-step__qty:active {
@@ -144,7 +144,7 @@
   border: 0 !important;
 }
 
-/* убрать стрелочки у number */
+
 .pdp-step__qty::-webkit-outer-spin-button,
 .pdp-step__qty::-webkit-inner-spin-button {
   -webkit-appearance: none;
@@ -154,15 +154,15 @@
 .pdp-step { align-items: stretch; }
 .pdp-step__qty {
   display: grid;
-  place-items: center; /* центр текста внутри input */
+  place-items: center; 
 }
 
 
 
 
 
-/* ---------- top grid ---------- */
-/* фиксируем левую колонку под thumbs+350px (чтобы правый блок сдвинулся левее) */
+
+
 .pdp-top {
   display: grid;
   grid-template-columns: calc(var(--pdp-thumb) + var(--pdp-thumb-gap) + var(--pdp-img)) 1fr;
@@ -171,7 +171,7 @@
   margin-bottom: var(--space-6);
 }
 
-/* ---------- gallery ---------- */
+
 .pdp-gallery {
   display: grid;
   grid-template-columns: var(--pdp-thumb) var(--pdp-img);
@@ -231,7 +231,7 @@
 }
 .pdp-main__ph { background: var(--pdp-surface); }
 
-/* ---------- right area ---------- */
+
 .pdp-right {
   display: grid;
   grid-template-columns: 1fr 250px;
@@ -264,7 +264,7 @@
   text-underline-offset: 3px;
 }
 
-/* clamp blocks: половина высоты картинки */
+
 .pdp-clamp {
   max-height: var(--pdp-clamp-h);
   overflow: hidden;
@@ -296,7 +296,7 @@
 .pdp-kv dt { color: var(--pdp-muted); }
 .pdp-kv dd { margin: 0; }
 
-/* buy card */
+
 .pdp-buy {
   border-radius: var(--pdp-radius);
   background: var(--pdp-surface);
@@ -332,7 +332,7 @@
 }
 .pdp-buy__btn:hover { background: var(--pdp-surface); }
 
-/* qty control: - [input] + */
+
 .pdp-qty {
   height: 34px;
   display: grid;
@@ -371,7 +371,7 @@
 .pdp-short { grid-column: 1 / 2; }
 .pdp-short__p { margin: 0; font-size: var(--fs-xs); color: var(--pdp-text); }
 
-/* ---------- sections ---------- */
+
 .pdp-section { margin-top: var(--space-7); scroll-margin-top: 18px; }
 .pdp-section--last { margin-bottom: var(--space-7); }
 
@@ -388,7 +388,7 @@
 .pdp-desc__p { margin: 0; font-size: var(--fs-sm); color: var(--pdp-text); }
 .pdp-muted { color: var(--pdp-muted); }
 
-/* ---------- FULL SPECS: columns of 6, wrap to next row if many ---------- */
+
 .pdp-speccols {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -414,7 +414,7 @@
 }
 .pdp-spec__v { color: var(--pdp-text); }
 
-/* ---------- related grid ---------- */
+
 .p-grid {
   display: grid;
   grid-template-columns: repeat(5, minmax(0, 1fr));
@@ -497,7 +497,7 @@
 }
 .p-card__btn-icon { width: 16px; height: 16px; display: block; }
 
-/* ---------- dialog ---------- */
+
 .pdp-dlg {
   border: 0;
   border-radius: 16px;
@@ -535,7 +535,7 @@
 }
 .pdp-dlg__img { width: 100%; height: 100%; display: block; aspect-ratio: 1/1; object-fit: cover; }
 
-/* ---------- responsive ---------- */
+
 @media (max-width: 1100px) {
   .p-grid { grid-template-columns: repeat(4, 1fr); }
   .pdp-top { grid-template-columns: 1fr; }
@@ -552,7 +552,7 @@
   .pdp-dlg__grid { grid-template-columns: repeat(3, 1fr); }
 }
 
-/* iPhone */
+
 @media (max-width: 430px) {
   .pdp { padding: var(--space-5) 0 var(--space-7); }
 

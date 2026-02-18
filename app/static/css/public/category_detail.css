@@ -442,8 +442,8 @@
 .cat-main { min-width: 0; }
 
 .cat-page .cat-main .p-grid{
-  grid-template-columns: repeat(4, minmax(0, 1fr)); /* вместо 5 */
-  gap: var(--space-6); /* как в home */
+  grid-template-columns: repeat(4, minmax(0, 1fr)); 
+  gap: var(--space-6); 
 }
 
 .cat-page .p-card__actions{
@@ -477,17 +477,17 @@
   .cat-page .cat-main .p-grid{ gap: var(--space-3); }
 }
 
-/* ===== Back link ("Назад к категориям") ===== */
+
 
 .cat-head__top{
   display: grid;
-  grid-template-columns: 1fr auto 1fr; /* back | title | ghost */
+  grid-template-columns: 1fr auto 1fr; 
   align-items: center;
   gap: 12px;
   margin-bottom: var(--space-3);
 }
 
-/* ссылка-назад */
+
 .cat-back{
   justify-self: start;
   display: inline-flex;
@@ -518,23 +518,23 @@
   border-color: rgba(107,44,255,0.35);
 }
 
-/* “пустышка” справа, чтобы заголовок был ровно по центру */
+
 .cat-head__ghost{
   justify-self: end;
   width: 1px;
   height: 1px;
 }
 
-/* вариант внутри фильтров */
+
 .cat-back--aside{
   width: fit-content;
   margin-bottom: var(--space-4);
 }
 
-/* мобильная адаптация (iPhone) */
+
 @media (max-width: 430px){
   .cat-head{
-    text-align: left; /* убираем центрирование шапки */
+    text-align: left; 
   }
 
   .cat-head__top{

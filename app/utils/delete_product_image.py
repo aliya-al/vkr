@@ -1,6 +1,6 @@
 from pathlib import Path
 
-# Папка хранения файлов и web-путь (отсюда отдаем в <img src="...">)
+                                                                    
 _PRODUCTS_UPLOAD_DIR = Path("app/static/img/uploads/products")
 _PRODUCTS_WEB_PREFIX = "/static/img/uploads/products"
 
@@ -20,5 +20,5 @@ def delete_product_image_if_local(web_path: str | None) -> None:
         if fpath.exists():
             fpath.unlink()
     except OSError:
-        # если файл уже удалён/нет прав — просто игнорируем
+                                                           
         pass

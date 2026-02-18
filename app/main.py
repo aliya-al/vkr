@@ -6,7 +6,7 @@ from starlette.middleware.sessions import SessionMiddleware
 from app.routers import routers
 from fastapi.staticfiles import StaticFiles
 
-load_dotenv() # загружает переменные из локального
+load_dotenv()                                     
 
 IS_PROD = 1
 
@@ -27,6 +27,6 @@ app.add_middleware(
     SessionMiddleware,
     secret_key=SESSION_SECRET_KEY,
     session_cookie="session",
-    same_site="lax",            # защита от части CSRF на уровне браузера
-    https_only=False,           # в проде True (если сайт на https). https_only=IS_PROD
+    same_site="lax",                                                     
+    https_only=False,                                                                  
 )

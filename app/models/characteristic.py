@@ -5,8 +5,8 @@ from app.utils.database import Base
 import enum
 
 class CharacteristicType(str, enum.Enum):
-    string = "string"   # любое текстовое значение: "M300", "красный", "гладкий"
-    number = "number"   # числовое: длина, ширина, толщина, плотность и т.п.
+    string = "string"                                                           
+    number = "number"                                                       
 
 class GlobalCharacteristic(Base):
     __tablename__ = "characteristics"
@@ -21,7 +21,7 @@ class GlobalCharacteristic(Base):
         default=CharacteristicType.string,
     )
 
-    # ед измерения: "м", "мм", "шт", "%", ...
+                                             
     unit: Mapped[str | None] = mapped_column(String(50), nullable=True)
 
     category_links = relationship("CategoryCharacteristic", back_populates="characteristic")

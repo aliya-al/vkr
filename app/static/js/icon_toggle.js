@@ -25,9 +25,7 @@
         return;
       }
 
-      // на странице /favorites при снятии лайка — убираем карточку
       if (action === "/favorites/toggle" && btn && !btn.classList.contains("is-active") && card) {
-        // удаляем только если мы реально на странице избранного
         if (document.body && document.body.querySelector(".fav")) {
           card.remove();
           if (document.querySelectorAll("article.p-card").length === 0) window.location.reload();

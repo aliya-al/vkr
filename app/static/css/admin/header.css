@@ -1,4 +1,4 @@
-/* Админский хедер: логотип слева, заголовок строго по центру, без серой верхней полосы */
+
 
 .admin-header {
   background: var(--color-bg);
@@ -7,7 +7,7 @@
 
 .admin-header__inner {
   display: grid;
-  grid-template-columns: 180px 1fr 180px; /* симметрия для идеального центра */
+  grid-template-columns: 180px 1fr 180px; 
   align-items: center;
   gap: 12px;
   min-height: 64px;
@@ -37,7 +37,7 @@
   justify-self: end;
 }
 
-/* iPhone / узкие экраны */
+
 @media (max-width: 520px) {
   .admin-header__inner {
     grid-template-columns: 1fr;

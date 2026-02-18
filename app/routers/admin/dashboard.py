@@ -204,7 +204,7 @@ async def request_inline_update(
         if not (order.manager_id is None or order.manager_id == me):
             return JSONResponse({"ok": False, "error": "Нет доступа."}, status_code=404)
 
-    # обновляем статус
+                      
     if status is not None:
         try:
             order.status = OrderStatus(status)
@@ -238,7 +238,7 @@ async def request_inline_update(
 
     await session.commit()
 
-    # ответ для JS
+                  
     status_value = order.status.value if order.status else "new"
     return JSONResponse({"ok": True, "status": status_value})
 

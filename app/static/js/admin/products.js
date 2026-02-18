@@ -2,26 +2,22 @@
   function qs(sel, root = document) { return root.querySelector(sel); }
   function qsa(sel, root = document) { return Array.from(root.querySelectorAll(sel)); }
 
-  // ---------- FILTER (left) without reload ----------
   async function applyFilterFromForm(form) {
     const listEl = qs("#apProductsList");
     if (!form || !listEl) return;
 
     const url = new URL(window.location.href);
-    url.search = ""; // пересобираем query с формы
+    url.search = "";
 
     const fd = new FormData(form);
 
-    // переносим поля формы в query
     for (const [k, v] of fd.entries()) {
       if (v === "" || v == null) continue;
       url.searchParams.append(k, String(v));
     }
 
-    // UX: сохраняем скролл, чтобы не прыгало
     const y = window.scrollY;
 
-    // Подгружаем текущую страницу, но вытаскиваем только список
     const r = await fetch(url.toString(), { headers: { "X-Requested-With": "fetch" } });
     if (!r.ok) throw new Error(String(r.status));
     const html = await r.text();
@@ -32,10 +28,8 @@
 
     listEl.innerHTML = nextList.innerHTML;
 
-    // обновляем URL без перезагрузки
     history.replaceState({}, "", url.toString());
 
-    // возвращаем скролл (на всякий случай)
     window.scrollTo(0, y);
   }
 
@@ -45,7 +39,6 @@
 
     const noneEl = qs("#apNone");
 
-    // change checkbox -> ajax
     form.addEventListener("change", (e) => {
       const el = e.target;
       if (!el) return;
@@ -54,7 +47,7 @@
       const isExtraFilter = el.matches('input[type="radio"][name="activity"], input[type="radio"][name="photos"]');
       if (!isCategory && !isExtraFilter) return;
 
-      if (isCategory && noneEl) noneEl.value = ""; // руками кликаем — это не "ничего"
+      if (isCategory && noneEl) noneEl.value = "";
       applyFilterFromForm(form).catch(console.error);
     });
 
@@ -78,7 +71,6 @@
     }
   }
 
-  // ---------- INLINE ACTIVE (right) without reload ----------
   async function postInlineActive(productId, isActive) {
     const r = await fetch(`/admin/products/${productId}/inline`, {
       method: "POST",
@@ -111,7 +103,7 @@
       if (!productId) return;
 
       const prev = sel.dataset.prevValue ?? "1";
-      const next = sel.value; // "1" or "0"
+      const next = sel.value;
       const nextBool = next === "1";
 
       sel.disabled = true;

@@ -1,10 +1,10 @@
-/* app/static/css/admin/products_create.css */
+
 
 .admin-productCreate{
   padding: var(--space-7) 0;
 }
 
-/* top bar */
+
 .pc-top{
   display:flex;
   align-items:flex-end;
@@ -21,7 +21,7 @@
   margin: 0;
 }
 
-/* alert */
+
 .pc-alert{
   background: var(--color-danger-soft);
   border: 1px solid var(--color-line);
@@ -34,7 +34,7 @@
 .pc-alert__label{ font-weight: 700; }
 .pc-alert__text{ margin-left: 6px; }
 
-/* breadcrumb */
+
 .pc-breadcrumb{
   display:flex;
   align-items:center;
@@ -56,7 +56,7 @@
   font-weight: 700;
 }
 
-/* layout */
+
 .pc-grid{
   display:grid;
   grid-template-columns: 1fr 340px;
@@ -73,7 +73,7 @@
   top: calc(var(--space-6) + 52px);
 }
 
-/* form */
+
 .pc-form{ display:block; }
 .pc-section + .pc-section{ margin-top: var(--space-6); }
 
@@ -107,7 +107,7 @@
 
 .pc-req{ color: var(--color-danger); }
 
-/* inputs */
+
 .pc-input,
 .pc-textarea,
 .pc-select{
@@ -133,7 +133,7 @@
   box-shadow: 0 0 0 2px var(--color-accent, #bdbdbd);
 }
 
-/* select with arrow */
+
 .pc-selectPill{
   position: relative;
   display:block;
@@ -157,7 +157,7 @@
   padding-right: 34px;
 }
 
-/* checkbox (в стиле ap-cbox, но под форму) */
+
 .pc-check{
   margin-top: 10px;
   display:flex;
@@ -199,7 +199,7 @@
 }
 .pc-check__label{ color: var(--color-text); }
 
-/* file input */
+
 .pc-file{
   display:block;
   border: 1px dashed var(--color-line);
@@ -233,7 +233,7 @@
   background: color-mix(in oklab, var(--color-bg), var(--color-surface) 35%);
 }
 
-/* buttons */
+
 .pc-actions{
   display:flex;
   align-items:center;
@@ -279,7 +279,7 @@
   background: transparent;
 }
 
-/* right side summary */
+
 .pc-summary{
   display:flex;
   flex-direction:column;
@@ -320,7 +320,7 @@
   font-size: var(--fs-xs);
 }
 
-/* responsive */
+
 @media (max-width: 1000px){
   .pc-grid,
   .pc-grid--pick{
@@ -339,7 +339,7 @@
 .pc-grid--one{
   grid-template-columns: 1fr;
 }
-/* file ui: name + clear button */
+
 .pc-file__meta{
   display:flex;
   flex-direction:column;
@@ -355,7 +355,7 @@
 }
 
 .pc-file__clear{
-  display:none;               /* показываем только когда выбран файл */
+  display:none;               
   width: 28px;
   height: 28px;
   border-radius: 999px;
@@ -373,7 +373,7 @@
   color: var(--color-text);
 }
 
-/* состояние "файл выбран" */
+
 .pc-file.is-picked{
   border-style: solid;
   background: color-mix(in oklab, var(--color-primary-soft), var(--color-bg) 55%);
@@ -383,7 +383,7 @@
   display:inline-grid;
   place-items:center;
 }
-/* previews */
+
 .pc-file__previews{
   display:none;
   align-items:center;
@@ -438,7 +438,7 @@
 .pc-title{
   text-align: left;
 }
-/* Единый блок "Текущее фото" — чтобы сетка не прыгала */
+
 .pc-cur{
   margin-top: 6px;
   padding: 10px 12px;
@@ -463,7 +463,7 @@
 
 .pc-cur__grid{
   margin-top: 10px;
-  min-height: 52px;          /* важно: одинаковая высота даже если фото нет */
+  min-height: 52px;          
   display: flex;
   gap: 8px;
   flex-wrap: wrap;
@@ -496,27 +496,27 @@
   border: 1px dashed var(--color-line);
   background: var(--color-bg);
 }
-/* выбор/удаление миниатюр (не меняем стили ap-thumb, только обвязка) */
-/* контейнер для выбора */
+
+
 .pc-imgPick{
-  display: inline-block; /* не добавляет лишней высоты */
+  display: inline-block; 
   cursor: pointer;
   user-select: none;
 }
 
-/* чекбокс скрыт */
+
 .pc-imgPick__chk{
   position: absolute;
   opacity: 0;
   pointer-events: none;
 }
 
-/* делаем миниатюру якорем для оверлея */
+
 .pc-imgPick__thumb{
   position: relative;
 }
 
-/* подпись "удалить" — поверх, не влияет на высоту */
+
 .pc-imgPick__cap{
   position: absolute;
   left: 4px;
@@ -534,21 +534,21 @@
   transition: opacity .15s ease, transform .15s ease;
 }
 
-/* показываем капшен при наведении */
+
 .pc-imgPick:hover .pc-imgPick__cap{
   opacity: 1;
   transform: translateY(0);
 }
 
-/* подсветка выбранных */
+
 .pc-imgPick__chk:checked + .pc-imgPick__thumb{
   outline: 2px solid var(--color-danger);
   outline-offset: 2px;
 }
 
-/* и когда выбрано — капшен всегда видим */
+
 .pc-imgPick__chk:checked + .pc-imgPick__thumb .pc-imgPick__cap{
   opacity: 1;
   transform: translateY(0);
-  background: rgba(198,40,40,.75); /* можно убрать если хочешь, но это не влияет на высоту */
+  background: rgba(198,40,40,.75); 
 }

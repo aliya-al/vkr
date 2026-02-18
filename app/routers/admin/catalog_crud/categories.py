@@ -266,7 +266,7 @@ async def category_create_page(request: Request, session: AsyncSession = Depends
             "confirm_required": False,
             "confirm_text": "",
             "cancel_url": "",
-            # новая категория на create всегда листовая -> чекбоксы показываем
+                                                                              
             "is_leaf": True,
             "characteristics": characteristics,
             "selected_characteristic_ids": selected_ids,
@@ -321,7 +321,7 @@ async def category_create(
     if parent_uuid:
         move_needed, parent_name = await _move_decision_for_parent(session, parent_uuid)
 
-    # Нужно подтверждение переноса, но его ещё нет
+                                                  
     if move_needed and not _truthy(confirm_move):
         categories = await _get_category_options(session)
         characteristics = await _get_all_characteristics(session)
@@ -342,7 +342,7 @@ async def category_create(
                     f"Они будут перенесены в создаваемую категорию «{name}»."
                 ),
                 "cancel_url": cancel_url,
-                # новая категория всё равно лист -> нужно сохранить выбранные characteristic_ids как hidden
+                                                                                                           
                 "is_leaf": True,
                 "characteristics": characteristics,
                 "selected_characteristic_ids": set(final_characteristic_ids),
@@ -358,7 +358,7 @@ async def category_create(
         session.add(category)
         await session.flush()
 
-        # фото категории (1 штука, новое заменяет старое)
+                                                         
         if image and image.filename:
             try:
                 saved_path = save_category_image(str(category.id), image)
@@ -390,10 +390,10 @@ async def category_create(
                     status_code=400,
                 )
 
-        # сохраняем характеристики (на create всегда можно)
+                                                           
         await _replace_category_characteristics(session, category.id, final_characteristic_ids)
 
-        # перенос товаров после подтверждения
+                                             
         if move_needed and parent_uuid and _truthy(confirm_move):
             await session.execute(
                 update(Product).where(Product.category_id == parent_uuid).values(category_id=category.id)
@@ -702,7 +702,7 @@ async def category_delete(category_id: uuid.UUID, session: AsyncSession = Depend
 
     async with session.begin():
         category_ids = await _get_subtree_category_ids(session, category_id)
-        # удаляем фото категорий (локальные файлы)
+                                                  
         for cid in category_ids:
             delete_category_image(str(cid))
 

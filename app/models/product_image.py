@@ -10,13 +10,13 @@ class ProductImage(Base):
     product_id: Mapped[uuid.UUID] = mapped_column(
         ForeignKey("products.id", ondelete="CASCADE"),
         nullable=False
-    ) # ondelete="CASCADE" - если удалить товар, то все связанные картинки тоже удалятся.
+    )                                                                                    
     file_path: Mapped[str] = mapped_column(String(500), nullable=False)
 
     product = relationship("Product", back_populates="images")
     is_main = Column(Boolean, nullable=False, default=False, server_default="false")
 
-    # PostgreSQL: одно главное фото на товар
+                                            
     __table_args__ = (
         Index(
             "ux_product_images_one_main_per_product",

@@ -96,7 +96,7 @@
 
                 <td>
                   {% if managers is defined and managers %}
-                    {# Админ: полный список менеджеров #}
+                    
                     <div class="tdInlineSelect">
                       <div class="selectPill">
                         <select class="js-inline-manager" data-order-id="{{ o.id }}" aria-label="Менеджер">
@@ -116,7 +116,7 @@
                       </div>
                     </div>
                   {% else %}
-                    {# Менеджер: только "Нет" или "я" #}
+                    
                     {% set me_id = admin.get("id") %}
                     <div class="tdInlineSelect">
                       <div class="selectPill">

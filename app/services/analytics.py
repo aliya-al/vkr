@@ -31,7 +31,7 @@ def default_periods(group: GroupBy) -> int:
         return 12
     if group == "month":
         return 12
-    return 5  # year
+    return 5        
 
 
 def compute_range(now: datetime, group: GroupBy, periods: int) -> tuple[datetime, datetime]:
@@ -50,7 +50,7 @@ def compute_range(now: datetime, group: GroupBy, periods: int) -> tuple[datetime
         start_dt = now - timedelta(weeks=periods)
     elif group == "month":
         start_dt = now - timedelta(days=31 * periods)
-    else:  # year
+    else:        
         start_dt = now - timedelta(days=365 * periods)
 
     return start_dt, end_dt
@@ -70,11 +70,11 @@ async def compute_range_scoped(
     if scope == "recent":
         return compute_range(now=now, group=group, periods=periods)
 
-    # scope == "all"
-    # защита от перегруза: all+day может дать тысячи точек
+                    
+                                                          
     if group == "day":
-        # лучше явно заставить выбирать week/month/year для all-time
-        # (можно снять ограничение позже, если захочешь)
+                                                                    
+                                                        
         raise ValueError("Для 'всё время' выбери group=week/month/year (day слишком тяжёлый).")
 
     min_dt = await session.scalar(

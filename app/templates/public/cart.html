@@ -36,7 +36,7 @@
     {% else %}
       <div class="cart-grid">
 
-        <!-- ITEMS -->
+        
         <div class="cart-list" role="list" aria-label="Товары в корзине">
           {% for it in items %}
             <article class="cart-item" role="listitem" data-cart-item data-unit="{{ it.unit_price }}">
@@ -62,7 +62,7 @@
 
   <div class="cart-item__side">
     <form class="qty" method="post" action="/cart/update" data-qty-form>
-      <!-- ВАЖНО: product_id -->
+      
       <input type="hidden" name="product_id" value="{{ it.id }}">
 
       <button class="qty__btn" type="button" data-qty-minus aria-label="Уменьшить количество">−</button>
@@ -95,7 +95,7 @@
     </div>
 
     <form class="cart-item__remove" method="post" action="/cart/remove" data-remove-form>
-      <!-- ВАЖНО: product_id -->
+      
       <input type="hidden" name="product_id" value="{{ it.id }}">
       <button class="icon-btn" type="submit" aria-label="Удалить из корзины" title="Удалить">
         <span aria-hidden="true">×</span>
@@ -107,7 +107,7 @@
           {% endfor %}
         </div>
 
-        <!-- SUMMARY -->
+        
         <aside class="cart-summary" aria-label="Итого">
           <div class="cart-summary__card">
             <div class="cart-summary__title">Итого</div>
@@ -186,7 +186,6 @@
     return res.json().catch(() => ({}));
   };
 
-  // QTY
   const qtyForms = document.querySelectorAll("[data-qty-form]");
   qtyForms.forEach((form) => {
     const item = form.closest("[data-cart-item]");
@@ -201,15 +200,12 @@
     let t = null;
 
     const sync = async () => {
-      // 1) UI мгновенно
       input.value = String(Math.max(1, parseIntSafe(input.value, 1)));
       recalcTotals();
 
-      // 2) синхронизация с сессией
       try {
         await postFormJson(form);
       } catch (e) {
-        // fallback: обычный сабмит (перезагрузка)
         form.requestSubmit();
       }
     };
@@ -231,7 +227,6 @@
     });
   });
 
-  // REMOVE
   const removeForms = document.querySelectorAll("[data-remove-form]");
   removeForms.forEach((form) => {
     form.addEventListener("submit", async (e) => {
@@ -242,18 +237,15 @@
         if (item) item.remove();
         recalcTotals();
 
-        // если корзина стала пустой — проще перегрузить /cart (чтобы показать empty-state)
         if (getItems().length === 0) {
           window.location.href = "/cart";
         }
       } catch (err) {
-        // fallback
         form.submit();
       }
     });
   });
 
-  // initial
   recalcTotals();
 })();
 </script>

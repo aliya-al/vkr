@@ -102,7 +102,7 @@ async def brand_edit(
             status_code=400,
         )
 
-    # проверка дубля имени (кроме самой себя)
+                                             
     exists_stmt = select(Brand.id).where(
         func.lower(Brand.name) == name_clean.lower(),
         Brand.id != brand_id,

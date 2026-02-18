@@ -16,7 +16,7 @@ _ALLOWED_FORMATS_TO_EXT = {
     "WEBP": ".webp",
 }
 
-_MAX_BYTES = 5 * 1024 * 1024  # 5 MB
+_MAX_BYTES = 5 * 1024 * 1024        
 
 def _project_root() -> Path:
     return Path(__file__).resolve().parents[2]
@@ -59,7 +59,7 @@ def save_category_image(category_id: str, upload: UploadFile) -> str:
     if not upload or not upload.filename:
         raise ValueError("Файл не выбран.")
 
-    # читаем файл в память, чтобы не уронить сервер огромным файлом
+                                                                   
     try:
         upload.file.seek(0)
         data = upload.file.read(_MAX_BYTES + 1)
@@ -72,11 +72,11 @@ def save_category_image(category_id: str, upload: UploadFile) -> str:
     except Exception:
         raise ValueError("Не удалось прочитать файл изображения.")
 
-    # проверяем реальный формат по содержимому
+                                              
     try:
         bio = BytesIO(data)
         img = Image.open(bio)
-        img.verify()  # проверка целостности
+        img.verify()                        
         fmt = (img.format or "").upper()
     except (UnidentifiedImageError, OSError):
         raise ValueError("Файл не является корректным изображением.")
@@ -87,7 +87,7 @@ def save_category_image(category_id: str, upload: UploadFile) -> str:
     if not ext:
         raise ValueError("Неверный формат изображения. Используйте JPG, PNG или WEBP.")
 
-    # сохраняем
+               
     delete_category_image(category_id)
 
     d = category_image_dir()

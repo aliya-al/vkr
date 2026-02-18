@@ -25,13 +25,13 @@ async def home_index(
     request: Request,
     session: AsyncSession = Depends(get_async_session),
 ):
-    # Новости: по дате (новые первые)
+                                     
     res_news = await session.execute(
         select(News).order_by(desc(News.created_at)).limit(12)
     )
     news = res_news.scalars().all()
 
-    # Категории: верхнего уровня (если parent_id используется)
+                                                              
     res_cats = await session.execute(
         select(Category)
         .where(Category.parent_id.is_(None))
@@ -50,7 +50,7 @@ async def home_index(
         for c in cats
     ]
 
-    # Акции: товары со скидкой (discount_percent > 0)
+                                                     
     res_promo = await session.execute(
         select(Product)
         .options(selectinload(Product.images))
@@ -61,7 +61,7 @@ async def home_index(
     )
     promo_products = res_promo.scalars().all()
 
-    # Товары: ограничим ради производительности
+                                               
     res_products = await session.execute(
         select(Product)
         .options(selectinload(Product.images))
