@@ -18,6 +18,7 @@ from app.services.order_totals import fetch_orders_weight_volume
 from app.utils.database import get_async_session
 from app.utils.deps import require_admin_or_404
 from app.utils.templates import templates
+from app.utils.uploads import normalize_product_media_path
 
 
 router = APIRouter(dependencies=[Depends(require_admin_or_404)])
@@ -69,23 +70,7 @@ async def _load_managers_for_admin(session: AsyncSession, keep_ids: set[uuid.UUI
 
 
 def _normalize_media_path(path: str | None) -> str | None:
-    if not path:
-        return None
-    p = path.strip()
-    if not p:
-        return None
-    if p.startswith(("http://", "https://", "//")):
-        return p
-    if p.startswith("/static/"):
-        return p
-    if p.startswith("static/"):
-        return "/" + p
-    p = p.lstrip("/")
-    if p.startswith("img/uploads/products/"):
-        return "/static/" + p
-    p = p.removeprefix("products/")
-    return "/static/img/uploads/products/" + p
-
+    return normalize_product_media_path(path)
 
 def _calc_display_price(price: int, discount_percent: int | None) -> int:
     if not discount_percent:
