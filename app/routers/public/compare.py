@@ -20,6 +20,7 @@ from app.services.compare import (
 from app.services.favorites import get_favorite_ids
 from app.utils.database import get_async_session
 from app.utils.templates import templates
+from app.utils.uploads import normalize_product_images_inplace
 
 router = APIRouter()
 
@@ -105,6 +106,7 @@ async def compare_page(
         )
     )
     products = result.scalars().all()
+    normalize_product_images_inplace(products)
 
     by_id = {p.id: p for p in products}
     ordered_products = [by_id[i] for i in ids if i in by_id]

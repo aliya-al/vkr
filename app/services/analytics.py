@@ -9,6 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.order import Order, OrderStatus
 from app.models.order_item import OrderItem
+from app.utils.uploads import normalize_product_media_path
 from app.models.product import Product
 
 GroupBy = Literal["year", "month", "week", "day"]
@@ -207,7 +208,7 @@ async def fetch_top_products_total_qty(
             "product_id": str(r["product_id"]),
             "name": r["product_name"],
             "slug": r["product_slug"],
-            "image": r["product_image"],
+            "image": normalize_product_media_path(r["product_image"]),
             "total_qty": int(r["total_qty"] or 0),
             "unique_orders": int(r["unique_orders"] or 0),
             "revenue": int(r["revenue"] or 0),
