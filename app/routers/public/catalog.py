@@ -14,6 +14,7 @@ from app.utils.templates import templates
 from app.utils.category_image import find_category_image_url
 from app.services.favorites import get_favorite_ids
 from app.services.compare import get_compare_ids
+from app.utils.uploads import normalize_product_media_path
 
 
 router = APIRouter()
@@ -196,7 +197,7 @@ async def catalog_category(slug: str, request: Request, session: AsyncSession = 
 
     product_cards = []
     for p in products:
-        main_image = p.images[0].file_path if p.images else None
+        main_image = normalize_product_media_path(p.images[0].file_path) if p.images else None
         product_cards.append(
             {
                 "id": str(p.id),
@@ -284,7 +285,7 @@ async def catalog_search(
                 "price": p.price,
                 "discount_percent": p.discount_percent,
                 "display_price": _calc_display_price(p.price, p.discount_percent),
-                "main_image": p.images[0].file_path if p.images else None,
+                "main_image": normalize_product_media_path(p.images[0].file_path) if p.images else None,
             }
             for p in products_db
         ]
