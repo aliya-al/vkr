@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+from typing import Any
 
 UPLOADS_ROOT_DIR = Path("app/static/uploads")
 UPLOADS_WEB_PREFIX = "/static/uploads"
@@ -76,3 +77,14 @@ def normalize_product_media_path(path: str | None) -> str | None:
 
     p = p.removeprefix("products/")
     return upload_web_path("products", p)
+
+
+def normalize_product_images_inplace(products: list[Any]) -> None:
+    for product in products:
+        for img in (getattr(product, "images", None) or []):
+            for attr in ("url", "image_url", "path", "file_path"):
+                value = getattr(img, attr, None)
+                if not value:
+                    continue
+                setattr(img, attr, normalize_product_media_path(value))
+                break
