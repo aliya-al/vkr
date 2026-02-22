@@ -13,43 +13,12 @@ from app.models.order_item import OrderItem
 from app.models.product import Product
 from app.utils.database import get_async_session
 from app.utils.templates import templates
+from app.utils.uploads import normalize_product_media_path
 
 router = APIRouter()
 
 def _normalize_media_path(path: str | None) -> str | None:
-
-    if not path:
-        return None
-
-    p = path.strip()
-    if not p:
-        return None
-
-                    
-    if p.startswith(("http://", "https://", "//")):
-        return p
-
-                                   
-    if p.startswith("/static/"):
-        return p
-
-                                      
-    if p.startswith("static/"):
-        return "/" + p
-
-                       
-    p = p.lstrip("/")
-
-                                                             
-                                                 
-    if p.startswith("img/uploads/products/"):
-        return "/static/" + p
-
-                                                 
-                            
-    p = p.removeprefix("products/")
-
-    return "/static/img/uploads/products/" + p
+    return normalize_product_media_path(path)
 
 def _get_cart(session_obj: dict) -> dict[str, int]:
     """

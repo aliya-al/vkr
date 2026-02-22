@@ -11,6 +11,7 @@ from app.models.category import Category
 from app.models.product_characteristic_value import ProductCharacteristicValue
 from app.utils.database import get_async_session
 from app.utils.templates import templates
+from app.utils.uploads import normalize_product_media_path
 from app.routers.public.favorites import get_favorite_ids
 from app.routers.public.compare import get_compare_ids
 
@@ -18,41 +19,7 @@ router = APIRouter()
 
 
 def _normalize_media_path(path: str | None) -> str | None:
-
-    if not path:
-        return None
-
-    p = path.strip()
-    if not p:
-        return None
-
-                    
-    if p.startswith(("http://", "https://", "//")):
-        return p
-
-                                   
-    if p.startswith("/static/"):
-        return p
-
-                                      
-    if p.startswith("static/"):
-        return "/" + p
-
-                       
-    p = p.lstrip("/")
-
-                                                             
-                                                 
-    if p.startswith("img/uploads/products/"):
-        return "/static/" + p
-
-                                                 
-                            
-    p = p.removeprefix("products/")
-
-    return "/static/img/uploads/products/" + p
-
-
+    return normalize_product_media_path(path)
 
 def _format_price_rub(value: int | None) -> str:
     if value is None:
