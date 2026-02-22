@@ -13,3 +13,7 @@ if not DATABASE_URL:
     raise RuntimeError("DATABASE_URL не установлен.")
 if not SESSION_SECRET_KEY:
     raise RuntimeError("SESSION_SECRET_KEY не установлен.")
+
+FOOTER_DEV_URL = os.getenv("FOOTER_DEV_URL", "")
+FOOTER_DEV_NAME = os.getenv("FOOTER_DEV_NAME", "")
+FOOTER_DEV_ENABLED = os.getenv("FOOTER_DEV_ENABLED", "1") == "1"

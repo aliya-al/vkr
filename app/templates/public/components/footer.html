@@ -1,15 +1,33 @@
-<footer class="pub-footer" role="contentinfo">
-  <div class="container pub-footer__inner">
-    <div class="pub-footer__content" aria-label="Контактная информация">
-      <div class="pub-footer__label">Контактная информация:</div>
-
-      <div class="pub-footer__text">
-        142200, Московская обл., г. Серпухов, ул. Серпуховская, д. 1, оф. 1.
+<footer class="site-footer">
+  <div class="container site-footer__inner">
+    <div class="site-footer__top">
+      <div class="site-footer__brand">
+        <a class="site-footer__logo" href="/" aria-label="На главную">
+          <!-- Если есть svg/logo — вставь сюда. Если нет, оставь текст -->
+          <span class="site-footer__name">Ваше название</span>
+        </a>
+        <div class="site-footer__meta">
+          <a class="site-footer__link" href="mailto:info@example.com">info@example.com</a>
+          <span class="site-footer__dot">•</span>
+          <a class="site-footer__link" href="tel:+79990000000">+7 (999) 000-00-00</a>
+        </div>
       </div>
 
-      <div class="pub-footer__label pub-footer__label--spaced">На связи:</div>
+      <div class="site-footer__note">
+        <span class="site-footer__small">Работаем: Пн–Пт 10:00–19:00</span>
+        <span class="site-footer__small">Город</span>
+      </div>
+    </div>
 
-      <a class="pub-footer__phone" href="tel:+78006007775">8-800-555-3535</a>
+    <div class="site-footer__bottom">
+      <span class="site-footer__copy">© {{ now().year if now else "2026" }} Ваше название</span>
+
+      {% if FOOTER_DEV_ENABLED and FOOTER_DEV_URL and FOOTER_DEV_NAME %}
+        <a class="site-footer__dev" href="{{ FOOTER_DEV_URL }}" target="_blank" rel="noopener">
+          Разработка сайтов: <span>{{ FOOTER_DEV_NAME }}</span>
+        </a>
+      {% endif %}
+
     </div>
   </div>
 </footer>
