@@ -7,9 +7,11 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 STATIC_ROOT = ROOT / "app" / "static"
-TARGET_ROOT = STATIC_ROOT / "uploads"
-LEGACY_IMG_ROOT = STATIC_ROOT / "img" / "uploads"
-KINDS = ("news", "products")
+IMG_UPLOADS = STATIC_ROOT / "img" / "uploads"
+TARGETS = {
+    "news": IMG_UPLOADS / "news",
+    "products": IMG_UPLOADS / "products",
+}
 
 
 @dataclass
@@ -22,10 +24,22 @@ class Stats:
 
 
 def _collect_source_dirs(kind: str) -> list[Path]:
+    # Базовые директории: целевая + исторические места в static/uploads/*
     candidates = [
-        LEGACY_IMG_ROOT / kind,
+        TARGETS[kind],
         STATIC_ROOT / "uploads" / kind,
     ]
+
+    # Дополнительно ищем любые папки .../uploads/<kind>, но исключаем categories.
+    for p in STATIC_ROOT.rglob(kind):
+        if not p.is_dir():
+            continue
+        rel = p.relative_to(STATIC_ROOT).as_posix()
+        if "/categories/" in f"/{rel}/" or rel.endswith("/categories"):
+            continue
+        if "/uploads/" in f"/{rel}/":
+            candidates.append(p)
+
     out: list[Path] = []
     seen: set[Path] = set()
     for c in candidates:
@@ -44,22 +58,26 @@ def _iter_files(src: Path):
             yield p
 
 
+def _relative_inside(src_root: Path, fpath: Path) -> Path:
+    return fpath.relative_to(src_root)
+
+
 def migrate(kind: str, mode: str, dry_run: bool, stats: Stats) -> None:
-    target_dir = TARGET_ROOT / kind
+    target_root = TARGETS[kind]
     source_dirs = _collect_source_dirs(kind)
 
     if not dry_run:
-        target_dir.mkdir(parents=True, exist_ok=True)
+        target_root.mkdir(parents=True, exist_ok=True)
 
-    print(f"\n[{kind}] target: {target_dir}")
+    print(f"\n[{kind}] target: {target_root}")
     for src in source_dirs:
         print(f"  source: {src}")
 
     for src in source_dirs:
         for file_path in _iter_files(src):
             stats.found += 1
-            rel = file_path.relative_to(src)
-            dest = target_dir / rel
+            rel = _relative_inside(src, file_path)
+            dest = target_root / rel
 
             try:
                 if file_path.resolve() == dest.resolve():
@@ -91,7 +109,7 @@ def migrate(kind: str, mode: str, dry_run: bool, stats: Stats) -> None:
 
 def main() -> None:
     parser = argparse.ArgumentParser(
-        description="Миграция загрузок news/products в app/static/uploads/... (из legacy img/uploads)"
+        description="Миграция uploads для news/products в app/static/img/uploads/..."
     )
     parser.add_argument("--dry-run", action="store_true", help="Показать план без изменений")
 
@@ -104,8 +122,9 @@ def main() -> None:
 
     print("Categories folder не затрагивается: app/static/uploads/categories")
     stats = Stats()
-    for kind in KINDS:
-        migrate(kind, mode, args.dry_run, stats)
+
+    for kind in ("news", "products"):
+        migrate(kind=kind, mode=mode, dry_run=args.dry_run, stats=stats)
 
     print("\n=== REPORT ===")
     print(f"found: {stats.found}")

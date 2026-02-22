@@ -29,7 +29,7 @@ router = APIRouter(dependencies=[Depends(require_admin_or_404)])
 
                                                                     
 _PRODUCTS_UPLOAD_DIR = UPLOADS_PRODUCTS_DIR
-_PRODUCTS_WEB_PREFIX = "/static/uploads/products"
+_PRODUCTS_WEB_PREFIX = "/static/img/uploads/products"
 
                         
 _ALLOWED_EXT = {".jpg", ".jpeg", ".png", ".webp", ".gif"}

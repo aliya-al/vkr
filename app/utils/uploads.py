@@ -2,12 +2,10 @@ from __future__ import annotations
 
 from pathlib import Path
 
-UPLOADS_ROOT = Path("app/static/uploads")
 UPLOADS_ROOT_IMG = Path("app/static/img/uploads")
-
-UPLOADS_NEWS_DIR = UPLOADS_ROOT / "news"
-UPLOADS_PRODUCTS_DIR = UPLOADS_ROOT / "products"
-UPLOADS_CATEGORIES_DIR = UPLOADS_ROOT / "categories"
+UPLOADS_NEWS_DIR = UPLOADS_ROOT_IMG / "news"
+UPLOADS_PRODUCTS_DIR = UPLOADS_ROOT_IMG / "products"
+UPLOADS_CATEGORIES_DIR = Path("app/static/uploads/categories")
 
 _PROJECT_ROOT = Path(__file__).resolve().parents[2]
 _STATIC_ROOT = _PROJECT_ROOT / "app" / "static"
@@ -21,7 +19,9 @@ def _static_url_to_file(url: str) -> Path | None:
     if not url.startswith("/static/"):
         return None
     rel = url.removeprefix("/static/")
-    return (_STATIC_ROOT / rel) if rel else None
+    if not rel:
+        return None
+    return _STATIC_ROOT / rel
 
 
 def _url_exists(url: str) -> bool:
@@ -30,22 +30,24 @@ def _url_exists(url: str) -> bool:
 
 
 def _pick_existing(candidates: list[str]) -> str | None:
-    uniq: list[str] = []
     seen: set[str] = set()
+    ordered: list[str] = []
     for c in candidates:
-        if c and c not in seen:
-            seen.add(c)
-            uniq.append(c)
+        if not c or c in seen:
+            continue
+        seen.add(c)
+        ordered.append(c)
 
-    for c in uniq:
+    for c in ordered:
         if _url_exists(c):
             return c
-    return uniq[0] if uniq else None
+    return ordered[0] if ordered else None
 
 
 def normalize_product_media_path(path: str | None) -> str | None:
     if not path:
         return None
+
     p = path.strip()
     if not p:
         return None
@@ -59,14 +61,11 @@ def normalize_product_media_path(path: str | None) -> str | None:
         candidates.append("/" + p)
     else:
         raw = p.lstrip("/")
-        if raw.startswith("uploads/products/"):
-            tail = raw.removeprefix("uploads/products/")
-            candidates.append("/static/uploads/products/" + tail)
-            candidates.append("/static/img/uploads/products/" + tail)
-        elif raw.startswith("img/uploads/products/"):
-            tail = raw.removeprefix("img/uploads/products/")
-            candidates.append("/static/uploads/products/" + tail)
-            candidates.append("/static/img/uploads/products/" + tail)
+        if raw.startswith("img/uploads/products/"):
+            candidates.append("/static/" + raw)
+        elif raw.startswith("uploads/products/"):
+            candidates.append("/static/" + raw)
+            candidates.append("/static/img/uploads/products/" + raw.removeprefix("uploads/products/"))
         elif raw.startswith("products/"):
             tail = raw.removeprefix("products/")
             candidates.append("/static/uploads/products/" + tail)
@@ -75,12 +74,22 @@ def normalize_product_media_path(path: str | None) -> str | None:
             candidates.append("/static/uploads/products/" + raw)
             candidates.append("/static/img/uploads/products/" + raw)
 
+    if candidates:
+        raw0 = candidates[0].removeprefix("/static/")
+        if raw0.startswith("img/uploads/products/"):
+            tail = raw0.removeprefix("img/uploads/products/")
+            candidates.append("/static/uploads/products/" + tail)
+        elif raw0.startswith("uploads/products/"):
+            tail = raw0.removeprefix("uploads/products/")
+            candidates.append("/static/img/uploads/products/" + tail)
+
     return _pick_existing(candidates)
 
 
 def normalize_news_media_path(path: str | None) -> str | None:
     if not path:
         return None
+
     p = path.strip()
     if not p:
         return None
@@ -94,14 +103,11 @@ def normalize_news_media_path(path: str | None) -> str | None:
         candidates.append("/" + p)
     else:
         raw = p.lstrip("/")
-        if raw.startswith("uploads/news/"):
-            tail = raw.removeprefix("uploads/news/")
-            candidates.append("/static/uploads/news/" + tail)
-            candidates.append("/static/img/uploads/news/" + tail)
-        elif raw.startswith("img/uploads/news/"):
-            tail = raw.removeprefix("img/uploads/news/")
-            candidates.append("/static/uploads/news/" + tail)
-            candidates.append("/static/img/uploads/news/" + tail)
+        if raw.startswith("img/uploads/news/"):
+            candidates.append("/static/" + raw)
+        elif raw.startswith("uploads/news/"):
+            candidates.append("/static/" + raw)
+            candidates.append("/static/img/uploads/news/" + raw.removeprefix("uploads/news/"))
         elif raw.startswith("news/"):
             tail = raw.removeprefix("news/")
             candidates.append("/static/uploads/news/" + tail)
@@ -109,5 +115,14 @@ def normalize_news_media_path(path: str | None) -> str | None:
         else:
             candidates.append("/static/uploads/news/" + raw)
             candidates.append("/static/img/uploads/news/" + raw)
+
+    if candidates:
+        raw0 = candidates[0].removeprefix("/static/")
+        if raw0.startswith("img/uploads/news/"):
+            tail = raw0.removeprefix("img/uploads/news/")
+            candidates.append("/static/uploads/news/" + tail)
+        elif raw0.startswith("uploads/news/"):
+            tail = raw0.removeprefix("uploads/news/")
+            candidates.append("/static/img/uploads/news/" + tail)
 
     return _pick_existing(candidates)
