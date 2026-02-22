@@ -10,11 +10,12 @@ from app.models.news import News
 from app.utils.database import get_async_session
 from app.utils.deps import require_admin_or_404
 from app.utils.templates import templates
+from app.utils.uploads import normalize_upload_web_path, upload_dir, upload_web_prefix
 
 router = APIRouter(dependencies=[Depends(require_admin_or_404)])
 
-_UPLOAD_DIR = Path("app/static/img/uploads/news")
-_WEB_PREFIX = "/static/img/uploads/news"
+_UPLOAD_DIR = upload_dir("news")
+_WEB_PREFIX = upload_web_prefix("news")
 
 NEWS_TITLE_MAX_LEN = 30
 
@@ -26,8 +27,6 @@ def _safe_ext(filename: str) -> str:
 
 
 async def _save_image(file: UploadFile) -> str:
-    _UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
-
     ext = _safe_ext(file.filename or "")
     if not ext:
         raise ValueError("Недопустимый формат изображения. Разрешены: jpg, jpeg, png, webp, gif.")
@@ -43,12 +42,16 @@ async def _save_image(file: UploadFile) -> str:
     return f"{_WEB_PREFIX}/{name}"
 
 
+
+def _normalize_news_image_path(path: str | None) -> str | None:
+    return normalize_upload_web_path(path)
+
+
 def _delete_image_if_local(web_path: str | None) -> None:
-    if not web_path:
+    normalized = _normalize_news_image_path(web_path)
+    if not normalized or not normalized.startswith(_WEB_PREFIX + "/"):
         return
-    if not web_path.startswith(_WEB_PREFIX + "/"):
-        return
-    filename = web_path.removeprefix(_WEB_PREFIX + "/")
+    filename = normalized.removeprefix(_WEB_PREFIX + "/")
     fpath = _UPLOAD_DIR / filename
     try:
         if fpath.exists():
@@ -61,6 +64,8 @@ def _delete_image_if_local(web_path: str | None) -> None:
 async def news_list(request: Request, session: AsyncSession = Depends(get_async_session)):
     result = await session.execute(select(News).order_by(News.created_at.desc()))
     items = result.scalars().all()
+    for item in items:
+        item.image_path = _normalize_news_image_path(item.image_path)
     return templates.TemplateResponse(
         "admin/news/index.html",
         {"request": request, "news": items},
@@ -129,6 +134,8 @@ async def news_edit_page(
     if not item:
         raise HTTPException(status_code=404)
 
+    item.image_path = _normalize_news_image_path(item.image_path)
+
     return templates.TemplateResponse(
         "admin/news/edit.html",
         {"request": request, "news": item, "error": None},
@@ -148,6 +155,8 @@ async def news_edit(
     item = result.scalar_one_or_none()
     if not item:
         raise HTTPException(status_code=404)
+
+    item.image_path = _normalize_news_image_path(item.image_path)
 
     title = title.strip()
     if len(title) > NEWS_TITLE_MAX_LEN:
