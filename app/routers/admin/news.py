@@ -15,7 +15,7 @@ from app.utils.templates import templates
 router = APIRouter(dependencies=[Depends(require_admin_or_404)])
 
 _UPLOAD_DIR = UPLOADS_NEWS_DIR
-_WEB_PREFIX = "/static/img/uploads/news"
+_WEB_PREFIX = "/static/uploads/news"
 
 NEWS_TITLE_MAX_LEN = 30
 
