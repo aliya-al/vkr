@@ -8,6 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.utils.templates import templates
 from app.utils.database import get_async_session
 from app.utils.category_image import find_category_image_url
+from app.utils.uploads import normalize_product_media_path, normalize_upload_web_path
 
 from app.models.news import News
 from app.models.category import Category
@@ -20,6 +21,22 @@ from app.services.compare import get_compare_ids
 router = APIRouter()
 
 
+def _normalize_news_items(news_items: list[News]) -> None:
+    for item in news_items:
+        item.image_path = normalize_upload_web_path(item.image_path)
+
+
+def _normalize_product_images(products: list[Product]) -> None:
+    for product in products:
+        for img in (getattr(product, "images", None) or []):
+            for attr in ("url", "image_url", "path", "file_path"):
+                value = getattr(img, attr, None)
+                if not value:
+                    continue
+                setattr(img, attr, normalize_product_media_path(value))
+
+
+
 @router.get("/", response_class=HTMLResponse)
 async def home_index(
     request: Request,
@@ -30,6 +47,7 @@ async def home_index(
         select(News).order_by(desc(News.created_at)).limit(12)
     )
     news = res_news.scalars().all()
+    _normalize_news_items(news)
 
                                                               
     res_cats = await session.execute(
@@ -60,6 +78,7 @@ async def home_index(
         .limit(20)
     )
     promo_products = res_promo.scalars().all()
+    _normalize_product_images(promo_products)
 
                                                
     res_products = await session.execute(
@@ -69,6 +88,7 @@ async def home_index(
         .limit(60)
     )
     products = res_products.scalars().all()
+    _normalize_product_images(products)
 
     fav_ids = [str(x) for x in (get_favorite_ids(request.session) or [])]
     cmp_ids = [str(x) for x in (get_compare_ids(request.session) or [])]
