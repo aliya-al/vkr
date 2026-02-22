@@ -11,7 +11,7 @@
   
   <link rel="stylesheet" href="/static/css/public/header.css">
   <link rel="stylesheet" href="/static/css/public/footer.css">
-
+  <link rel="stylesheet" href="/static/css/public/components/cookie_consent.css">
 
   {% block head %}{% endblock %}
 </head>
@@ -23,8 +23,10 @@
   </main>
 
   {% include "public/components/footer.html" ignore missing %}
+  {% include "public/components/cookie_consent.html" %}
 
   <script src="/static/js/public/cart_stepper.js" defer></script>
+  <script src="/static/js/public/cookie_consent.js" defer></script>
   <script src="/static/js/public/search_suggest.js" defer></script>
 
   {% block scripts %}{% endblock %}
