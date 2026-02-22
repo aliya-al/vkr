@@ -44,6 +44,12 @@
   cursor: pointer;
 }
 
+.cookie-consent__toggle:focus-visible,
+.cookie-consent__accept:focus-visible {
+  outline: 2px solid var(--color-primary-strong);
+  outline-offset: 2px;
+}
+
 .cookie-consent__details {
   display: inline-block;
   max-width: 0;
@@ -78,6 +84,12 @@
 
 .cookie-consent__accept:hover {
   background: var(--color-primary-strong);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cookie-consent__details {
+    transition: none;
+  }
 }
 
 @media (max-width: 640px) {

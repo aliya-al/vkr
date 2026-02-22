@@ -3,10 +3,11 @@
   const consentMaxAgeSeconds = 60 * 60 * 24 * 365;
 
   const banner = document.getElementById("cookieConsent");
+  const text = document.getElementById("cookieConsentText");
   const toggleButton = document.getElementById("cookieConsentToggle");
   const acceptButton = document.getElementById("cookieConsentAccept");
 
-  if (!banner || !toggleButton || !acceptButton) {
+  if (!banner || !text || !toggleButton || !acceptButton) {
     return;
   }
 
@@ -19,9 +20,22 @@
     banner.hidden = false;
   }
 
-  toggleButton.addEventListener("click", () => {
+  const toggleDetails = () => {
     const isExpanded = banner.classList.toggle("cookie-consent--expanded");
     toggleButton.setAttribute("aria-expanded", String(isExpanded));
+  };
+
+  toggleButton.addEventListener("click", toggleDetails);
+
+  text.addEventListener("click", (event) => {
+    const clickedControl = event.target.closest("button");
+    if (clickedControl && clickedControl !== toggleButton) {
+      return;
+    }
+
+    if (event.target === text || event.target.closest(".cookie-consent__details")) {
+      toggleDetails();
+    }
   });
 
   acceptButton.addEventListener("click", () => {
