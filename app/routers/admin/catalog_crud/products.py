@@ -22,14 +22,13 @@ from app.utils.delete_product_image import delete_product_image_if_local
 from app.utils.templates import templates
 from app.utils.strings import slugify, ensure_unique_slug
 from app.utils.deps import require_admin_or_404
-from app.utils.uploads import upload_dir, upload_web_prefix
 
 
 router = APIRouter(dependencies=[Depends(require_admin_or_404)])
 
                                                                     
-_PRODUCTS_UPLOAD_DIR = upload_dir("products")
-_PRODUCTS_WEB_PREFIX = upload_web_prefix("products")
+_PRODUCTS_UPLOAD_DIR = Path("app/static/img/uploads/products")
+_PRODUCTS_WEB_PREFIX = "/static/img/uploads/products"
 
                         
 _ALLOWED_EXT = {".jpg", ".jpeg", ".png", ".webp", ".gif"}
