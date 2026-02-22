@@ -1,7 +1,6 @@
-from pathlib import Path
+from app.utils.uploads import UPLOADS_PRODUCTS_DIR
 
-                                                                    
-_PRODUCTS_UPLOAD_DIR = Path("app/static/img/uploads/products")
+_PRODUCTS_UPLOAD_DIR = UPLOADS_PRODUCTS_DIR
 _PRODUCTS_WEB_PREFIX = "/static/img/uploads/products"
 
 def delete_product_image_if_local(web_path: str | None) -> None:

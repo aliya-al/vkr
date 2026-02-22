@@ -7,13 +7,14 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.news import News
+from app.utils.uploads import UPLOADS_NEWS_DIR, normalize_news_media_path
 from app.utils.database import get_async_session
 from app.utils.deps import require_admin_or_404
 from app.utils.templates import templates
 
 router = APIRouter(dependencies=[Depends(require_admin_or_404)])
 
-_UPLOAD_DIR = Path("app/static/img/uploads/news")
+_UPLOAD_DIR = UPLOADS_NEWS_DIR
 _WEB_PREFIX = "/static/img/uploads/news"
 
 NEWS_TITLE_MAX_LEN = 30
@@ -61,6 +62,8 @@ def _delete_image_if_local(web_path: str | None) -> None:
 async def news_list(request: Request, session: AsyncSession = Depends(get_async_session)):
     result = await session.execute(select(News).order_by(News.created_at.desc()))
     items = result.scalars().all()
+    for item in items:
+        item.image_path = normalize_news_media_path(item.image_path)
     return templates.TemplateResponse(
         "admin/news/index.html",
         {"request": request, "news": items},
@@ -128,6 +131,8 @@ async def news_edit_page(
     item = result.scalar_one_or_none()
     if not item:
         raise HTTPException(status_code=404)
+
+    item.image_path = normalize_news_media_path(item.image_path)
 
     return templates.TemplateResponse(
         "admin/news/edit.html",
