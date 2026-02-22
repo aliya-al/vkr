@@ -44,6 +44,12 @@
   cursor: pointer;
 }
 
+.cookie-consent__toggle:focus-visible,
+.cookie-consent__accept:focus-visible {
+  outline: 2px solid var(--color-primary-strong);
+  outline-offset: 2px;
+}
+
 .cookie-consent__details {
   display: inline-block;
   max-width: 0;
@@ -88,6 +94,7 @@
   .cookie-consent__content {
     gap: 10px;
     padding: 12px;
+    width: 100%;
   }
 
   .cookie-consent__accept {

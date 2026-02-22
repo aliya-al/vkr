@@ -4,9 +4,10 @@
 
   const banner = document.getElementById("cookieConsent");
   const toggleButton = document.getElementById("cookieConsentToggle");
+  const details = document.getElementById("cookieConsentDetails");
   const acceptButton = document.getElementById("cookieConsentAccept");
 
-  if (!banner || !toggleButton || !acceptButton) {
+  if (!banner || !toggleButton || !details || !acceptButton) {
     return;
   }
 
@@ -22,10 +23,12 @@
   toggleButton.addEventListener("click", () => {
     const isExpanded = banner.classList.toggle("cookie-consent--expanded");
     toggleButton.setAttribute("aria-expanded", String(isExpanded));
+    details.setAttribute("aria-hidden", String(!isExpanded));
   });
 
   acceptButton.addEventListener("click", () => {
-    document.cookie = `${consentCookieName}=1; Max-Age=${consentMaxAgeSeconds}; Path=/; SameSite=Lax`;
+    const secureFlag = window.location.protocol === "https:" ? "; Secure" : "";
+    document.cookie = `${consentCookieName}=1; Max-Age=${consentMaxAgeSeconds}; Path=/; SameSite=Lax${secureFlag}`;
     banner.hidden = true;
   });
 })();
