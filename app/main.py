@@ -1,14 +1,9 @@
-import os
-
-from dotenv import load_dotenv
 from fastapi import FastAPI
-from starlette.middleware.sessions import SessionMiddleware
-from app.routers import routers
 from fastapi.staticfiles import StaticFiles
+from starlette.middleware.sessions import SessionMiddleware
 
-load_dotenv()                                     
-
-IS_PROD = 1
+from app.routers import routers
+from app.config import IS_PROD, SESSION_SECRET_KEY, COOKIE_SECURE
 
 app = FastAPI(
     docs_url=None if IS_PROD else "/docs",
@@ -19,14 +14,10 @@ app = FastAPI(
 app.include_router(routers)
 app.mount("/static", StaticFiles(directory="app/static"), name="static")
 
-SESSION_SECRET_KEY = os.getenv("SESSION_SECRET_KEY")
-if not SESSION_SECRET_KEY:
-    raise RuntimeError("SESSION_SECRET_KEY не установлен.")
-
 app.add_middleware(
     SessionMiddleware,
     secret_key=SESSION_SECRET_KEY,
     session_cookie="session",
-    same_site="lax",                                                     
-    https_only=False,                                                                  
+    same_site="lax",
+    https_only=COOKIE_SECURE,
 )

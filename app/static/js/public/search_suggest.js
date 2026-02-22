@@ -20,17 +20,24 @@
 
     box.innerHTML = '';
     items.slice(0, 6).forEach((item) => {
-      const link = document.createElement('a');
-      link.className = 'public-search__suggestion';
-      link.href = item.url;
-      link.textContent = item.name || '';
+  const link = document.createElement('a');
+  link.className = 'public-search__suggestion';
+  link.href = item.url;
 
-      const type = document.createElement('small');
-      type.textContent = item.type === 'category' ? 'категория' : 'товар';
-      link.appendChild(type);
+  const text = document.createElement('span');
+  text.className = 'public-search__suggestionText';
+  text.textContent = item.name || '';
+  link.appendChild(text);
 
-      box.appendChild(link);
-    });
+  const type = document.createElement('small');
+  type.textContent = item.type === 'category' ? 'категория' : 'товар';
+  link.appendChild(type);
+
+  link.title = (item.name || '').trim();
+
+  box.appendChild(link);
+});
+
     box.hidden = false;
   };
 
