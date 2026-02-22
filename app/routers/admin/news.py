@@ -27,8 +27,6 @@ def _safe_ext(filename: str) -> str:
 
 
 async def _save_image(file: UploadFile) -> str:
-    _UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
-
     ext = _safe_ext(file.filename or "")
     if not ext:
         raise ValueError("Недопустимый формат изображения. Разрешены: jpg, jpeg, png, webp, gif.")
@@ -46,15 +44,7 @@ async def _save_image(file: UploadFile) -> str:
 
 
 def _normalize_news_image_path(path: str | None) -> str | None:
-    normalized = normalize_upload_web_path(path)
-    if not normalized:
-        return None
-    if normalized.startswith("/static/uploads/news/"):
-        return normalized
-    if normalized.startswith("/static/uploads/"):
-        suffix = normalized.removeprefix("/static/uploads/")
-        return f"/static/uploads/news/{suffix}"
-    return normalized
+    return normalize_upload_web_path(path)
 
 
 def _delete_image_if_local(web_path: str | None) -> None:

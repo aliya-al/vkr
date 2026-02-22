@@ -7,8 +7,12 @@ UPLOADS_WEB_PREFIX = "/static/uploads"
 LEGACY_UPLOADS_WEB_PREFIX = "/static/img/uploads"
 
 
+def upload_path(*parts: str) -> Path:
+    return UPLOADS_ROOT_DIR.joinpath(*parts)
+
+
 def upload_dir(*parts: str) -> Path:
-    target = UPLOADS_ROOT_DIR.joinpath(*parts)
+    target = upload_path(*parts)
     target.mkdir(parents=True, exist_ok=True)
     return target
 

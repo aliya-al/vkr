@@ -34,6 +34,7 @@ def _normalize_product_images(products: list[Product]) -> None:
                 if not value:
                     continue
                 setattr(img, attr, normalize_product_media_path(value))
+                break
 
 
 

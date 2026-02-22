@@ -50,8 +50,6 @@ async def _save_product_image(file: UploadFile) -> str:
     Асинхронно сохранить картинку чанками и вернуть web-path.
     не блокируем event loop и не читаем файл целиком в память.
     """
-    _PRODUCTS_UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
-
     ext = _ext_or_empty(file.filename or "")
     if not ext:
         raise ValueError("Неподдерживаемый формат изображения.")
