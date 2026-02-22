@@ -17,7 +17,6 @@ from app.models.characteristic import GlobalCharacteristic, CharacteristicType
 from app.models.product import Product
 from app.models.product_characteristic_value import ProductCharacteristicValue
 from app.models.product_image import ProductImage
-from app.utils.uploads import UPLOADS_PRODUCTS_DIR
 from app.utils.database import get_async_session
 from app.utils.delete_product_image import delete_product_image_if_local
 from app.utils.templates import templates
@@ -28,7 +27,7 @@ from app.utils.deps import require_admin_or_404
 router = APIRouter(dependencies=[Depends(require_admin_or_404)])
 
                                                                     
-_PRODUCTS_UPLOAD_DIR = UPLOADS_PRODUCTS_DIR
+_PRODUCTS_UPLOAD_DIR = Path("app/static/img/uploads/products")
 _PRODUCTS_WEB_PREFIX = "/static/img/uploads/products"
 
                         

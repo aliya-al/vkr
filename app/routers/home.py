@@ -15,7 +15,6 @@ from app.models.product import Product
 
 from app.services.favorites import get_favorite_ids
 from app.services.compare import get_compare_ids
-from app.utils.uploads import normalize_news_media_path, normalize_product_media_path
 
 
 router = APIRouter()
@@ -31,8 +30,6 @@ async def home_index(
         select(News).order_by(desc(News.created_at)).limit(12)
     )
     news = res_news.scalars().all()
-    for item in news:
-        item.image_path = normalize_news_media_path(item.image_path)
 
                                                               
     res_cats = await session.execute(
@@ -63,9 +60,6 @@ async def home_index(
         .limit(20)
     )
     promo_products = res_promo.scalars().all()
-    for p in promo_products:
-        if p.images:
-            p.images[0].file_path = normalize_product_media_path(p.images[0].file_path)
 
                                                
     res_products = await session.execute(
@@ -75,9 +69,6 @@ async def home_index(
         .limit(60)
     )
     products = res_products.scalars().all()
-    for p in products:
-        if p.images:
-            p.images[0].file_path = normalize_product_media_path(p.images[0].file_path)
 
     fav_ids = [str(x) for x in (get_favorite_ids(request.session) or [])]
     cmp_ids = [str(x) for x in (get_compare_ids(request.session) or [])]
