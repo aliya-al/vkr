@@ -125,6 +125,28 @@
   color: var(--color-muted);
 }
 
+
+.catQuickAdd{
+  width: 18px;
+  height: 18px;
+  border-radius: 999px;
+  border: 1px solid var(--color-line);
+  background: var(--color-surface);
+  color: var(--color-muted);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+  font-weight: 700;
+  line-height: 1;
+  font-size: 12px;
+  flex: 0 0 auto;
+}
+
+.catQuickAdd:hover{
+  color: var(--color-text);
+  border-color: var(--color-text);
+}
 .catName{
   display:flex;
   align-items:center;
