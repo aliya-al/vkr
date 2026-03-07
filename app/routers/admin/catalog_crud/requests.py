@@ -807,6 +807,7 @@ async def request_edit_page(
         {
             "request": request,
             "admin": admin,
+            "can_delete_order": _is_admin(admin),
             "order_id": str(order.id),
             "error": error,
             "field_errors": field_errors,
@@ -1158,7 +1159,7 @@ async def request_delete(
     session: AsyncSession = Depends(get_async_session),
 ):
     if not _is_admin(admin):
-        raise HTTPException(status_code=404)
+        raise HTTPException(status_code=403, detail="Недостаточно прав для удаления заявки.")
 
     order = await session.get(Order, order_id)
     if not order:
@@ -1166,7 +1167,7 @@ async def request_delete(
 
     await session.delete(order)
     await session.commit()
-    return RedirectResponse("/admin/requests", status_code=303)
+    return RedirectResponse(url="/admin/requests", status_code=303)
 
 
 @router.post("/admin/requests/new/cart/add")

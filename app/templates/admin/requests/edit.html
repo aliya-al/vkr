@@ -16,9 +16,11 @@
         <a class="reqn-btn" href="/admin/dashboard">На главную</a>
         <a class="reqn-btn reqn-btn--ghost" href="/admin/requests">К заявкам</a>
 
-        <form method="post" action="/admin/requests/{{ order_id }}/delete" style="display:inline" onsubmit="return confirm('Удалить заявку?');">
-          <button class="reqn-btn reqn-btn--ghost" type="submit">Удалить заявку</button>
-        </form>
+        {% if can_delete_order %}
+          <form method="post" action="/admin/requests/{{ order_id }}/delete" style="display:inline" onsubmit="return confirm('Удалить заявку?');">
+            <button class="reqn-btn reqn-btn--ghost" type="submit">Удалить заявку</button>
+          </form>
+        {% endif %}
       </div>
     </div>
 
