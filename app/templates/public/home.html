@@ -168,6 +168,7 @@
 
   const cards = Array.from(track.querySelectorAll('.home-news__card'));
   const count = cards.length;
+  const AUTOPLAY_MS = 6000;
 
   const getCardWidth = () => {
     const el = cards[0];
@@ -185,6 +186,13 @@
     const max = Math.max(0, count - 1);
     const idx = Math.min(max, Math.max(0, i));
     track.scrollTo({ left: idx * w, behavior: 'smooth' });
+  };
+
+  const scrollNextAuto = () => {
+    if (count <= 1) return;
+    const idx = getIndex();
+    const nextIdx = (idx >= count - 1) ? 0 : idx + 1;
+    scrollToIndex(nextIdx);
   };
 
   const sync = () => {
@@ -208,6 +216,10 @@
     scrollToIndex(getIndex());
     sync();
   });
+
+  if (count > 1) {
+    window.setInterval(scrollNextAuto, AUTOPLAY_MS);
+  }
 
   sync();
 })();
