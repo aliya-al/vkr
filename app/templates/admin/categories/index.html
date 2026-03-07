@@ -12,6 +12,13 @@
   <tr data-delete-item>
     <td class="catTdName">
       <div class="catName" style="--lvl: {{ level }};">
+        <a
+          class="catQuickAdd"
+          href="/admin/categories/new?parent_set=1&parent_id={{ cat['id'] }}"
+          aria-label="Создать подкатегорию для {{ cat['name'] }}"
+          title="Создать подкатегорию"
+        >+</a>
+
         {% if cat["children"]|length %}
           <span class="catTreeDot" aria-hidden="true"></span>
         {% else %}
