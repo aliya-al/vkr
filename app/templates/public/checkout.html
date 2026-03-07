@@ -168,8 +168,8 @@
                           <option value="{{ addr }}" {% if addr == pick_val %}selected{% endif %}>{{ addr }}</option>
                         {% endfor %}
                       {% else %}
-                        <option value="ул. Примерная, 1" {% if pick_val in ('','ул. Примерная, 1') %}selected{% endif %}>ул. Примерная, 1</option>
-                        <option value="пр-т Тестовый, 10" {% if pick_val == 'пр-т Тестовый, 10' %}selected{% endif %}>пр-т Тестовый, 10</option>
+                        <option value="Казань склад" {% if pick_val in ('','ул. Примерная, 1') %}selected{% endif %}>ул. Примерная, 1</option>
+
                       {% endif %}
                     </select>
                   </label>

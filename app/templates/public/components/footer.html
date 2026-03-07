@@ -4,23 +4,23 @@
       <div class="site-footer__brand">
         <a class="site-footer__logo" href="/" aria-label="На главную">
           <!-- Если есть svg/logo — вставь сюда. Если нет, оставь текст -->
-          <span class="site-footer__name">Ваше название</span>
+          <span class="site-footer__name">СтройМаркет на Журналистов</span>
         </a>
         <div class="site-footer__meta">
           <a class="site-footer__link" href="mailto:info@example.com">info@example.com</a>
           <span class="site-footer__dot">•</span>
-          <a class="site-footer__link" href="tel:+79990000000">+7 (999) 000-00-00</a>
+          <a class="site-footer__link" href="tel:+79990000000">+7 (917) 290-00-45</a>
         </div>
       </div>
 
       <div class="site-footer__note">
-        <span class="site-footer__small">Работаем: Пн–Пт 10:00–19:00</span>
-        <span class="site-footer__small">Город</span>
+       <!--  <span class="site-footer__small">Работаем: Пн–Пт 10:00–19:00</span> -->
+        <span class="site-footer__small">Казань</span>
       </div>
     </div>
 
     <div class="site-footer__bottom">
-      <span class="site-footer__copy">© {{ now().year if now else "2026" }} Ваше название</span>
+      <span class="site-footer__copy">© {{ now().year if now else "2026" }} СтройМаркет на Журналистов</span>
 
       {% if FOOTER_DEV_ENABLED and FOOTER_DEV_URL and FOOTER_DEV_NAME %}
         <a class="site-footer__dev" href="{{ FOOTER_DEV_URL }}" target="_blank" rel="noopener">
