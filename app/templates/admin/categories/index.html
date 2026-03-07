@@ -12,21 +12,24 @@
   <tr data-delete-item>
     <td class="catTdName">
       <div class="catName" style="--lvl: {{ level }};">
-        {% if cat["children"]|length %}
-          <span class="catTreeDot" aria-hidden="true"></span>
-        {% else %}
-          <span class="catTreeDot catTreeDot--leaf" aria-hidden="true"></span>
-        {% endif %}
+        <div class="catName__main">
+          {% if cat["children"]|length %}
+            <span class="catTreeDot" aria-hidden="true"></span>
+          {% else %}
+            <span class="catTreeDot catTreeDot--leaf" aria-hidden="true"></span>
+          {% endif %}
 
-        {% set nm = cat["name"] %}
-<span class="catName__text">
-  {{ (nm[:(cat_name_max-1)] ~ '…') if (cat_name_max and (nm|length > cat_name_max)) else nm }}
-</span>
+          {% set nm = cat["name"] %}
+          <span class="catName__text">
+            {{ (nm[:(cat_name_max-1)] ~ '…') if (cat_name_max and (nm|length > cat_name_max)) else nm }}
+          </span>
 
+          {% if cat["children"]|length %}
+            <span class="catName__meta">{{ cat["children"]|length }}</span>
+          {% endif %}
+        </div>
 
-        {% if cat["children"]|length %}
-          <span class="catName__meta">{{ cat["children"]|length }}</span>
-        {% endif %}
+        <a class="catAddSubcat" href="/admin/categories/new?parent_set=1&parent_id={{ cat['id'] }}">Добавить подкатегорию</a>
       </div>
     </td>
 
