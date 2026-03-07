@@ -254,13 +254,20 @@ async def category_create_page(request: Request, session: AsyncSession = Depends
     characteristics = await _get_all_characteristics(session)
 
     selected_parent_id = request.query_params.get("parent_id", "")
+    selected_parent_name = "(нет)"
     selected_ids: set[int] = set()
     if selected_parent_id:
         try:
-            selected_ids = await _get_selected_characteristic_ids(session, uuid.UUID(selected_parent_id))
+            selected_parent_uuid = uuid.UUID(selected_parent_id)
+            selected_ids = await _get_selected_characteristic_ids(session, selected_parent_uuid)
+
+            parent_obj = await session.get(Category, selected_parent_uuid)
+            if parent_obj:
+                selected_parent_name = parent_obj.name
         except Exception:
             selected_parent_id = ""
             selected_ids = set()
+            selected_parent_name = "(нет)"
 
     return templates.TemplateResponse(
         "admin/categories/create.html",
@@ -271,6 +278,7 @@ async def category_create_page(request: Request, session: AsyncSession = Depends
             "name_value": request.query_params.get("name", ""),
             "parent_id_value": selected_parent_id,
             "selected_parent_id": selected_parent_id,
+            "selected_parent_name": selected_parent_name,
             "confirm_required": False,
             "confirm_text": "",
             "cancel_url": "",

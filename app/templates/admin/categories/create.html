@@ -61,12 +61,7 @@
   </div>
 
 {% else %}
-        {% set parent_name = '(нет)' %}
-        {% for c in categories %}
-          {% if (c['id']|string) == (selected_parent_id|string) %}
-            {% set parent_name = c['name'] %}
-          {% endif %}
-        {% endfor %}
+        {% set parent_name = selected_parent_name|default('(нет)') %}
 
         <div class="pc-breadcrumb">
           <span class="pc-breadcrumb__label">Родитель:</span>
