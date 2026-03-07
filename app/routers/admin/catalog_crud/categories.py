@@ -253,7 +253,14 @@ async def category_create_page(request: Request, session: AsyncSession = Depends
     categories = await _get_category_options(session)
     characteristics = await _get_all_characteristics(session)
 
+    selected_parent_id = request.query_params.get("parent_id", "")
     selected_ids: set[int] = set()
+    if selected_parent_id:
+        try:
+            selected_ids = await _get_selected_characteristic_ids(session, uuid.UUID(selected_parent_id))
+        except Exception:
+            selected_parent_id = ""
+            selected_ids = set()
 
     return templates.TemplateResponse(
         "admin/categories/create.html",
@@ -262,7 +269,8 @@ async def category_create_page(request: Request, session: AsyncSession = Depends
             "image_url": None,
             "categories": categories,
             "name_value": request.query_params.get("name", ""),
-            "parent_id_value": request.query_params.get("parent_id", ""),
+            "parent_id_value": selected_parent_id,
+            "selected_parent_id": selected_parent_id,
             "confirm_required": False,
             "confirm_text": "",
             "cancel_url": "",
@@ -302,6 +310,7 @@ async def category_create(
                 "selected_characteristic_ids": set(_clean_int_list(characteristic_ids)),
                 "error": f"Название категории не должно превышать {CAT_NAME_MAX} символов.",
                 "parent_id_value": parent_id or "",
+                "selected_parent_id": parent_id or "",
                 "name_value": name_value,
                 "confirm_required": False,
                 "confirm_text": "",
@@ -336,6 +345,7 @@ async def category_create(
                 "parent_set": "1",
                 "name_value": name,
                 "parent_id_value": parent_id or "",
+                "selected_parent_id": parent_id or "",
                 "confirm_required": True,
                 "confirm_text": (
                     f"Категория «{parent_name or 'Родительская'}» уже содержит товары. "
@@ -377,6 +387,7 @@ async def category_create(
                         "cat_name_max": CAT_NAME_MAX,
                         "name_value": name,
                         "parent_id_value": parent_id or "",
+                        "selected_parent_id": parent_id or "",
                         "parent_set": "1",
                         "confirm_required": False,
                         "confirm_text": "",
