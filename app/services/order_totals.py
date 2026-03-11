@@ -8,16 +8,17 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.order_item import OrderItem
-from app.models.product import Product
 
 
 async def fetch_orders_weight_volume(
     session: AsyncSession,
     order_ids: Iterable[uuid.UUID],
 ) -> dict[uuid.UUID, dict[str, float]]:
-    """
-    Считает итоговый вес/объём по нескольким заказам одним запросом.
-    Инвариант: берём физ. поля из Product (weight_kg, volume_m3) и умножаем на количество в OrderItem.
+    """Считает итоговый вес/объём по нескольким заявкам одним запросом.
+
+    Используем поля-снапшоты из ``OrderItem``: если товар уже удалён из каталога,
+    значения ``weight_kg``/``volume_m3`` всё равно должны корректно учитываться
+    по сохранённому составу заявки.
     """
     ids = list(order_ids)
     if not ids:
@@ -26,10 +27,9 @@ async def fetch_orders_weight_volume(
     stmt = (
         select(
             OrderItem.order_id.label("order_id"),
-            func.coalesce(func.sum(OrderItem.quantity * Product.weight_kg), 0.0).label("weight_kg"),
-            func.coalesce(func.sum(OrderItem.quantity * Product.volume_m3), 0.0).label("volume_m3"),
+            func.coalesce(func.sum(OrderItem.quantity * OrderItem.weight_kg), 0.0).label("weight_kg"),
+            func.coalesce(func.sum(OrderItem.quantity * OrderItem.volume_m3), 0.0).label("volume_m3"),
         )
-        .join(Product, Product.id == OrderItem.product_id)
         .where(OrderItem.order_id.in_(ids))
         .group_by(OrderItem.order_id)
     )
