@@ -16,7 +16,7 @@
         <a class="reqn-btn" href="/admin/dashboard">На главную</a>
         <a class="reqn-btn reqn-btn--ghost" href="/admin/requests">К заявкам</a>
         {% if not is_edit_mode %}
-          <a class="reqn-btn reqn-btn--primary" href="/admin/requests/{{ order_id }}/edit?mode=edit">Изменить</a>
+          <a class="reqn-btn reqn-btn--primary" href="/admin/requests/{{ order_id }}/edit?mode=edit">Изменить состав</a>
         {% endif %}
         {% if can_delete_order %}
           <form method="post" action="/admin/requests/{{ order_id }}/delete" style="display:inline" onsubmit="return confirm('Удалить заявку?');">
