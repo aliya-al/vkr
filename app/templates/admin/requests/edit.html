@@ -1,6 +1,6 @@
 {% extends "admin/base.html" %}
 
-{% block title %}Редактировать заявку{% endblock %}
+{% block title %}Заявка{% endblock %}
 
 {% block head %}
   <link rel="stylesheet" href="/static/css/admin/requests.css">
@@ -11,11 +11,13 @@
   <div class="container">
 
     <div class="reqn-head">
-      <h1 class="reqn-title">Редактировать заявку</h1>
+      <h1 class="reqn-title">Заявка</h1>
       <div class="reqn-actions">
         <a class="reqn-btn" href="/admin/dashboard">На главную</a>
         <a class="reqn-btn reqn-btn--ghost" href="/admin/requests">К заявкам</a>
-
+        {% if not is_edit_mode %}
+          <a class="reqn-btn reqn-btn--primary" href="/admin/requests/{{ order_id }}/edit?mode=edit">Изменить</a>
+        {% endif %}
         {% if can_delete_order %}
           <form method="post" action="/admin/requests/{{ order_id }}/delete" style="display:inline" onsubmit="return confirm('Удалить заявку?');">
             <button class="reqn-btn reqn-btn--ghost" type="submit">Удалить заявку</button>
@@ -29,259 +31,162 @@
     {% endif %}
 
     <div class="reqn-grid">
-
       <section class="reqn-card" aria-label="Данные заявки">
-        <form
-          class="reqn-form"
-          method="post"
-          action="/admin/requests/{{ order_id }}/edit"
-          id="reqNewForm"
-          data-cart-prefix="/admin/requests/{{ order_id }}"
-          novalidate
-        >
-
-          <div class="reqn-block">
-            <div class="reqn-blockTitle">Данные клиента</div>
-
-            <div class="reqn-2col">
-              <label class="reqn-field">
-                <span class="reqn-label">Имя <b class="reqn-req">*</b></span>
-                <input class="reqn-input" type="text" name="customer_name" required value="{{ form_data.get('customer_name','') }}">
-              </label>
-
-              <label class="reqn-field">
-                <span class="reqn-label">Телефон <b class="reqn-req">*</b></span>
-                <input class="reqn-input"
-                       type="tel"
-                       name="customer_phone"
-                       id="customerPhone"
-                       required
-                       inputmode="tel"
-                       placeholder="+7 (___) ___-__-__"
-                       value="{{ form_data.get('customer_phone','') }}">
-              </label>
-            </div>
-          </div>
-
-          <div class="reqn-block">
-            <div class="reqn-blockTitle reqn-blockTitle--center">Способ получения</div>
-
-            <div class="reqn-toggle" role="group" aria-label="Способ получения">
-              <button class="reqn-toggleBtn" type="button" data-value="pickup" aria-pressed="false">Самовывоз</button>
-              <button class="reqn-toggleBtn" type="button" data-value="delivery" aria-pressed="false">Доставка</button>
+        <form class="reqn-form" method="post" action="/admin/requests/{{ order_id }}/edit" id="reqNewForm" data-cart-prefix="/admin/requests/{{ order_id }}" novalidate>
+          <fieldset {% if not is_edit_mode %}disabled{% endif %} style="border:0;padding:0;margin:0;min-inline-size:auto;">
+            <div class="reqn-block">
+              <div class="reqn-blockTitle">Данные клиента</div>
+              <div class="reqn-2col">
+                <label class="reqn-field">
+                  <span class="reqn-label">Имя <b class="reqn-req">*</b></span>
+                  <input class="reqn-input" type="text" name="customer_name" required value="{{ form_data.get('customer_name','') }}">
+                </label>
+                <label class="reqn-field">
+                  <span class="reqn-label">Телефон <b class="reqn-req">*</b></span>
+                  <input class="reqn-input" type="tel" name="customer_phone" id="customerPhone" required inputmode="tel" placeholder="+7 (___) ___-__-__" value="{{ form_data.get('customer_phone','') }}">
+                </label>
+              </div>
             </div>
 
-            {% set dt = form_data.get('delivery_type','pickup') %}
-            <input type="hidden" name="delivery_type" id="deliveryType" value="{{ dt }}">
+            <div class="reqn-block">
+              <div class="reqn-blockTitle reqn-blockTitle--center">Способ получения</div>
+              <div class="reqn-toggle" role="group" aria-label="Способ получения">
+                <button class="reqn-toggleBtn" type="button" data-value="pickup" aria-pressed="false">Самовывоз</button>
+                <button class="reqn-toggleBtn" type="button" data-value="delivery" aria-pressed="false">Доставка</button>
+              </div>
 
-            {% set fe = field_errors or {} %}
+              {% set dt = form_data.get('delivery_type','pickup') %}
+              <input type="hidden" name="delivery_type" id="deliveryType" value="{{ dt }}">
+              {% set fe = field_errors or {} %}
 
-<div class="reqn-pane" id="panePickup">
-  <label class="reqn-field">
-    <span class="reqn-label">Пункт самовывоза <b class="reqn-req">*</b></span>
+              <div class="reqn-pane" id="panePickup">
+                <label class="reqn-field">
+                  <span class="reqn-label">Пункт самовывоза <b class="reqn-req">*</b></span>
+                  {% set pick_val = (form_data.get('pickup_address','') or '') %}
+                  {% set has_pick_val = pick_val|length > 0 %}
+                  {% set in_list = (pick_val in (pickup_points or [])) %}
+                  <select class="reqn-input {% if fe.get('pickup_address') %}is-error{% endif %}" name="pickup_address" id="pickupAddress" required>
+                    {% if has_pick_val and (not in_list) %}
+                      <option value="{{ pick_val }}" selected>{{ pick_val }} (ранее)</option>
+                    {% endif %}
+                    {% for addr in (pickup_points or []) %}
+                      <option value="{{ addr }}" {% if addr == pick_val %}selected{% endif %}>{{ addr }}</option>
+                    {% endfor %}
+                  </select>
+                </label>
+              </div>
 
-    {% set fe = field_errors or {} %}
-    {% set pick_val = (form_data.get('pickup_address','') or '') %}
-    {% set has_pick_val = pick_val|length > 0 %}
-    {% set in_list = (pick_val in (pickup_points or [])) %}
-
-    <select class="reqn-input {% if fe.get('pickup_address') %}is-error{% endif %}"
-            name="pickup_address"
-            id="pickupAddress"
-            required>
-
-      {% if has_pick_val and (not in_list) %}
-        <option value="{{ pick_val }}" selected>{{ pick_val }} (ранее)</option>
-      {% endif %}
-
-      {% for addr in (pickup_points or []) %}
-        <option value="{{ addr }}" {% if addr == pick_val %}selected{% endif %}>{{ addr }}</option>
-      {% endfor %}
-    </select>
-
-    {% if fe.get('pickup_address') %}
-      <div class="reqn-fieldHint" role="alert">{{ fe.get('pickup_address') }}</div>
-    {% endif %}
-  </label>
-</div>
-
-            <div class="reqn-pane is-hidden" id="paneDelivery">
-              <label class="reqn-field">
-                <span class="reqn-label">Адрес доставки <b class="reqn-req">*</b></span>
-
-                <input class="reqn-input {% if fe.get('delivery_address') %}is-error{% endif %}"
-                       type="text"
-                       name="delivery_address"
-                       id="deliveryAddress"
-                       placeholder="Город, улица, дом, квартира"
-                       value="{{ form_data.get('delivery_address','') }}">
-
-                {% if fe.get('delivery_address') %}
-                  <div class="reqn-fieldHint" role="alert">{{ fe.get('delivery_address') }}</div>
-                {% endif %}
-              </label>
-            </div>
-          </div>
-
-          <div class="reqn-block">
-            <div class="reqn-blockTitle">Управление</div>
-
-            <div class="reqn-2col">
-              <label class="reqn-field">
-                <span class="reqn-label">Дата и время</span>
-                <input class="reqn-input" type="datetime-local" name="created_at" value="{{ form_data.get('created_at','') }}">
-              </label>
-
-              <label class="reqn-field">
-                <span class="reqn-label">Статус</span>
-                <select class="reqn-input" name="status">
-                  {% set cur_s = form_data.get('status','new') %}
-                  {% for val, label in statuses %}
-                    <option value="{{ val }}" {% if val == cur_s %}selected{% endif %}>{{ label }}</option>
-                  {% endfor %}
-                </select>
-              </label>
+              <div class="reqn-pane is-hidden" id="paneDelivery">
+                <label class="reqn-field">
+                  <span class="reqn-label">Адрес доставки <b class="reqn-req">*</b></span>
+                  <input class="reqn-input {% if fe.get('delivery_address') %}is-error{% endif %}" type="text" name="delivery_address" id="deliveryAddress" placeholder="Город, улица, дом, квартира" value="{{ form_data.get('delivery_address','') }}">
+                </label>
+              </div>
             </div>
 
-            <div class="reqn-2col">
-              <label class="reqn-field">
-                <span class="reqn-label">Менеджер</span>
-                <select class="reqn-input" name="manager_id" {% if not managers %}disabled{% endif %}>
-                  {% set cur_m = form_data.get('manager_id','') %}
-                  <option value="" {% if not cur_m %}selected{% endif %}>Не прикреплен</option>
-                  {% for m in (managers or []) %}
-                    <option value="{{ m.id }}"
-                      {% if cur_m == (m.id|string) %}selected{% endif %}
-                      {% if (not m.is_active) and (cur_m != (m.id|string)) %}disabled{% endif %}
-                    >
-                      {{ m.login }}{% if not m.is_active %} (неактивен){% endif %}
-                    </option>
-                  {% endfor %}
-                </select>
-              </label>
+            <div class="reqn-block">
+              <div class="reqn-blockTitle">Управление</div>
+              <div class="reqn-2col">
+                <label class="reqn-field">
+                  <span class="reqn-label">Дата и время</span>
+                  <input class="reqn-input" type="datetime-local" name="created_at" value="{{ form_data.get('created_at','') }}">
+                </label>
+                <label class="reqn-field">
+                  <span class="reqn-label">Статус</span>
+                  <select class="reqn-input" name="status">
+                    {% set cur_s = form_data.get('status','new') %}
+                    {% for val, label in statuses %}
+                      <option value="{{ val }}" {% if val == cur_s %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                  </select>
+                </label>
+              </div>
 
-              <div class="reqn-field reqn-field--ghost">
-                <span class="reqn-label">Итого</span>
-                <div class="reqn-totals">
-                  <div class="reqn-totalRow">
-                    <span class="reqn-muted">Сумма</span>
-                    <span class="reqn-strong">
-                      <span class="reqn-old" data-total-base {% if not (total_base is defined and total_base > total_price) %}hidden{% endif %}>{{ total_base }} ₽</span>
-                      <span data-total-price>{{ total_price }} ₽</span>
-                    </span>
-                  </div>
-                  <div class="reqn-totalRow">
-                    <span class="reqn-muted">Вес</span>
-                    <span class="reqn-strong" data-total-weight>{{ "%.1f"|format(total_weight or 0) }} кг</span>
-                  </div>
-                  <div class="reqn-totalRow">
-                    <span class="reqn-muted">Кубатура</span>
-                    <span class="reqn-strong" data-total-volume>{{ "%.3f"|format(total_volume or 0) }} м³</span>
+              <div class="reqn-2col">
+                <label class="reqn-field">
+                  <span class="reqn-label">Менеджер</span>
+                  <select class="reqn-input" name="manager_id" {% if not managers %}disabled{% endif %}>
+                    {% set cur_m = form_data.get('manager_id','') %}
+                    <option value="" {% if not cur_m %}selected{% endif %}>Не прикреплен</option>
+                    {% for m in (managers or []) %}
+                      <option value="{{ m.id }}" {% if cur_m == (m.id|string) %}selected{% endif %} {% if (not m.is_active) and (cur_m != (m.id|string)) %}disabled{% endif %}>
+                        {{ m.login }}{% if not m.is_active %} (неактивен){% endif %}
+                      </option>
+                    {% endfor %}
+                  </select>
+                </label>
+
+                <div class="reqn-field reqn-field--ghost">
+                  <span class="reqn-label">Итого</span>
+                  <div class="reqn-totals">
+                    <div class="reqn-totalRow">
+                      <span class="reqn-muted">Сумма</span>
+                      <span class="reqn-strong">
+                        <span class="reqn-old" data-total-base {% if not (total_base is defined and total_base > total_price) %}hidden{% endif %}>{{ total_base }} ₽</span>
+                        <span data-total-price>{{ total_price }} ₽</span>
+                      </span>
+                    </div>
+                    <div class="reqn-totalRow"><span class="reqn-muted">Вес</span><span class="reqn-strong" data-total-weight>{{ "%.1f"|format(total_weight or 0) }} кг</span></div>
+                    <div class="reqn-totalRow"><span class="reqn-muted">Кубатура</span><span class="reqn-strong" data-total-volume>{{ "%.3f"|format(total_volume or 0) }} м³</span></div>
                   </div>
                 </div>
               </div>
             </div>
-          </div>
 
-<label class="reqn-field">
-  <span class="reqn-label">Комментарий (необязательно)</span>
-  <textarea
-    class="reqn-input reqn-textarea"
-    name="comment"
-    rows="3"
-    maxlength="300"
-    data-maxlength="300"
-    placeholder="Например: удобное время, домофон, подъезд…"
-  >{{ form_data.get('comment','') }}</textarea>
-</label>
+            <label class="reqn-field">
+              <span class="reqn-label">Комментарий (необязательно)</span>
+              <textarea class="reqn-input reqn-textarea" name="comment" rows="3" maxlength="300">{{ form_data.get('comment','') }}</textarea>
+            </label>
+          </fieldset>
 
-
-          <div class="reqn-submitRow">
-            <button class="reqn-btn reqn-btn--primary reqn-btn--block" type="submit">
-              Изменить заявку
-            </button>
-          </div>
-
+          {% if is_edit_mode %}
+            <div class="reqn-submitRow">
+              <button class="reqn-btn reqn-btn--primary reqn-btn--block" type="submit">Сохранить заявку</button>
+            </div>
+          {% endif %}
         </form>
       </section>
 
       <section class="reqn-side" aria-label="Товары заявки">
-
-        <div class="reqn-card reqn-card--scroll">
-          <div class="reqn-cardHead">
-            <div class="reqn-cardTitle">Все товары</div>
-            <input class="reqn-search" type="search" placeholder="Поиск" id="prodSearch" aria-label="Поиск товара">
-          </div>
-
-          <div class="reqn-scrollBody" id="prodList">
-            <div class="reqn-prodList">
-              {% for pr in products %}
-                {% set in_qty = (req_cart.get(pr.id|string) if req_cart else 0) %}
-
-                <article
-                  class="reqn-prod"
-                  data-name="{{ pr.name|lower }}"
-                  data-product-id="{{ pr.id }}"
-                  data-unit="{{ pr.unit_price }}"
-                  data-base="{{ pr.base_unit_price }}"
-                  data-weight="{{ pr.weight_kg or 0 }}"
-                  data-volume="{{ pr.volume_m3 or 0 }}"
-                  data-img="{{ pr.image_url or '' }}"
-                >
-                  <div class="reqn-pMedia">
-                    {% if pr.image_url %}
-                      <img class="reqn-pImg" src="{{ pr.image_url }}" alt="{{ pr.name }}">
-                    {% else %}
-                      <span class="reqn-pPh" aria-hidden="true"></span>
-                    {% endif %}
-                  </div>
-
-                  <div class="reqn-pBody">
-                    <div class="reqn-pName" title="{{ pr.name }}">{{ pr.name }}</div>
-                    <div class="reqn-pMeta">
-                      {% if pr.base_unit_price and pr.base_unit_price > pr.unit_price %}
-                        <del class="reqn-pOld">{{ pr.base_unit_price }} ₽</del>
-                      {% endif %}
-                      <span class="reqn-pNew">{{ pr.unit_price }} ₽</span>
+        {% if is_edit_mode %}
+          <div class="reqn-card reqn-card--scroll">
+            <div class="reqn-cardHead">
+              <div class="reqn-cardTitle">Все товары</div>
+              <input class="reqn-search" type="search" placeholder="Поиск" id="prodSearch" aria-label="Поиск товара">
+            </div>
+            <div class="reqn-scrollBody" id="prodList">
+              <div class="reqn-prodList">
+                {% for pr in products %}
+                  {% set in_qty = (req_cart.get(pr.id|string) if req_cart else 0) %}
+                  <article class="reqn-prod" data-name="{{ pr.name|lower }}" data-product-id="{{ pr.id }}" data-unit="{{ pr.unit_price }}" data-base="{{ pr.base_unit_price }}" data-weight="{{ pr.weight_kg or 0 }}" data-volume="{{ pr.volume_m3 or 0 }}" data-img="{{ pr.image_url or '' }}">
+                    <div class="reqn-pMedia">{% if pr.image_url %}<img class="reqn-pImg" src="{{ pr.image_url }}" alt="{{ pr.name }}">{% else %}<span class="reqn-pPh" aria-hidden="true"></span>{% endif %}</div>
+                    <div class="reqn-pBody"><div class="reqn-pName" title="{{ pr.name }}">{{ pr.name }}</div><div class="reqn-pMeta">{% if pr.base_unit_price and pr.base_unit_price > pr.unit_price %}<del class="reqn-pOld">{{ pr.base_unit_price }} ₽</del>{% endif %}<span class="reqn-pNew">{{ pr.unit_price }} ₽</span></div></div>
+                    <div class="reqn-pAct">
+                      <button class="reqn-btn reqn-btn--sm reqn-btn--primary" type="button" data-add data-product-id="{{ pr.id }}">Добавить</button>
+                      <div class="reqn-inQty" data-inqty {% if not in_qty %}hidden{% endif %}>В заявке: <b data-inqty-val>{{ in_qty }}</b></div>
                     </div>
-                  </div>
-
-                  <div class="reqn-pAct">
-                    <button
-                      class="reqn-btn reqn-btn--sm reqn-btn--primary"
-                      type="button"
-                      data-add
-                      data-product-id="{{ pr.id }}"
-                    >
-                      Добавить
-                    </button>
-                    <div class="reqn-inQty" data-inqty {% if not in_qty %}hidden{% endif %}>
-                      В заявке: <b data-inqty-val>{{ in_qty }}</b>
-                    </div>
-                  </div>
-                </article>
-              {% endfor %}
+                  </article>
+                {% endfor %}
+              </div>
             </div>
           </div>
-        </div>
+        {% endif %}
 
         <div class="reqn-card reqn-card--scroll">
           <div class="reqn-cardHead">
             <div class="reqn-cardTitle">Товары в заявке</div>
-
-            <form method="post" action="/admin/requests/{{ order_id }}/cart/clear" class="reqn-clearForm">
-              <button class="reqn-btn reqn-btn--ghost reqn-btn--sm" type="submit" {% if not items %}disabled{% endif %}>
-                Очистить
-              </button>
-            </form>
+            {% if is_edit_mode %}
+              <form method="post" action="/admin/requests/{{ order_id }}/cart/clear" class="reqn-clearForm">
+                <button class="reqn-btn reqn-btn--ghost reqn-btn--sm" type="submit" {% if not items %}disabled{% endif %}>Очистить</button>
+              </form>
+            {% endif %}
           </div>
 
           <div class="reqn-scrollBody reqn-cartList" id="reqCartList">
             {% if not items %}
-              <div class="reqn-empty">Пока нет товаров. Добавь сверху.</div>
+              <div class="reqn-empty">Пока нет товаров.</div>
             {% else %}
               {% for it in items %}
-                {% set p = it["product"] %}
                 {% set qty = it["qty"] %}
                 {% set unit_price = it["unit_price"] %}
                 {% set unit_old = it["base_unit_price"] %}
@@ -289,60 +194,44 @@
                 {% set img = it.get("image_url") %}
                 {% set w = it.get("weight_kg") or 0 %}
                 {% set v = it.get("volume_m3") or 0 %}
+                {% set status = it.get("product_status") %}
+                {% set pname = it.get("product_name") %}
 
-                <article
-                  class="reqn-cartItem"
-                  data-cart-item
-                  data-product-id="{{ p.id }}"
-                  data-unit="{{ unit_price }}"
-                  data-base-unit="{{ unit_old }}"
-                  data-weight="{{ w }}"
-                  data-volume="{{ v }}"
-                >
-                  <div class="reqn-ciMedia">
-                    {% if img %}
-                      <img class="reqn-ciImg" src="{{ img }}" alt="{{ p.name }}">
-                    {% else %}
-                      <span class="reqn-ciPh" aria-hidden="true"></span>
-                    {% endif %}
-                  </div>
-
+                <article class="reqn-cartItem" data-cart-item data-order-item-id="{{ it.get('order_item_id') }}" data-product-id="{{ it.get('product_id') }}" data-unit="{{ unit_price }}" data-base-unit="{{ unit_old }}" data-weight="{{ w }}" data-volume="{{ v }}">
+                  <div class="reqn-ciMedia">{% if img %}<img class="reqn-ciImg" src="{{ img }}" alt="{{ pname }}">{% else %}<span class="reqn-ciPh" aria-hidden="true"></span>{% endif %}</div>
                   <div class="reqn-ciBody">
-                    <div class="reqn-ciName" title="{{ p.name }}">{{ p.name }}</div>
-
-                    <div class="reqn-ciMeta">
-                      {% if has_old %}
-                        <del class="reqn-ciOld">{{ unit_old }} ₽</del>
-                      {% endif %}
-                      <span class="reqn-ciUnit">{{ unit_price }} ₽/шт.</span>
+                    <div class="reqn-ciName" title="{{ pname }}">{{ pname }}
+                      {% if status == 'deleted' %}<span class="reqn-muted">(удалён)</span>{% elif status == 'inactive' %}<span class="reqn-muted">(неактуален)</span>{% endif %}
                     </div>
-
+                    <div class="reqn-ciMeta">{% if has_old %}<del class="reqn-ciOld">{{ unit_old }} ₽</del>{% endif %}<span class="reqn-ciUnit">{{ unit_price }} ₽/шт.</span></div>
                     <div class="reqn-ciControls">
-                      <div class="reqn-qty" data-qty>
-                        <button class="reqn-qtyBtn" type="button" data-minus>−</button>
-                        <input class="reqn-qtyInput" type="number" min="1" step="1" value="{{ qty }}" data-input inputmode="numeric" pattern="[0-9]*">
-                        <button class="reqn-qtyBtn" type="button" data-plus>+</button>
-                      </div>
-
-                      <div class="reqn-ciLine" data-line-total>{{ (unit_price * qty) }} ₽</div>
-
-                      <button class="reqn-iconBtn" type="button" data-remove title="Удалить" aria-label="Удалить">×</button>
+                      {% if is_edit_mode %}
+                        <div class="reqn-qty" data-qty>
+                          <button class="reqn-qtyBtn" type="button" data-minus>−</button>
+                          <input class="reqn-qtyInput" type="number" min="1" step="1" value="{{ qty }}" data-input inputmode="numeric" pattern="[0-9]*">
+                          <button class="reqn-qtyBtn" type="button" data-plus>+</button>
+                        </div>
+                        <div class="reqn-ciLine" data-line-total>{{ (unit_price * qty) }} ₽</div>
+                        <button class="reqn-iconBtn" type="button" data-remove title="Удалить" aria-label="Удалить">×</button>
+                      {% else %}
+                        <div class="reqn-ciLine">{{ qty }} шт.</div>
+                        <div class="reqn-ciLine">{{ (unit_price * qty) }} ₽</div>
+                      {% endif %}
                     </div>
                   </div>
                 </article>
               {% endfor %}
             {% endif %}
           </div>
-
         </div>
-
       </section>
-
     </div>
   </div>
 </section>
 {% endblock %}
 
 {% block scripts %}
+{% if is_edit_mode %}
 <script src="/static/js/admin/requests.js"></script>
+{% endif %}
 {% endblock %}

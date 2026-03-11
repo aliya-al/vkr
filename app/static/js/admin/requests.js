@@ -326,6 +326,8 @@
       const item = buildCartItemFromPicker(productId, newQty);
       if (!item) return;
 
+      if (r.order_item_id) item.setAttribute("data-order-item-id", String(r.order_item_id));
+
       wrap.appendChild(item);
       ensureEmptyCartState();
       updateTotals();
@@ -336,7 +338,7 @@
     const wrap = qs("#reqCartList");
     if (!wrap) return;
 
-    const commit = async (item, pid, nextQty) => {
+    const commit = async (item, pid, orderItemId, nextQty) => {
       const input = item.querySelector("[data-input]");
       if (input) input.value = String(nextQty);
 
@@ -347,11 +349,11 @@
       updateTotals();
 
       const prefix = getCartPrefix();
-      const r = await postForm(`${prefix}/cart/update`, { product_id: pid, qty: nextQty });
+      const r = await postForm(`${prefix}/cart/update`, { product_id: pid || "", order_item_id: orderItemId || "", qty: nextQty });
 
       if (!r || r.ok !== true) return;
 
-      syncInQtyInPicker(pid, nextQty);
+      if (pid) syncInQtyInPicker(pid, nextQty);
       updateTotals();
     };
 
@@ -361,31 +363,32 @@
 
       e.preventDefault();
 
-      const pid = item.getAttribute("data-product-id");
-      if (!pid) return;
+      const pid = item.getAttribute("data-product-id") || "";
+      const orderItemId = item.getAttribute("data-order-item-id") || "";
+      if (!pid && !orderItemId) return;
 
       const input = item.querySelector("[data-input]");
       const cur = input ? Math.max(1, parseNum(input.value, 1)) : 1;
 
       if (e.target.closest("[data-minus]")) {
         const next = Math.max(1, cur - 1);
-        await commit(item, pid, next);
+        await commit(item, pid, orderItemId, next);
         return;
       }
 
       if (e.target.closest("[data-plus]")) {
         const next = cur + 1;
-        await commit(item, pid, next);
+        await commit(item, pid, orderItemId, next);
         return;
       }
 
       if (e.target.closest("[data-remove]")) {
         const prefix = getCartPrefix();
-        const r = await postForm(`${prefix}/cart/remove`, { product_id: pid });
+        const r = await postForm(`${prefix}/cart/remove`, { product_id: pid || "", order_item_id: orderItemId || "" });
         if (!r || r.ok !== true) return;
 
         item.remove();
-        syncInQtyInPicker(pid, 0);
+        if (pid) syncInQtyInPicker(pid, 0);
         ensureEmptyCartState();
       }
     });
@@ -395,8 +398,9 @@
       if (!input) return;
 
       const item = input.closest("[data-cart-item]");
-      const pid = item?.getAttribute("data-product-id");
-      if (!pid) return;
+      const pid = item?.getAttribute("data-product-id") || "";
+      const orderItemId = item?.getAttribute("data-order-item-id") || "";
+      if (!pid && !orderItemId) return;
 
       const next = Math.max(1, parseNum(input.value, 1));
       input.value = String(next);
@@ -406,10 +410,10 @@
       if (lineEl) lineEl.textContent = formatMoney(unit * next);
 
       const prefix = getCartPrefix();
-      const r = await postForm(`${prefix}/cart/update`, { product_id: pid, qty: next });
+      const r = await postForm(`${prefix}/cart/update`, { product_id: pid || "", order_item_id: orderItemId || "", qty: next });
       if (!r || r.ok !== true) return;
 
-      syncInQtyInPicker(pid, next);
+      if (pid) syncInQtyInPicker(pid, next);
       updateTotals();
     });
   };

@@ -3,7 +3,7 @@ from __future__ import annotations
 import uuid
 from datetime import datetime
 
-from fastapi import APIRouter, Depends, Form, HTTPException, Request
+from fastapi import APIRouter, Depends, Form, HTTPException, Query, Request
 from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse
 from sqlalchemy import or_, select, delete
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -150,19 +150,23 @@ async def _load_order_items_for_ui(session: AsyncSession, order: Order) -> tuple
 
     for it in rows:
         p = it.product
-        if not p:
-            continue
 
         qty = int(it.quantity or 0)
         if qty < 1:
             continue
 
-        base_unit = int(getattr(it, "price_per_item", None) or getattr(p, "price", 0) or 0)
-        unit_price = int(getattr(it, "final_price_per_item", None) or _calc_display_price(base_unit, p.discount_percent))
-        img_url = _normalize_media_path(getattr(it, "product_image", None)) or _normalize_media_path(getattr(p, "image_url", None))
+        base_unit = int(getattr(it, "price_per_item", None) or 0)
+        unit_price = int(getattr(it, "final_price_per_item", None) or base_unit)
+        img_url = _normalize_media_path(getattr(it, "product_image", None))
 
-        w = float(getattr(it, "weight_kg", None) or float(p.weight_kg or 0.0))
-        v = float(getattr(it, "volume_m3", None) or float(p.volume_m3 or 0.0))
+        w = float(getattr(it, "weight_kg", None) or 0.0)
+        v = float(getattr(it, "volume_m3", None) or 0.0)
+
+        product_status: str | None = None
+        if not p:
+            product_status = "deleted"
+        elif not bool(getattr(p, "is_active", True)):
+            product_status = "inactive"
 
         total_price += unit_price * qty
         total_base += base_unit * qty
@@ -171,16 +175,20 @@ async def _load_order_items_for_ui(session: AsyncSession, order: Order) -> tuple
 
         items.append(
             {
-                "product": p,
+                "order_item_id": it.id,
+                "product_id": str(p.id) if p else (str(it.product_id) if it.product_id else ""),
+                "product_name": it.product_name or (getattr(p, "name", None) if p else "Товар"),
                 "qty": qty,
                 "unit_price": unit_price,
                 "base_unit_price": base_unit,
                 "image_url": img_url,
                 "weight_kg": w,
                 "volume_m3": v,
+                "product_status": product_status,
             }
         )
-        req_cart[str(p.id)] = qty
+        if p and p.is_active:
+            req_cart[str(p.id)] = qty
 
     return items, total_price, total_base, total_weight, total_volume, req_cart
 
@@ -758,9 +766,11 @@ async def request_edit_page(
     order_id: uuid.UUID,
     request: Request,
     admin: dict = Depends(require_admin_or_404),
+    mode: str = Query("view"),
     session: AsyncSession = Depends(get_async_session),
 ):
     order = await _get_order_or_404(session, order_id)
+    is_edit_mode = (mode == "edit")
 
     if not _is_admin(admin) and not _can_manager_access_order(admin, order):
         raise HTTPException(status_code=404)
@@ -825,6 +835,7 @@ async def request_edit_page(
             "products": products,
             "req_cart": req_cart,
             "order_items_count": len(order_items),
+            "is_edit_mode": is_edit_mode,
         },
     )
 
@@ -956,7 +967,7 @@ async def request_edit_submit(
     await _recalc_and_save_order_totals(session, order)
     await session.commit()
 
-    return RedirectResponse(f"/admin/requests/", status_code=303)
+    return RedirectResponse(f"/admin/requests/{order_id}/edit", status_code=303)
 
 
 @router.post("/admin/requests/{order_id:uuid}/cart/add")
@@ -1047,7 +1058,7 @@ async def request_edit_cart_add(
     await _recalc_and_save_order_totals(session, order)
     await session.commit()
 
-    return {"ok": True, "qty": new_qty}
+    return {"ok": True, "qty": new_qty, "order_item_id": it.id}
 
 
 @router.post("/admin/requests/{order_id:uuid}/cart/update")
@@ -1058,23 +1069,34 @@ async def request_edit_cart_update(
     session: AsyncSession = Depends(get_async_session),
 
     product_id: str = Form(...),
+    order_item_id: int | None = Form(None),
     qty: int = Form(...),
 ):
     order = await _get_order_or_404(session, order_id)
     if not _is_admin(admin) and not _can_manager_access_order(admin, order):
         raise HTTPException(status_code=404)
 
-    try:
-        pid = uuid.UUID(product_id)
-    except Exception:
-        raise HTTPException(status_code=400)
+    it: OrderItem | None = None
+    pid: uuid.UUID | None = None
+
+    if order_item_id is not None:
+        res_by_id = await session.execute(
+            select(OrderItem).where(OrderItem.id == order_item_id, OrderItem.order_id == order.id)
+        )
+        it = res_by_id.scalar_one_or_none()
+
+    if not it:
+        try:
+            pid = uuid.UUID(product_id)
+        except Exception:
+            raise HTTPException(status_code=400)
+
+        res2 = await session.execute(
+            select(OrderItem).where(OrderItem.order_id == order.id, OrderItem.product_id == pid)
+        )
+        it = res2.scalar_one_or_none()
 
     q = int(qty) if qty is not None else 1
-
-    res2 = await session.execute(
-        select(OrderItem).where(OrderItem.order_id == order.id, OrderItem.product_id == pid)
-    )
-    it = res2.scalar_one_or_none()
 
     if q < 1:
         if it:
@@ -1083,21 +1105,9 @@ async def request_edit_cart_update(
         if not it:
             raise HTTPException(status_code=404)
 
-        res_p = await session.execute(select(Product).where(Product.id == pid, Product.is_active.is_(True)))
-        product = res_p.scalar_one_or_none()
-        if not product:
-            raise HTTPException(status_code=404)
-
-        base_unit = int(product.price)
-        unit_price = _calc_display_price(base_unit, product.discount_percent)
-
         it.quantity = q
-        it.final_price_per_item = unit_price
-        it.price_per_item = base_unit
-        it.discount_percent = product.discount_percent
+        unit_price = int(it.final_price_per_item or it.price_per_item or 0)
         it.total_price = unit_price * q
-        it.weight_kg = float(product.weight_kg or 0.0)
-        it.volume_m3 = float(product.volume_m3 or 0.0)
         session.add(it)
 
     await _recalc_and_save_order_totals(session, order)
@@ -1113,20 +1123,29 @@ async def request_edit_cart_remove(
     session: AsyncSession = Depends(get_async_session),
 
     product_id: str = Form(...),
+    order_item_id: int | None = Form(None),
 ):
     order = await _get_order_or_404(session, order_id)
     if not _is_admin(admin) and not _can_manager_access_order(admin, order):
         raise HTTPException(status_code=404)
 
-    try:
-        pid = uuid.UUID(product_id)
-    except Exception:
-        raise HTTPException(status_code=400)
+    it: OrderItem | None = None
+    if order_item_id is not None:
+        res_by_id = await session.execute(
+            select(OrderItem).where(OrderItem.id == order_item_id, OrderItem.order_id == order.id)
+        )
+        it = res_by_id.scalar_one_or_none()
 
-    res2 = await session.execute(
-        select(OrderItem).where(OrderItem.order_id == order.id, OrderItem.product_id == pid)
-    )
-    it = res2.scalar_one_or_none()
+    if not it:
+        try:
+            pid = uuid.UUID(product_id)
+        except Exception:
+            raise HTTPException(status_code=400)
+
+        res2 = await session.execute(
+            select(OrderItem).where(OrderItem.order_id == order.id, OrderItem.product_id == pid)
+        )
+        it = res2.scalar_one_or_none()
     if it:
         await session.delete(it)
 
