@@ -278,6 +278,11 @@
   place-items:center;
 }
 
+
+.reqn-ciMedia--ph{
+  background: #e5e7eb;
+}
+
 .reqn-ciImg{
   width:100%;
   height:100%;
@@ -289,7 +294,7 @@
   width:100%;
   height:100%;
   display:block;
-  background: var(--rn-surface);
+  background: #e5e7eb;
 }
 
 .reqn-ciBody{
@@ -436,7 +441,7 @@
   width:100%;
   height:100%;
   display:block;
-  background: var(--rn-surface);
+  background: #e5e7eb;
 }
 
 .reqn-pBody{
