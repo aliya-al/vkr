@@ -1080,8 +1080,8 @@ async def request_edit_cart_update(
     admin: dict = Depends(require_admin_or_404),
     session: AsyncSession = Depends(get_async_session),
 
-    product_id: str = Form(...),
-    order_item_id: int | None = Form(None),
+    product_id: str | None = Form(None),
+    order_item_id: str | None = Form(None),
     qty: int = Form(...),
 ):
     order = await _get_order_or_404(session, order_id)
@@ -1091,15 +1091,26 @@ async def request_edit_cart_update(
     it: OrderItem | None = None
     pid: uuid.UUID | None = None
 
-    if order_item_id is not None:
+    order_item_id_raw = (order_item_id or "").strip()
+    order_item_id_int: int | None = None
+    if order_item_id_raw:
+        try:
+            order_item_id_int = int(order_item_id_raw)
+        except Exception:
+            order_item_id_int = None
+
+    if order_item_id_int is not None:
         res_by_id = await session.execute(
-            select(OrderItem).where(OrderItem.id == order_item_id, OrderItem.order_id == order.id)
+            select(OrderItem).where(OrderItem.id == order_item_id_int, OrderItem.order_id == order.id)
         )
         it = res_by_id.scalar_one_or_none()
 
     if not it:
+        pid_raw = (product_id or "").strip()
+        if not pid_raw:
+            raise HTTPException(status_code=400)
         try:
-            pid = uuid.UUID(product_id)
+            pid = uuid.UUID(pid_raw)
         except Exception:
             raise HTTPException(status_code=400)
 
@@ -1134,23 +1145,34 @@ async def request_edit_cart_remove(
     admin: dict = Depends(require_admin_or_404),
     session: AsyncSession = Depends(get_async_session),
 
-    product_id: str = Form(...),
-    order_item_id: int | None = Form(None),
+    product_id: str | None = Form(None),
+    order_item_id: str | None = Form(None),
 ):
     order = await _get_order_or_404(session, order_id)
     if not _is_admin(admin) and not _can_manager_access_order(admin, order):
         raise HTTPException(status_code=404)
 
     it: OrderItem | None = None
-    if order_item_id is not None:
+    order_item_id_raw = (order_item_id or "").strip()
+    order_item_id_int: int | None = None
+    if order_item_id_raw:
+        try:
+            order_item_id_int = int(order_item_id_raw)
+        except Exception:
+            order_item_id_int = None
+
+    if order_item_id_int is not None:
         res_by_id = await session.execute(
-            select(OrderItem).where(OrderItem.id == order_item_id, OrderItem.order_id == order.id)
+            select(OrderItem).where(OrderItem.id == order_item_id_int, OrderItem.order_id == order.id)
         )
         it = res_by_id.scalar_one_or_none()
 
     if not it:
+        pid_raw = (product_id or "").strip()
+        if not pid_raw:
+            raise HTTPException(status_code=400)
         try:
-            pid = uuid.UUID(product_id)
+            pid = uuid.UUID(pid_raw)
         except Exception:
             raise HTTPException(status_code=400)
 

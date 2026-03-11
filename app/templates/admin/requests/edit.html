@@ -197,8 +197,8 @@
                 {% set status = it.get("product_status") %}
                 {% set pname = it.get("product_name") %}
 
-                <article class="reqn-cartItem" data-cart-item data-order-item-id="{{ it.get('order_item_id') }}" data-product-id="{{ it.get('product_id') }}" data-unit="{{ unit_price }}" data-base-unit="{{ unit_old }}" data-weight="{{ w }}" data-volume="{{ v }}">
-                  <div class="reqn-ciMedia">{% if img %}<img class="reqn-ciImg" src="{{ img }}" alt="{{ pname }}">{% else %}<span class="reqn-ciPh" aria-hidden="true"></span>{% endif %}</div>
+                <article class="reqn-cartItem" data-cart-item {% if it.get('order_item_id') %}data-order-item-id="{{ it.get('order_item_id') }}"{% endif %} data-product-id="{{ it.get('product_id') }}" data-unit="{{ unit_price }}" data-base-unit="{{ unit_old }}" data-weight="{{ w }}" data-volume="{{ v }}">
+                  <div class="reqn-ciMedia{% if not img %} reqn-ciMedia--ph{% endif %}">{% if img %}<img class="reqn-ciImg" src="{{ img }}" alt="{{ pname }}">{% else %}<span class="reqn-ciPh" aria-hidden="true"></span>{% endif %}</div>
                   <div class="reqn-ciBody">
                     <div class="reqn-ciName" title="{{ pname }}">{{ pname }}
                       {% if status == 'deleted' %}<span class="reqn-muted">(удалён)</span>{% elif status == 'inactive' %}<span class="reqn-muted">(неактуален)</span>{% endif %}

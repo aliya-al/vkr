@@ -40,6 +40,11 @@
   };
 
   const formatMoney = (n) => `${parseNum(n)} ₽`;
+  const cleanId = (v) => {
+    const s = String(v ?? "").trim();
+    if (!s || s === "None" || s === "null" || s === "undefined") return "";
+    return s;
+  };
 
   const getForm = () => qs("#reqNewForm");
   const getCartPrefix = () => getForm()?.dataset?.cartPrefix || "/admin/requests/new";
@@ -187,7 +192,7 @@
     item.setAttribute("data-volume", String(vol));
 
     item.innerHTML = `
-      <div class="reqn-ciMedia">
+      <div class="reqn-ciMedia${img ? "" : " reqn-ciMedia--ph"}">
         ${img ? `<img class="reqn-ciImg" src="${img}" alt="${name}">` : `<span class="reqn-ciPh" aria-hidden="true"></span>`}
       </div>
       <div class="reqn-ciBody">
@@ -348,8 +353,12 @@
 
       updateTotals();
 
+      const payload = { qty: nextQty };
+      if (pid) payload.product_id = pid;
+      if (orderItemId) payload.order_item_id = orderItemId;
+
       const prefix = getCartPrefix();
-      const r = await postForm(`${prefix}/cart/update`, { product_id: pid || "", order_item_id: orderItemId || "", qty: nextQty });
+      const r = await postForm(`${prefix}/cart/update`, payload);
 
       if (!r || r.ok !== true) return;
 
@@ -363,8 +372,8 @@
 
       e.preventDefault();
 
-      const pid = item.getAttribute("data-product-id") || "";
-      const orderItemId = item.getAttribute("data-order-item-id") || "";
+      const pid = cleanId(item.getAttribute("data-product-id"));
+      const orderItemId = cleanId(item.getAttribute("data-order-item-id"));
       if (!pid && !orderItemId) return;
 
       const input = item.querySelector("[data-input]");
@@ -383,8 +392,12 @@
       }
 
       if (e.target.closest("[data-remove]")) {
+        const payload = {};
+        if (pid) payload.product_id = pid;
+        if (orderItemId) payload.order_item_id = orderItemId;
+
         const prefix = getCartPrefix();
-        const r = await postForm(`${prefix}/cart/remove`, { product_id: pid || "", order_item_id: orderItemId || "" });
+        const r = await postForm(`${prefix}/cart/remove`, payload);
         if (!r || r.ok !== true) return;
 
         item.remove();
@@ -398,8 +411,8 @@
       if (!input) return;
 
       const item = input.closest("[data-cart-item]");
-      const pid = item?.getAttribute("data-product-id") || "";
-      const orderItemId = item?.getAttribute("data-order-item-id") || "";
+      const pid = cleanId(item?.getAttribute("data-product-id"));
+      const orderItemId = cleanId(item?.getAttribute("data-order-item-id"));
       if (!pid && !orderItemId) return;
 
       const next = Math.max(1, parseNum(input.value, 1));
@@ -409,8 +422,12 @@
       const lineEl = item.querySelector("[data-line-total]");
       if (lineEl) lineEl.textContent = formatMoney(unit * next);
 
+      const payload = { qty: next };
+      if (pid) payload.product_id = pid;
+      if (orderItemId) payload.order_item_id = orderItemId;
+
       const prefix = getCartPrefix();
-      const r = await postForm(`${prefix}/cart/update`, { product_id: pid || "", order_item_id: orderItemId || "", qty: next });
+      const r = await postForm(`${prefix}/cart/update`, payload);
       if (!r || r.ok !== true) return;
 
       if (pid) syncInQtyInPicker(pid, next);
