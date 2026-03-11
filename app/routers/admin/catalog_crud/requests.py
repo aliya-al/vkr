@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 
 from fastapi import APIRouter, Depends, Form, HTTPException, Query, Request
 from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse
@@ -233,7 +233,7 @@ async def _get_order_or_404(session: AsyncSession, order_id: uuid.UUID) -> Order
 
 from zoneinfo import ZoneInfo
 
-_TZ_LOCAL = ZoneInfo("Europe/Berlin")
+_TZ_MOSCOW = ZoneInfo("Europe/Moscow")
 
 
 def _iso_dt_local(dt: datetime | None) -> str:
@@ -241,10 +241,28 @@ def _iso_dt_local(dt: datetime | None) -> str:
         return ""
     x = dt
     if getattr(x, "tzinfo", None) is not None:
-        x = x.astimezone(_TZ_LOCAL).replace(tzinfo=None)
+        x = x.astimezone(_TZ_MOSCOW).replace(tzinfo=None)
     else:
-        x = x.replace(tzinfo=None)
-    return x.replace(second=0, microsecond=0).isoformat(timespec="minutes")
+        x = x.replace(tzinfo=timezone.utc).astimezone(_TZ_MOSCOW).replace(tzinfo=None)
+    return x.replace(microsecond=0).isoformat(timespec="seconds")
+
+
+def _parse_local_moscow_datetime(value: str) -> datetime | None:
+    raw = (value or "").strip()
+    if not raw:
+        return None
+    parsed = datetime.fromisoformat(raw)
+    if parsed.tzinfo is None:
+        parsed = parsed.replace(tzinfo=_TZ_MOSCOW)
+    else:
+        parsed = parsed.astimezone(_TZ_MOSCOW)
+    return parsed.astimezone(timezone.utc)
+
+
+def _default_created_at_value(draft_value: str | None = None) -> str:
+    if draft_value:
+        return draft_value
+    return datetime.now(_TZ_MOSCOW).replace(tzinfo=None, microsecond=0).isoformat(timespec="seconds")
 
 
 
@@ -508,7 +526,7 @@ async def request_new_page(
         "pickup_address": draft.get("pickup_address", ""),
         "delivery_address": draft.get("delivery_address", ""),
         "comment": draft.get("comment", ""),
-        "created_at": draft.get("created_at", ""),
+        "created_at": _default_created_at_value(draft.get("created_at", "")),
         "status": (draft.get("status", "new") or "new"),
         "manager_id": draft.get("manager_id", ""),
     }
@@ -589,7 +607,7 @@ async def request_new_submit(
     created_at_dt: datetime | None = None
     if created_at:
         try:
-            created_at_dt = datetime.fromisoformat(created_at)
+            created_at_dt = _parse_local_moscow_datetime(created_at)
         except Exception:
             created_at_dt = None
 
@@ -625,13 +643,7 @@ async def request_new_submit(
             except Exception:
                 err = "Некорректный статус."
 
-    if not err and created_at_dt:
-        now_dt = datetime.now(created_at_dt.tzinfo) if created_at_dt.tzinfo else datetime.now()
-        if created_at_dt > now_dt:
-            err = "Дата заявки не может быть в будущем."
-            field_errors["created_at"] = "Укажи дату и время не позже текущего момента."
-
-    if not err and created_at and created_at_dt and created_at_dt > datetime.now(created_at_dt.tzinfo):
+    if not err and created_at and created_at_dt and created_at_dt > datetime.now(timezone.utc):
         err = "Дата заявки не может быть в будущем."
         field_errors["created_at"] = "Укажи дату и время не позже текущего момента."
 
@@ -877,7 +889,7 @@ async def request_edit_submit(
     created_at_dt: datetime | None = None
     if created_at:
         try:
-            created_at_dt = datetime.fromisoformat(created_at)
+            created_at_dt = _parse_local_moscow_datetime(created_at)
         except Exception:
             created_at_dt = None
 
